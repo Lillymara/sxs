@@ -15,7 +15,7 @@ import {
   shopRefreshCost,
 } from "../../data/gameConfig";
 import { expToNext, getSeason } from "../xp";
-import { SEASON_END_CAPS, progressionCaps, upgradeCosts, type ProgressionCaps, type Slot, type UpgradeCosts } from "./costs";
+import { progressionCaps, upgradeCosts, type ProgressionCaps, type Slot, type UpgradeCosts } from "./costs";
 import { realmYieldsPerEntry, type RealmYields } from "./realm";
 import { minimumPlan, scoreSeason, type MinimumPlan, type ScoreSummary, type SlotCategory } from "./score";
 import { summarizeTime, type TimeInput, type TimeSummary } from "./time";
@@ -87,9 +87,6 @@ export interface CharacterProjection {
   xpSaved: number;
   /** Level where the XP table ran out, if it did. */
   stoppedAt?: number;
-  /** The season's level cap, when the projection reaches it; `banked` is the EXP earned past it. */
-  cappedAt?: number;
-  banked?: number;
 }
 
 export interface MaterialLine {
@@ -159,7 +156,7 @@ const LABELS: Record<Material, string> = {
  * Character EXP over the season. The rate is constant between resets and steps up
  * at each reset as new statues arrive; boost hours are paid at the post-reset rate.
  */
-function projectCharacter(input: PlannerInput, time: TimeSummary, maxLevel?: number): CharacterProjection {
+function projectCharacter(input: PlannerInput, time: TimeSummary): CharacterProjection {
   const table = getSeason(input.season);
   const base = Math.max(0, input.xpPerHour);
   const rateAfter = (resetsPassed: number) =>
@@ -187,14 +184,8 @@ function projectCharacter(input: PlannerInput, time: TimeSummary, maxLevel?: num
     return { ok: false, level, xp, need: 0, decimalLevel: level, xpGained: gained, xpSaved: saved };
   }
   let stoppedAt: number | undefined;
-  let cappedAt: number | undefined;
   while (remaining > 0) {
     const req = need(level);
-    // At the season's level cap the rest is banked, not lost.
-    if (maxLevel !== undefined && level >= maxLevel) {
-      cappedAt = level;
-      break;
-    }
     if (req === undefined) {
       stoppedAt = level;
       break;
@@ -214,11 +205,10 @@ function projectCharacter(input: PlannerInput, time: TimeSummary, maxLevel?: num
     level,
     xp,
     need: req,
-    decimalLevel: cappedAt !== undefined ? level : level + (req > 0 ? Math.min(1, xp / req) : 0),
+    decimalLevel: level + (req > 0 ? Math.min(1, xp / req) : 0),
     xpGained: gained,
     xpSaved: saved,
     stoppedAt,
-    ...(cappedAt !== undefined ? { cappedAt, banked: xp + remaining } : {}),
   };
 }
 
@@ -265,7 +255,7 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
   const rule = getRule(input.season);
   if (!rule) return null;
   const time = summarizeTime(input);
-  const character = projectCharacter(input, time, SEASON_END_CAPS[rule.season]?.character);
+  const character = projectCharacter(input, time);
   const caps = progressionCaps(rule, character.ok ? character.level : input.level);
   // Plans past a cap can't happen, so they're counted at the cap (never below what's already reached).
   const capped = (slots: Slot[], cap: number | null) =>

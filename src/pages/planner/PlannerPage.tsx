@@ -217,12 +217,6 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
                 {t && <> · {fmt(t.xpHours)} EXP hours</>}
               </p>
             )}
-            {result?.character.cappedAt !== undefined && (
-              <p className="hint">
-                Season {season} stops at level {result.character.cappedAt}. The {formatXpShort(result.character.banked ?? 0)} EXP you'd earn past it is
-                banked, not scored.
-              </p>
-            )}
             {result && !result.character.ok && <p className="error">No EXP data for that level in Season {season}.</p>}
             {result?.character.stoppedAt !== undefined && <p className="error">EXP data runs out at level {result.character.stoppedAt}.</p>}
             {full && (

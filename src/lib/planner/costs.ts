@@ -101,8 +101,8 @@ export function upgradeCosts(
 }
 
 /** Highest levels a season allows by its end, whatever the character level (Season 1 confirmed in game). */
-export const SEASON_END_CAPS: Record<number, { character: number; skill: number; fantomon: number; relic: number }> = {
-  1: { character: 130, skill: 130, fantomon: 140, relic: 14 },
+export const SEASON_END_CAPS: Record<number, { skill: number; fantomon: number; relic: number }> = {
+  1: { skill: 130, fantomon: 140, relic: 14 },
 };
 
 export interface ProgressionCaps {
