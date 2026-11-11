@@ -261,6 +261,22 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
               </button>
             </div>
           )}
+          {(() => {
+            // A Backpack was read, but some materials weren't on it: usually they're further down the list.
+            const bagRead = statuses.some((st) => st.read?.kind === "backpack");
+            if (!bagRead) return null;
+            const missing = [
+              ...(["ore", "essence", "sand", "treats"] as const).filter((k) => found.have?.[k] === undefined).map((k) => CART_LABELS[k]),
+              ...(["ore", "rola", "essence", "sand"] as const).filter((k) => found.tools?.[k] === undefined).map((k) => TOOL_LABELS[k]),
+              ...(found.refinedOre === undefined ? ["Refined Ore"] : []),
+            ];
+            return missing.length ? (
+              <p className="note warn">
+                Not found in your Backpack: <b>{missing.join(", ")}</b>. They may be further down the list or cut off at the bottom. Scroll so
+                they show with their numbers and tap <b>Add more screenshots</b>.
+              </p>
+            ) : null;
+          })()}
           {count === 0 ? (
             <p className="note warn">Nothing could be read. Try uncropped screenshots of the screens listed above.</p>
           ) : (
