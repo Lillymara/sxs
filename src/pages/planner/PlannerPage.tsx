@@ -20,6 +20,7 @@ import { Summary } from "./Summary";
 import { findProblems } from "./validate";
 import { GoatCard } from "../../components/SillyGoat";
 import { ScreenshotImport } from "./ScreenshotImport";
+import { GoalPlanBox } from "./GoalPlanBox";
 import { applyFound } from "./fromScreens";
 
 interface Props {
@@ -232,6 +233,31 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
               {full ? "Each slot's current level and where you plan to take it." : "One level for the whole system: now, and where you plan to take it."} Scoring starts above Lv {floor}
               {rule && <> (relics above +{rule.relicFloor})</>}.
             </p>
+            <GoalPlanBox
+              result={result}
+              planned={{
+                gear: form.gear.map((r) => Number(r.planned) || 0),
+                skill: form.skills.map((r) => Number(r.planned) || 0),
+                fantomon: form.fantomons.map((r) => Number(r.planned) || 0),
+                relic: form.relics.map((r) => Number(r.planned.replace(/^\+/, "")) || 0),
+              }}
+              current={{
+                gear: form.gear.map((r) => Math.max(floor, Number(r.current) || 0)),
+                skill: form.skills.map((r) => Math.max(floor, Number(r.current) || 0)),
+                fantomon: form.fantomons.map((r) => Math.max(floor, Number(r.current) || 0)),
+                relic: form.relics.map((r) => Math.max(rule?.relicFloor ?? 0, Number(r.current.replace(/^\+/, "")) || 0)),
+              }}
+              onApply={(planned) => {
+                const put = (rows: SlotForm[], levels: number[]) => rows.map((r, i) => ({ ...r, planned: String(levels[i]) }));
+                onChange({
+                  ...form,
+                  gear: put(form.gear, planned.gear),
+                  skills: put(form.skills, planned.skill),
+                  fantomons: put(form.fantomons, planned.fantomon),
+                  relics: put(form.relics, planned.relic),
+                });
+              }}
+            />
             {full ? (
               SYSTEMS.map((s) => {
                 const names = s.field === "gear" ? GEAR_NAMES : range(form[s.field].length, (i) => (s.field === "skills" ? `Skill ${i + 1}` : `#${i + 1}`));

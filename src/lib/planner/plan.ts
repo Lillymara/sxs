@@ -15,6 +15,7 @@ import {
   shopRefreshCost,
 } from "../../data/gameConfig";
 import { expToNext, getSeason } from "../xp";
+import { planForGoal, type GoalPlan } from "./optimize";
 import { progressionCaps, upgradeCosts, type ProgressionCaps, type Slot, type UpgradeCosts } from "./costs";
 import { realmYieldsPerEntry, type RealmYields } from "./realm";
 import { minimumPlan, scoreSeason, type MinimumPlan, type ScoreSummary, type SlotCategory } from "./score";
@@ -139,6 +140,8 @@ export interface PlannerResult {
   rolaBoughtPerDay: number;
   /** Realm tools over the season, by Realm. */
   realmTools: Record<RealmMaterial, number>;
+  /** The cheapest plan across every system that reaches the goal, or null with no goal to reach. */
+  goalPlan: GoalPlan | null;
   /** Per category: the lowest plan that reaches the goal with everything else as planned. */
   minimum: Record<SlotCategory, MinimumPlan>;
 }
@@ -423,6 +426,41 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
   const order: Material[] = ["ore", "rola", "essence", "sand", "treats"];
   const materials = order.map((k) => (k === "rola" ? rola : others.find((m) => m.key === k)!));
 
+  // "Plan my goal": what each material comes to by season end (on hand, income, Realm runs; not the
+  // Home Shop, whose stock depends on what's planned), spent on the cheapest route to the goal.
+  const atCurrent = (slots: Slot[]) => slots.map((sl) => ({ ...sl, planned: sl.current }));
+  const baseScore = scoreSeason(rule, {
+    characterLevel: character.ok ? character.decimalLevel : input.level,
+    gear: atCurrent(input.gear),
+    skills: atCurrent(input.skills),
+    fantomons: atCurrent(input.fantomons),
+    relics: atCurrent(input.relics),
+    primostarsNow: input.primostarsNow,
+    primostarGoal: input.primostarGoal,
+  });
+  const supply = (k: Material) => {
+    const m = materials.find((x) => x.key === k)!;
+    return m.passive + (m.realmYield && m.entriesAvailable ? m.entriesAvailable * m.realmYield : 0);
+  };
+  const goalPlan =
+    score.scoreNeeded > 0
+      ? planForGoal(rule, {
+          gear: input.gear,
+          skills: input.skills,
+          fantomons: input.fantomons,
+          relics: input.relics,
+          caps: { gear: caps.gear, skill: caps.skill, fantomon: caps.fantomon, relic: caps.relic },
+          pointsNeeded: score.scoreNeeded - baseScore.total,
+          budget: {
+            ore: supply("ore"),
+            rola: Math.max(0, supply("rola") - refreshRola),
+            essence: supply("essence"),
+            sand: supply("sand"),
+            fantomonExp: supply("treats") * Math.max(0, input.expPerTreat),
+          },
+        })
+      : null;
+
   const dawniumPerDay =
     REALM_MATERIALS.reduce((a, k) => a + DAWNIUM_REFRESH_COSTS.slice(0, Math.min(10, Math.max(0, input.refreshes[k]))).reduce((x, y) => x + y, 0), 0) +
     rolaBuyCost(Math.max(0, Math.floor(input.rolaBuys)));
@@ -446,5 +484,6 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
     shopRefreshRolaPerDay,
     rolaBoughtPerDay,
     realmTools,
+    goalPlan,
   };
 }

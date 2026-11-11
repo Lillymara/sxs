@@ -44,8 +44,8 @@ describe("upgrade costs", () => {
   it("uses the Season 2 unlock table for caps", () => {
     expect(progressionCaps(s2, 155)).toMatchObject({ gear: 190, skill: 180, relic: 18, nextAt: 160 });
     expect(progressionCaps(s1, 125).relic).toBe(13);
-    expect(progressionCaps(s1, 156)).toMatchObject({ gear: null, skill: 130, fantomon: 140, relic: 14, nextAt: null });
-    expect(progressionCaps(s1, 132)).toMatchObject({ relic: 14, nextAt: null });
+    expect(progressionCaps(s1, 130.6)).toMatchObject({ gear: null, skill: 130, fantomon: 140, relic: 14 });
+    expect(progressionCaps(s1, 129)).toMatchObject({ skill: 129, fantomon: 130, relic: 13 });
   });
 });
 

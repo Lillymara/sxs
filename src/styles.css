@@ -913,3 +913,13 @@ button.wheel-hub:disabled { cursor: progress; }
   gap: 0.3rem;
 }
 .shot-apply-top { display: grid; gap: 8px; justify-items: start; margin: 4px 0 14px; }
+
+/* Season Planner: "Plan my goal". */
+.goal-plan { border: 1px solid var(--line, rgba(127,127,127,.25)); border-radius: 14px; padding: 12px 14px; margin: 10px 0 14px; display: grid; gap: 8px; }
+.goal-plan.ok { border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.goal-plan.short { border-color: color-mix(in srgb, var(--error) 50%, transparent); background: color-mix(in srgb, var(--error) 7%, transparent); }
+.goal-plan .hint { margin: 0; }
+.goal-plan-head { margin: 0; font-size: 0.92rem; }
+.goal-plan-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 0.9rem; }
+.goal-plan-list li { display: flex; justify-content: space-between; gap: 12px; }
+.goal-plan .spin-button { justify-self: start; }
