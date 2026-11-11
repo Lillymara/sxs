@@ -146,21 +146,37 @@ export const CART_ROWS = ["rola", "wood", "stone", "ore", "essence", "gear", "sa
  * rows are evenly spaced. The pitch comes from the rows already read, so a missed row can still be
  * found and read on its own.
  */
+/** Cart rows are ~100–130 px apart at the reader's 1200 px width; two readings closer than this are one line. */
+const MIN_ROW_GAP = 45;
+
 export function cartRowCentres(words: Word[]): { centres: number[]; pitch: number; valueX: number } | null {
   const title = words.find((w) => /cart$/i.test(w.text));
-  const values = words.filter((w) => /^\+\d/.test(w.text)).map(midY).sort((a, b) => a - b);
+  // Values from both passes, with readings of the same line (a few dozen pixels apart at most) merged.
+  const raw = words.filter((w) => /^\+\d/.test(w.text)).map(midY).sort((a, b) => a - b);
+  const values: number[] = [];
+  for (const y of raw) if (!values.length || y - values[values.length - 1] >= MIN_ROW_GAP) values.push(y);
   if (!title || values.length < 2) return null;
-  const gaps = values.slice(1).map((y, i) => y - values[i]).filter((g) => g > 20);
-  if (!gaps.length) return null;
-  const minGap = Math.min(...gaps);
-  // Gaps are whole multiples of the pitch; average the ones that are a single row.
-  const singles = gaps.map((g) => g / Math.round(g / minGap));
-  const pitch = singles.reduce((a, b) => a + b, 0) / singles.length;
   const top = midY(title);
+  // Fit evenly spaced rows to every value found: the first row sits about 0.93 rows below the title,
+  // and each value belongs to the nearest of the eight rows. A misplaced reading costs a little; a
+  // value that would fall outside the eight rows costs a lot.
+  let best = { cost: Infinity, first: 0, pitch: 0 };
+  for (let pitch = 60; pitch <= 170; pitch += 0.5) {
+    for (let lead = 0.75; lead <= 1.1; lead += 0.01) {
+      const first = top + pitch * lead;
+      let cost = Math.abs(lead - 0.93) * pitch * 0.5;
+      for (const y of values) {
+        const k = Math.round((y - first) / pitch);
+        cost += k < 0 || k > CART_ROWS.length - 1 ? pitch : Math.abs(y - (first + k * pitch));
+      }
+      if (cost < best.cost) best = { cost, first, pitch };
+    }
+  }
+  const { pitch } = best;
   const xs = words.filter((w) => /^\+\d/.test(w.text)).map((w) => w.bbox.x0);
   // Predicted centres drift a little down the list, so snap each to a value already read near it.
   const centres = CART_ROWS.map((_, k) => {
-    const guess = top + pitch * (0.93 + k);
+    const guess = best.first + pitch * k;
     const near = values.find((y) => Math.abs(y - guess) < pitch * 0.4);
     return near ?? guess;
   });

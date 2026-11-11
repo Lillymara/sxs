@@ -69,4 +69,23 @@ describe("screenshot parsing", () => {
     // A line missed: no guessing.
     expect(cartValuesInOrder(words.filter((x) => x.text !== "+784/h"))).toBeUndefined();
   });
+
+  it("keeps the Cart row spacing when both passes read the same line slightly apart (seen in Zen)", () => {
+    const w = (text: string, y: number): Word => ({ text, bbox: { x0: 310, x1: 420, y0: y - 15, y1: y + 15 } });
+    const words = [
+      w("Cart", 883),
+      w("+739/h", 1736),
+      w("+39/h", 1865),
+      w("+10125/h", 1004),
+      w("+550/h", 1110),
+      w("+739/h", 1739),
+      w("+39/h", 1887),
+    ];
+    const rows = cartRowCentres(words)!;
+    expect(rows.pitch).toBeGreaterThan(100);
+    expect(rows.pitch).toBeLessThan(140);
+    // Rola is the first row, Treats the last.
+    expect(Math.abs(rows.centres[0] - 1004)).toBeLessThan(30);
+    expect(Math.abs(rows.centres[7] - 1876)).toBeLessThan(40);
+  });
 });
