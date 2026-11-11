@@ -242,6 +242,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
             </p>
             <GoalPlanBox
               result={result}
+              onSetGoal={(stars) => set("primostarGoal", String(stars))}
               planned={{
                 gear: form.gear.map((r) => Number(r.planned) || 0),
                 skill: form.skills.map((r) => Number(r.planned) || 0),

@@ -969,3 +969,5 @@ button.wheel-hub:disabled { cursor: progress; }
   .pact-totals { grid-template-columns: 1fr 1fr; font-size: 0.78rem; }
   .pact-totals small { display: inline; }
 }
+.goal-lower { display: grid; gap: 6px; }
+.goal-lower-buttons { display: flex; flex-wrap: wrap; gap: 6px; }

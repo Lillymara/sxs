@@ -3,6 +3,7 @@ import type { PlannerResult } from "../../lib/planner/plan";
 import type { Spend } from "../../lib/planner/optimize";
 import type { SlotCategory } from "../../lib/planner/score";
 import { formatXpShort } from "../../lib/xp";
+import { ASTRAL_PACT, PACT_BONUSES } from "../../data/astralPact";
 
 const SPEND_LABELS: Record<Spend, string> = { ore: "Ore", rola: "Rola", essence: "Essence", sand: "Sand", fantomonExp: "Fantomon EXP" };
 const SYSTEM_LABELS: Record<SlotCategory, string> = { gear: "Gear", skill: "Skills", fantomon: "Fantomons", relic: "Relics" };
@@ -19,7 +20,10 @@ export function GoalPlanBox({
   current,
   planned,
   onApply,
+  onSetGoal,
 }: {
+  /** Lowers the Primostar goal. */
+  onSetGoal?: (stars: number) => void;
   result: PlannerResult | null;
   /** Planned levels now in the form, to tell when this plan is already in use. */
   planned: Record<SlotCategory, number[]>;
@@ -63,6 +67,9 @@ export function GoalPlanBox({
             ? ", even with every system at its cap."
             : `: ${SPEND_LABELS[plan.limitedBy as Spend] ?? "materials"} runs out first. This is the most your materials reach.`}
       </p>
+      {!reaches && onSetGoal && (
+        <LowerGoal reachable={plan.reachableTotal} goal={result.score.goal} onSetGoal={onSetGoal} />
+      )}
       {changed.length > 0 ? (
         <ul className="goal-plan-list">
           {changed.map((k) => (
@@ -93,6 +100,36 @@ export function GoalPlanBox({
             Use this plan
           </button>
         ))}
+    </div>
+  );
+}
+
+/** When the goal is out of reach: lower it to the most the materials reach, or the best Astral Pact tier below that. */
+function LowerGoal({ reachable, goal, onSetGoal }: { reachable: number; goal: number; onSetGoal: (stars: number) => void }) {
+  const tier = [...ASTRAL_PACT].reverse().find(([s]) => s <= reachable && s < goal);
+  return (
+    <div className="goal-lower">
+      <p className="hint">
+        The most you can reach is about <b>{reachable.toLocaleString()}</b> Primostars.
+        {tier && (
+          <>
+            {" "}
+            The highest Astral Pact bonus within that is at <b>{tier[0].toLocaleString()}</b> ({PACT_BONUSES[tier[1]].label} +{PACT_BONUSES[tier[1]].amount}%).
+          </>
+        )}
+      </p>
+      <div className="goal-lower-buttons">
+        {tier && (
+          <button type="button" className="fill-btn" onClick={() => onSetGoal(tier[0])}>
+            Lower goal to {tier[0].toLocaleString()} (Astral Pact)
+          </button>
+        )}
+        {(!tier || tier[0] !== reachable) && reachable < goal && (
+          <button type="button" className="fill-btn" onClick={() => onSetGoal(reachable)}>
+            Lower goal to {reachable.toLocaleString()} (most I can reach)
+          </button>
+        )}
+      </div>
     </div>
   );
 }

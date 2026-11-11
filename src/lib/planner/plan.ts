@@ -145,7 +145,7 @@ export interface PlannerResult {
   /** Refined Ore for gear (every 5 levels): need, on hand, gathered by season end (4 spots a day), and what's left. */
   refinedOre: { need: number; have: number; gathered: number; left: number };
   /** The cheapest plan across every system that reaches the goal, or null with no goal to reach. */
-  goalPlan: GoalPlan | null;
+  goalPlan: (GoalPlan & { reachableTotal: number }) | null;
   /** Per category: the lowest plan that reaches the goal with everything else as planned. */
   minimum: Record<SlotCategory, MinimumPlan>;
 }
@@ -446,7 +446,7 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
     const m = materials.find((x) => x.key === k)!;
     return m.passive + (m.realmYield && m.entriesAvailable ? m.entriesAvailable * m.realmYield : 0);
   };
-  const goalPlan =
+  const goalRoute =
     score.scoreNeeded > 0
       ? planForGoal(rule, {
           gear: input.gear,
@@ -464,6 +464,11 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
           },
         })
       : null;
+  // The most Primostars the materials reach: what's had now, the fixed ones, and the plan's score.
+  const goalPlan = goalRoute && {
+    ...goalRoute,
+    reachableTotal: input.primostarsNow + rule.fixedStars + Math.floor((baseScore.total + goalRoute.pointsAdded) / rule.pointsPerStar + 1e-9),
+  };
 
   const dawniumPerDay =
     REALM_MATERIALS.reduce((a, k) => a + DAWNIUM_REFRESH_COSTS.slice(0, Math.min(10, Math.max(0, input.refreshes[k]))).reduce((x, y) => x + y, 0), 0) +
