@@ -19,6 +19,8 @@ import { SlotTable } from "./SlotTable";
 import { Summary } from "./Summary";
 import { findProblems } from "./validate";
 import { GoatCard } from "../../components/SillyGoat";
+import { ScreenshotImport } from "./ScreenshotImport";
+import { applyFound } from "./fromScreens";
 
 interface Props {
   character: Character;
@@ -113,6 +115,15 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
               : "Quick and rougher: one level per system and your Cart income. Switch to Full for a closer answer."}
           </p>
         </div>
+
+        <ScreenshotImport
+          season={season}
+          onApply={(found) => {
+            const next = applyFound(found, character, form);
+            onCharacterChange(next.character);
+            onChange(next.form);
+          }}
+        />
 
         <div className="planner-cards">
           <Card icon="🎯" title="Season & goal">

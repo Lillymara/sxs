@@ -286,6 +286,30 @@ input.silly { border-color: var(--error); color: var(--error); box-shadow: 0 0 0
 .open-toggle:hover { border-color: var(--accent); }
 .open-toggle.is-open { background: color-mix(in srgb, #22c55e 18%, var(--surface)); border-color: #22c55e; color: #4ade80; }
 
+/* ---- Fill from screenshots ---- */
+.shot-open { justify-self: start; display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; border: 1px dashed var(--accent); background: var(--accent-soft); color: var(--text); font-weight: 700; cursor: pointer; }
+.shot-open:hover { border-style: solid; }
+.shot-card { display: grid; gap: 10px; border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.shot-card .hint { margin: 0; }
+.shot-list { margin: 0; padding-left: 20px; display: grid; gap: 2px; font-size: 0.88rem; color: var(--muted); }
+.shot-list b { color: var(--text); }
+.shot-drop { position: relative; display: grid; place-items: center; padding: 18px; border-radius: 14px; border: 2px dashed var(--line); background: var(--surface-2); cursor: pointer; font-weight: 700; color: var(--accent); text-align: center; }
+.shot-drop:hover { border-color: var(--accent); }
+.shot-drop.busy { cursor: progress; color: var(--muted); }
+.shot-drop input { position: absolute; inset: 0; opacity: 0; cursor: inherit; }
+.shot-status { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 0.85rem; }
+.shot-status li { display: flex; justify-content: space-between; gap: 10px; }
+.shot-file { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.ok-text { color: #15803d; font-weight: 700; }
+:root[data-tone="dark"] .ok-text { color: #4ade80; }
+.shot-review { display: grid; gap: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.shot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.shot-field { display: grid; gap: 3px; font-size: 0.8rem; font-weight: 600; }
+.shot-field input { padding: 7px 9px; }
+.shot-field input:placeholder-shown { border-style: dashed; }
+.shot-field small { font-weight: 400; color: var(--muted); font-size: 0.7rem; }
+.shot-review .spin-button { justify-self: start; }
+
 /* ---- Level Timer boosts ---- */
 .boosts { display: grid; gap: 10px; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
 .boosts legend { padding: 0 6px; }
