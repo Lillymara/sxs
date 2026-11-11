@@ -923,3 +923,49 @@ button.wheel-hub:disabled { cursor: progress; }
 .goal-plan-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 0.9rem; }
 .goal-plan-list li { display: flex; justify-content: space-between; gap: 12px; }
 .goal-plan .spin-button { justify-self: start; }
+
+/* Astral Pact: summary line and pop-out table. */
+.pact-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 10px 0 4px; font-size: 0.86rem; }
+.pact-line p { margin: 0; }
+.pact-dialog { overflow: hidden; border: 1px solid var(--line); border-radius: 18px; padding: 0; width: min(640px, calc(100vw - 32px)); max-height: min(86vh, 900px); background: var(--surface); color: var(--text); }
+.pact-dialog::backdrop { background: rgba(5, 8, 20, 0.6); backdrop-filter: blur(2px); }
+.pact-inner { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; max-height: min(86vh, 900px); box-sizing: border-box; }
+.pact-head { display: flex; justify-content: space-between; align-items: center; }
+.pact-head h2 { margin: 0; font-size: 1.1rem; }
+.pact-inner .hint { margin: 0; }
+.pact-totals { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px 12px; font-size: 0.84rem; }
+.pact-totals div { display: flex; justify-content: space-between; gap: 6px; }
+.pact-totals small { color: var(--accent); font-weight: 600; display: block; text-align: right; }
+.pact-totals b { text-align: right; }
+.pact-key { margin: 0; font-size: 0.78rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.pact-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: -4px; }
+.pact-dot.have, .pact-row.have td:first-child { background: color-mix(in srgb, var(--muted) 35%, transparent); }
+.pact-dot.season, .pact-row.season td:first-child { background: color-mix(in srgb, var(--accent) 45%, transparent); }
+.pact-dot.goal, .pact-row.goal td:first-child { background: color-mix(in srgb, #f5b942 45%, transparent); }
+.pact-scroll { overflow: auto; min-height: 0; flex: 1; border-top: 1px solid var(--line); }
+.pact-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.pact-table th { position: sticky; top: 0; background: var(--surface); text-align: left; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; padding: 6px 8px; }
+.pact-table td { padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.pact-table td:first-child { font-variant-numeric: tabular-nums; font-weight: 700; border-radius: 6px; text-align: right; }
+.pact-table td:last-child { text-align: right; white-space: nowrap; color: var(--muted); }
+.pact-row.have td:nth-child(2) { color: var(--muted); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Small phones (under ~400px): keep the header inside the screen. */
+@media (max-width: 400px) {
+  .brand small { display: none; }
+  .brand { gap: 8px; }
+  .topbar { min-width: 0; }
+  .top-actions { min-width: 0; }
+}
+
+/* Astral Pact table: fixed columns so long bonus names wrap on phones. */
+.pact-table { table-layout: fixed; }
+.pact-table th:first-child, .pact-table td:first-child { width: 4.6em; }
+.pact-table th:last-child, .pact-table td:last-child { width: 6.8em; }
+.pact-table td:nth-child(2) { white-space: normal; overflow-wrap: anywhere; line-height: 1.3; }
+@media (max-width: 480px) {
+  .pact-inner { padding: 14px 12px; }
+  .pact-totals { grid-template-columns: 1fr 1fr; font-size: 0.78rem; }
+  .pact-totals small { display: inline; }
+}

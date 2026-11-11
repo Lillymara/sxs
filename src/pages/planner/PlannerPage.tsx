@@ -21,6 +21,7 @@ import { findProblems } from "./validate";
 import { GoatCard } from "../../components/SillyGoat";
 import { ScreenshotImport } from "./ScreenshotImport";
 import { GoalPlanBox } from "./GoalPlanBox";
+import { pactGoalHint } from "./AstralPact";
 import { applyFound } from "./fromScreens";
 
 interface Props {
@@ -141,7 +142,13 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
           <Card icon="🎯" title="Season & goal">
             <div className="fields">
               <Field label="Primostars you have" value={form.primostarsNow} onChange={(v) => set("primostarsNow", v)} placeholder="0" />
-              <Field label="Total you want" value={form.primostarGoal} onChange={(v) => set("primostarGoal", v)} placeholder="0" />
+              <Field
+                label="Total you want"
+                value={form.primostarGoal}
+                onChange={(v) => set("primostarGoal", v)}
+                placeholder="0"
+                hint={pactGoalHint(Number(form.primostarGoal)) ?? "Pick a total that unlocks an Astral Pact bonus (see the projection)."}
+              />
               <Field
                 className="span-2"
                 type="datetime-local"
@@ -631,7 +638,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
       </div>
 
       <aside className="planner-summary" id="summary">
-        {silly ? <GoatCard messages={problems.messages} outlined={Object.values(problems.slots).some((x) => x.size > 0)} /> : <Summary result={result} now={now} />}
+        {silly ? <GoatCard messages={problems.messages} outlined={Object.values(problems.slots).some((x) => x.size > 0)} /> : <Summary result={result} now={now} onPickGoal={(stars) => set("primostarGoal", String(stars))} />}
       </aside>
 
       {silly ? (

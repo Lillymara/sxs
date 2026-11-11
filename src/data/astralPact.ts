@@ -1,0 +1,128 @@
+// Astral Pact: permanent bonuses unlocked by total Primostars filled (across seasons).
+// Thresholds and bonuses as listed by SxS Companion (sxscompanion.com/seasons/astral-pact) and in game.
+
+export type PactBonus = "ATK" | "DEF" | "HP" | "SPD" | "GEAR" | "GEM" | "X2" | "EXP";
+
+export const PACT_BONUSES: Record<PactBonus, { label: string; amount: number }> = {
+  ATK: { label: "ATK", amount: 1 },
+  DEF: { label: "DEF", amount: 1 },
+  HP: { label: "HP", amount: 1 },
+  SPD: { label: "SPD", amount: 1 },
+  GEAR: { label: "Dungeon: Gear Drop Ascension Rate", amount: 3 },
+  GEM: { label: "Gem Drop Rate", amount: 5 },
+  X2: { label: "Dungeon: 2x Rating Reward Rate", amount: 2 },
+  EXP: { label: "EXP Gain Boost", amount: 2 },
+};
+
+/** [Primostars filled, bonus], in order. */
+export const ASTRAL_PACT: [number, PactBonus][] = [
+  [5, "ATK"],
+  [10, "GEAR"],
+  [15, "DEF"],
+  [20, "GEM"],
+  [25, "HP"],
+  [30, "X2"],
+  [35, "SPD"],
+  [40, "EXP"],
+  [48, "ATK"],
+  [56, "GEAR"],
+  [64, "DEF"],
+  [72, "X2"],
+  [80, "HP"],
+  [88, "GEM"],
+  [96, "SPD"],
+  [104, "EXP"],
+  [116, "ATK"],
+  [128, "GEAR"],
+  [140, "DEF"],
+  [152, "GEM"],
+  [164, "HP"],
+  [176, "X2"],
+  [188, "SPD"],
+  [200, "EXP"],
+  [215, "ATK"],
+  [230, "GEAR"],
+  [245, "DEF"],
+  [260, "GEM"],
+  [275, "HP"],
+  [290, "X2"],
+  [305, "SPD"],
+  [320, "EXP"],
+  [340, "ATK"],
+  [360, "GEAR"],
+  [380, "DEF"],
+  [400, "GEM"],
+  [420, "HP"],
+  [440, "X2"],
+  [460, "SPD"],
+  [480, "EXP"],
+  [505, "ATK"],
+  [530, "GEAR"],
+  [555, "DEF"],
+  [580, "GEM"],
+  [605, "HP"],
+  [630, "X2"],
+  [655, "SPD"],
+  [680, "EXP"],
+  [710, "ATK"],
+  [740, "GEAR"],
+  [770, "DEF"],
+  [800, "GEM"],
+  [830, "HP"],
+  [860, "X2"],
+  [890, "SPD"],
+  [920, "EXP"],
+  [955, "ATK"],
+  [990, "GEAR"],
+  [1025, "DEF"],
+  [1060, "GEM"],
+  [1095, "HP"],
+  [1130, "X2"],
+  [1165, "SPD"],
+  [1200, "EXP"],
+  [1240, "ATK"],
+  [1280, "GEAR"],
+  [1320, "DEF"],
+  [1360, "GEM"],
+  [1400, "HP"],
+  [1440, "X2"],
+  [1480, "SPD"],
+  [1520, "EXP"],
+  [1565, "ATK"],
+  [1610, "GEAR"],
+  [1655, "DEF"],
+  [1700, "GEM"],
+  [1745, "HP"],
+  [1790, "X2"],
+  [1835, "SPD"],
+  [1880, "EXP"],
+  [1940, "ATK"],
+  [2000, "GEAR"],
+  [2060, "DEF"],
+  [2120, "GEM"],
+  [2180, "HP"],
+  [2240, "X2"],
+  [2300, "SPD"],
+  [2360, "EXP"],
+  [2425, "ATK"],
+  [2490, "GEAR"],
+  [2555, "DEF"],
+  [2620, "GEM"],
+  [2685, "HP"],
+  [2750, "X2"],
+  [2815, "SPD"],
+  [2880, "EXP"],
+];
+
+/** Bonus totals (in %) unlocked at a number of Primostars. */
+export function pactTotals(stars: number): Record<PactBonus, number> {
+  const out = Object.fromEntries(Object.keys(PACT_BONUSES).map((k) => [k, 0])) as Record<PactBonus, number>;
+  for (const [at, b] of ASTRAL_PACT) if (stars >= at) out[b] += PACT_BONUSES[b].amount;
+  return out;
+}
+
+/** How many tiers are unlocked at a number of Primostars, and the next one. */
+export function pactProgress(stars: number): { unlocked: number; next: [number, PactBonus] | undefined } {
+  const unlocked = ASTRAL_PACT.filter(([at]) => stars >= at).length;
+  return { unlocked, next: ASTRAL_PACT[unlocked] };
+}

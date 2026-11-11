@@ -1,5 +1,6 @@
 import type { PlannerResult } from "../../lib/planner/plan";
 import { formatXpShort } from "../../lib/xp";
+import { AstralPactSummary } from "./AstralPact";
 
 const fmt = (x: number) => Math.round(x).toLocaleString();
 const ICONS: Record<string, string> = { character: "🛏️", gear: "⚔️", skill: "✨", fantomon: "🐾", relic: "💎" };
@@ -11,7 +12,7 @@ const when = (d: Date | null, now: Date) =>
       ? "now"
       : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
-export function Summary({ result, now }: { result: PlannerResult | null; now: Date }) {
+export function Summary({ result, now, onPickGoal }: { result: PlannerResult | null; now: Date; onPickGoal?: (stars: number) => void }) {
   if (!result) {
     return (
       <section className="card results empty">
@@ -38,6 +39,7 @@ export function Summary({ result, now }: { result: PlannerResult | null; now: Da
         {score.fixedStars} fixed + {fmt(score.starsFromScore)} earned · total {fmt(score.projectedTotal)}
         {score.rating && <> · rating {score.rating}</>}
       </p>
+      <AstralPactSummary have={score.projectedTotal - score.earned} projected={score.projectedTotal} goal={score.goal} onPickGoal={onPickGoal} />
       {goalSet &&
         (score.difference >= 0 ? (
           <p className="note good">Goal of {fmt(score.goal)} reached, with {fmt(score.difference)} to spare.</p>
