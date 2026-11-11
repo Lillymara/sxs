@@ -107,6 +107,25 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
     setError("");
   };
 
+  const apply = () => {
+    if (!found) return;
+    // Treat blanks as "leave alone".
+    const clean = (v?: string) => (v && v.trim() ? v.trim() : undefined);
+    onApply({
+      season: clean(found.season),
+      level: clean(found.level),
+      xp: clean(found.xp),
+      rate: clean(found.rate),
+      gearPieces: clean(found.gearPieces),
+      have: Object.fromEntries(Object.entries(found.have ?? {}).filter(([, v]) => clean(v))),
+      tools: Object.fromEntries(Object.entries(found.tools ?? {}).filter(([, v]) => clean(v))),
+      cart: Object.fromEntries(Object.entries(found.cart).filter(([, v]) => clean(v))),
+      levels: Object.fromEntries(Object.entries(found.levels).filter(([, v]) => clean(v))),
+    });
+    setOpen(false);
+    startOver();
+  };
+
   if (!open) {
     return (
       <button type="button" className="shot-open" onClick={() => setOpen(true)}>
@@ -233,6 +252,14 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
       {found && !busy && (
         <div className="shot-review">
           <h3 className="subhead">Check what was found ({count})</h3>
+          {count > 0 && (
+            <div className="shot-apply-top">
+              <p className="hint">Nothing goes into the planner until you tap Fill the planner. Check the boxes below first, or fill now.</p>
+              <button type="button" className="spin-button" onClick={apply}>
+                Fill the planner
+              </button>
+            </div>
+          )}
           {count === 0 ? (
             <p className="note warn">Nothing could be read. Try uncropped screenshots of the screens listed above.</p>
           ) : (
@@ -273,27 +300,7 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
                 )}
               </div>
               <p className="hint">Blank fields are left as they are. Edit anything that was misread.</p>
-              <button
-                type="button"
-                className="spin-button"
-                onClick={() => {
-                  // Treat blanks as "leave alone".
-                  const clean = (v?: string) => (v && v.trim() ? v.trim() : undefined);
-                  onApply({
-                    season: clean(found.season),
-                    level: clean(found.level),
-                    xp: clean(found.xp),
-                    rate: clean(found.rate),
-                    gearPieces: clean(found.gearPieces),
-                    have: Object.fromEntries(Object.entries(found.have ?? {}).filter(([, v]) => clean(v))),
-                    tools: Object.fromEntries(Object.entries(found.tools ?? {}).filter(([, v]) => clean(v))),
-                    cart: Object.fromEntries(Object.entries(found.cart).filter(([, v]) => clean(v))),
-                    levels: Object.fromEntries(Object.entries(found.levels).filter(([, v]) => clean(v))),
-                  });
-                  setOpen(false);
-                  startOver();
-                }}
-              >
+              <button type="button" className="spin-button" onClick={apply}>
                 Fill the planner
               </button>
             </>

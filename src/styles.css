@@ -912,3 +912,4 @@ button.wheel-hub:disabled { cursor: progress; }
   display: grid;
   gap: 0.3rem;
 }
+.shot-apply-top { display: grid; gap: 8px; justify-items: start; margin: 4px 0 14px; }
