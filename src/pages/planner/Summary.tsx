@@ -117,16 +117,15 @@ export function Summary({ result, now }: { result: PlannerResult | null; now: Da
       </div>
       <p className="hint">
         Income is what you have plus Cart, gathering and daily Rola. What's still short is covered by the Realm runs you'll have, then the Home
-        Shop. Green is spare; red still needs finding. Sand is in White Sand.
+        Shop, which only spends Rola you have spare. Green is spare; red still needs finding. Sand is in White Sand.
         {(() => {
-          const rolaLine = materials.find((m) => m.key === "rola");
           const shopRola = materials.reduce((a, m) => a + m.shopRola, 0);
           return shopRola > 0 || result.shopRefreshRolaPerDay > 0 ? (
             <>
               {" "}
               Rola need includes <b>{short(shopRola)}</b> for shop buys
               {result.shopRefreshRolaPerDay > 0 && <> and {short(result.shopRefreshRolaPerDay * result.time.resets.length)} for refreshes</>}
-              {rolaLine && rolaLine.balance < 0 && <>, more than your Rola covers</>}.
+.
             </>
           ) : null;
         })()}

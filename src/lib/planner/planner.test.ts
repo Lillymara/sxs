@@ -188,8 +188,21 @@ describe("planSeason", () => {
     expect(on.dawniumPerDay).toBe(5 * 30);
   });
 
+  it("only spends spare Rola in the Home Shop", () => {
+    // No Rola income at all (daily tasks off, so no daily Rola or free Pickaxes): nothing is bought.
+    const broke = planSeason({ ...base, dailyTasks: false, gear: slots(5, 130, 132), shopRefreshes: 2 })!;
+    expect(broke.materials.find((m) => m.key === "ore")!.fromShop).toBe(0);
+    const rich = { ...base.income, rola: { have: 1e6, cartPerHour: 0, perDay: 0 } };
+    const some = planSeason({ ...base, income: rich, dailyTasks: false, gear: slots(5, 130, 132), shopRefreshes: 2 })!;
+    const rolaLine = some.materials.find((m) => m.key === "rola")!;
+    // Spends at most the spare: Rola never goes negative because of the shop.
+    expect(rolaLine.balance).toBeGreaterThanOrEqual(-0.01);
+    expect(some.materials.find((m) => m.key === "ore")!.fromShop).toBeGreaterThan(0);
+  });
+
   it("buys what's still short in the Home Shop and charges it in Rola", () => {
-    const r = planSeason({ ...base, gear: slots(5, 130, 132), shopRefreshes: 2 })!;
+    const rich = { ...base.income, rola: { have: 1e9, cartPerHour: 0, perDay: 0 } };
+    const r = planSeason({ ...base, income: rich, gear: slots(5, 130, 132), shopRefreshes: 2 })!;
     const ore = r.materials.find((m) => m.key === "ore")!;
     const rola = r.materials.find((m) => m.key === "rola")!;
     // No income or Realms, so the shop covers what it can: 1.5 listings x 3 shelves x 10 days x 1,500 Ore.

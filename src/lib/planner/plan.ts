@@ -358,7 +358,7 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
 
   let realmEntriesNeeded: number | null = 0;
   /** One material's balance: income, then the Realm entries you'll have, then the Home Shop. */
-  const line = (key: Material, need: number): MaterialLine => {
+  const line = (key: Material, need: number, shopShare = 1): MaterialLine => {
     const inc = input.income[key];
     const fromCart = Math.max(0, inc.cartPerHour) * time.productionHours;
     const fromOverworld = key === "treats" ? 0 : overworld[key];
@@ -373,7 +373,7 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
       realmEntriesNeeded = realmEntriesNeeded === null || entriesNeeded === null ? null : realmEntriesNeeded + entriesNeeded;
     }
     const fromRealm = realmYield && entriesAvailable ? Math.min(shortfall, entriesAvailable * realmYield) : 0;
-    const fromShop = Math.min(shortfall - fromRealm, shopSupply[key]);
+    const fromShop = Math.min(shortfall - fromRealm, shopSupply[key]) * shopShare;
     return {
       key,
       label: LABELS[key],
@@ -396,10 +396,18 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
     };
   };
 
-  // Everything but Rola first, since Home Shop purchases are paid in Rola.
-  const others = (["ore", "essence", "sand", "treats"] as Material[]).map((k) => line(k, needs[k]));
-  const shopRolaTotal = others.reduce((a, m) => a + m.shopRola, 0) + shopRefreshRolaPerDay * resets;
-  const rola = line("rola", needs.rola + shopRolaTotal);
+  // The Home Shop only spends spare Rola: what's left after upgrades and refreshes, counting the
+  // Rola Realm runs you'll have. If that can't buy everything still short, every purchase shrinks
+  // by the same share.
+  const refreshRola = shopRefreshRolaPerDay * resets;
+  const rolaBase = line("rola", needs.rola + refreshRola);
+  const rolaAvailable = rolaBase.passive + (rolaBase.realmYield && rolaBase.entriesAvailable ? rolaBase.entriesAvailable * rolaBase.realmYield : 0);
+  const spareRola = Math.max(0, rolaAvailable - (needs.rola + refreshRola));
+  const shopKeys: Material[] = ["ore", "essence", "sand", "treats"];
+  const wanted = shopKeys.map((k) => line(k, needs[k])).reduce((a, m) => a + m.shopRola, 0);
+  const shopShare = wanted > 0 ? Math.min(1, spareRola / wanted) : 1;
+  const others = shopKeys.map((k) => line(k, needs[k], shopShare));
+  const rola = line("rola", needs.rola + refreshRola + others.reduce((a, m) => a + m.shopRola, 0));
   const order: Material[] = ["ore", "rola", "essence", "sand", "treats"];
   const materials = order.map((k) => (k === "rola" ? rola : others.find((m) => m.key === k)!));
 
