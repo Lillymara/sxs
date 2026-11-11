@@ -190,6 +190,51 @@ const STEPS: Step[] = [
   },
 ];
 
+/** Every button and link worth knowing, and where it sits. */
+const WHERE: { what: ReactNode; where: ReactNode; does: ReactNode }[] = [
+  { what: <a href="#/planner">Season Planner</a>, where: "Top menu, under Plan", does: "Opens the planner." },
+  { what: "This guide", where: "The 📖 banner at the very top of the planner", does: "Comes back here." },
+  {
+    what: "Clear planner",
+    where: "Top right of the planner, beside the guide banner, and again at the very bottom",
+    does: "Empties your goal, levels, plan, materials and Realm choices (it asks first). Your character, server and Simple/Full stay.",
+  },
+  { what: "Simple / Full", where: "The switch at the top of the planner", does: "How much the planner asks for." },
+  { what: "Fill from screenshots", where: "Just under Simple / Full", does: "Reads your game screenshots." },
+  { what: "How to take the screenshots", where: "Inside Fill from screenshots, at the top", does: "Where each screen is in the game, with examples." },
+  { what: "Add more screenshots / Start over", where: "Inside Fill from screenshots, after you pick some", does: "Add another screenshot, or clear the list." },
+  {
+    what: "Fill the planner",
+    where: "Under Check what was found (top and bottom of the list)",
+    does: "Puts what was read into the planner. Nothing goes in until you tap it.",
+  },
+  {
+    what: <a href="#/calendar">Server Calendar</a>,
+    where: "Top menu, under Plan. Before you've picked one, there's also a Pick your server link under Season ends",
+    does: "Sets your server, which sets the season end and reset time.",
+  },
+  { what: "Plan my goal / Use this plan", where: "The box at the top of the System levels card", does: "The cheapest way to your goal; fills every Plan box." },
+  { what: "Lower goal to …", where: "Inside Plan my goal, when the goal is out of reach", does: "Sets a goal you can reach, or the best Astral Pact tier within it." },
+  { what: "Fill min", where: "Beside each system in System levels", does: "Puts the rest of your goal on that one system." },
+  {
+    what: "Realm suggestions",
+    where: "Each day card → Material Realms",
+    does: "Suggested refreshes (Ore/Rola/Essence/Sand) to reach your goal, plus presets, with Dawnium costs. Tap one to use it.",
+  },
+  { what: <a href="#/dawnium">Dawnium Guide</a>, where: "Top menu under Info, or the link under Material Realms", does: "Where Dawnium does the most good." },
+  {
+    what: "See all bonuses (Astral Pact)",
+    where: "The projection panel, under the Primostars total",
+    does: "The full bonus table. Aim for this on a row makes it your goal.",
+  },
+  {
+    what: "Jump to the projection",
+    where: "On a phone: the bar fixed at the bottom of the screen (+N Primostars)",
+    does: "Scrolls down to the results.",
+  },
+  { what: <a href="#/">Level Timer</a>, where: "Top menu, under Plan", does: "When you'll reach your next level, with bed boosts and Temporal Crystals." },
+];
+
 const QUICK = [
   "Pick your server on the Server Calendar so the season end is right.",
   "Fill from screenshots (or type your numbers in), then tap Fill the planner.",
@@ -214,12 +259,39 @@ export function PlannerGuidePage() {
           </a>
         </p>
         <nav className="guide-toc" aria-label="Guide sections">
+          <a href="#/guide?where" onClick={(e) => jump(e, "where")}>
+            Where to find everything
+          </a>
           {STEPS.map((s, i) => (
             <a key={s.id} href={`#/guide?${s.id}`} onClick={(e) => jump(e, s.id)}>
               {i + 1}. {s.title}
             </a>
           ))}
         </nav>
+      </section>
+
+      <section className="card" id="guide-where">
+        <h2 className="subhead">Where to find everything</h2>
+        <div className="table-wrap flat">
+          <table className="guide-where">
+            <thead>
+              <tr>
+                <th scope="col">What</th>
+                <th scope="col">Where</th>
+                <th scope="col">What it does</th>
+              </tr>
+            </thead>
+            <tbody>
+              {WHERE.map((w, i) => (
+                <tr key={i}>
+                  <th scope="row">{w.what}</th>
+                  <td>{w.where}</td>
+                  <td>{w.does}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="card">
@@ -249,7 +321,9 @@ export function PlannerGuidePage() {
       <section className="card">
         <h2 className="subhead">Good to know</h2>
         <ul className="guide-notes">
-          <li>Everything you enter is saved in this browser only. "Clear planner" at the bottom of the planner starts over.</li>
+          <li>
+            Everything you enter is saved in this browser only. <b>Clear planner</b> (top right of the planner, or at the very bottom) starts over.
+          </li>
           <li>Numbers accept K, M and B (like 605K or 1.53M), the way the game shows them.</li>
           <li>Redo your screenshots every few days: your rates and stockpiles change, and so does the best plan.</li>
           <li>Material, Realm and shop amounts are estimates from the game's data, so leave yourself a little room.</li>

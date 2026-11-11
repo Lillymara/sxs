@@ -30,6 +30,8 @@ interface Props {
   onCharacterChange: (c: Character) => void;
   form: PlannerForm;
   onChange: (f: PlannerForm) => void;
+  /** Empties the planner (asks first). */
+  onClear: () => void;
   result: PlannerResult | null;
   now: Date;
   defaults: TimeDefaults;
@@ -87,7 +89,7 @@ const shown = (rows: SlotForm[], key: keyof SlotForm) => {
   return nums.length < rows.length || lo !== hi ? `${plus}${lo}–${hi}` : `${plus}${lo}`;
 };
 
-export function PlannerPage({ character, onCharacterChange, form, onChange, result, now, defaults, server }: Props) {
+export function PlannerPage({ character, onCharacterChange, form, onChange, onClear, result, now, defaults, server }: Props) {
   const season = Number(character.season);
   const rule = getRule(season);
   const table = getSeason(season);
@@ -116,12 +118,17 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
   return (
     <div className="planner">
       <div className="planner-form">
-        <a className="guide-banner" href="#/guide">
-          <span aria-hidden>📖</span>
-          <span>
-            <b>New to the planner?</b> Read the step-by-step guide to what everything does →
-          </span>
-        </a>
+        <div className="planner-top">
+          <a className="guide-banner" href="#/guide">
+            <span aria-hidden>📖</span>
+            <span>
+              <b>New to the planner?</b> Read the step-by-step guide to what everything does →
+            </span>
+          </a>
+          <button type="button" className="link-button planner-clear" onClick={onClear}>
+            Clear planner
+          </button>
+        </div>
         <div className="mode-switch" role="group" aria-label="Planner detail">
           {(["simple", "full"] as const).map((m) => (
             <button key={m} type="button" aria-pressed={form.mode === m} onClick={() => set("mode", m)}>

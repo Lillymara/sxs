@@ -995,3 +995,15 @@ button.wheel-hub:disabled { cursor: progress; }
 .realm-option b { font-size: 1.05rem; color: var(--accent); letter-spacing: 0.02em; }
 .realm-option-name { font-weight: 700; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .realm-option.in-use { border-color: color-mix(in srgb, var(--accent) 60%, transparent); cursor: default; }
+.planner-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.planner-top .guide-banner { flex: 1; margin-bottom: 0; }
+.planner-clear { white-space: nowrap; flex: none; }
+.guide-where { width: 100%; font-size: 0.86rem; }
+.guide-where th, .guide-where td { white-space: normal; vertical-align: top; }
+.guide-where tbody th { font-weight: 700; min-width: 9em; }
+.guide-where td:nth-child(2) { color: var(--muted); }
+@media (max-width: 560px) {
+  .guide-where thead { display: none; }
+  .guide-where tr { display: grid; gap: 2px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .guide-where th, .guide-where td { border: 0; padding: 0; }
+}

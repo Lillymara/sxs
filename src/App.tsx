@@ -147,6 +147,11 @@ export default function App() {
   }, [page, character, currentXp, planner, timeDefaults, now]);
 
   const current = PAGES.find((p) => p.id === page)!;
+  /** Clears the planner's own inputs (character, server and Simple/Full stay), after a check. */
+  const clearPlanner = () => {
+    if (window.confirm("Clear the Season Planner? Your goal, levels, plan, materials and Realm choices are emptied. Your character and server stay."))
+      setPlanner({ ...DEFAULT_PLANNER, mode: planner.mode });
+  };
 
   useEffect(() => {
     document.title = `${current.title} · Sword x Staff`;
@@ -232,13 +237,14 @@ export default function App() {
             onCharacterChange={setCharacter}
             form={planner}
             onChange={setPlanner}
+            onClear={clearPlanner}
             result={plan}
             now={now}
             defaults={timeDefaults}
             server={server && { name: server.name, season: server.season.number, seasonEnds: server.seasonEnds }}
           />
           <p className="reset-row">
-            <button type="button" className="link-button" onClick={() => setPlanner(DEFAULT_PLANNER)}>
+            <button type="button" className="link-button" onClick={clearPlanner}>
               Clear planner
             </button>
           </p>
