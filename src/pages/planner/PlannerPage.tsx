@@ -321,7 +321,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
           </Card>
 
           <Card icon="🛒" title="Cart income">
-            <p className="hint">What your Cart makes an hour, in the order the Cart screen lists it.</p>
+            <p className="hint">What your Cart makes an hour, in the order the Cart screen lists it, and how much you already have.</p>
             {full ? (
               <div className="table-wrap flat">
                 <table className="input-table">
@@ -354,17 +354,31 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
               </div>
             ) : (
               <div className="cart-list">
-                {CART_ORDER.map((k) => (
-                  <label key={k} className="cart-row">
-                    <span>{MATERIAL_LABELS[k].replace(" (White eq.)", "")}</span>
-                    <input
-                      value={form.income[k].cartPerHour}
-                      onChange={(e) => set("income", { ...form.income, [k]: { ...form.income[k], cartPerHour: e.target.value } })}
-                      placeholder="0"
-                    />
-                    <small>/hr</small>
-                  </label>
-                ))}
+                <div className="cart-row cart-head" aria-hidden>
+                  <span />
+                  <span>Cart / hr</span>
+                  <span>Have now</span>
+                </div>
+                {CART_ORDER.map((k) => {
+                  const name = MATERIAL_LABELS[k].replace(" (White eq.)", "");
+                  return (
+                    <div key={k} className="cart-row">
+                      <span>{name}</span>
+                      <input
+                        aria-label={`${name} Cart per hour`}
+                        value={form.income[k].cartPerHour}
+                        onChange={(e) => set("income", { ...form.income, [k]: { ...form.income[k], cartPerHour: e.target.value } })}
+                        placeholder="0"
+                      />
+                      <input
+                        aria-label={`${name} on hand`}
+                        value={form.income[k].have}
+                        onChange={(e) => set("income", { ...form.income, [k]: { ...form.income[k], have: e.target.value } })}
+                        placeholder="0"
+                      />
+                    </div>
+                  );
+                })}
               </div>
             )}
             <p className="hint">Sand counts as White Sand (1 Blue = 5 White, 1 Purple = 25 White).</p>
@@ -427,6 +441,30 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
               <small>Each shelf lists about 1.5 stacks each of Ore, Sand, Essence and treats. Spare Rola buys whatever is still short.</small>
             </label>
 
+            <h3 className="subhead">Realm tools saved up</h3>
+            <p className="hint">
+              Tools already in your Backpack, on top of the ones the daily tasks give. Filled in from a Backpack screenshot when the tools show in it.
+            </p>
+            <div className="table-wrap flat">
+              <table className="input-table">
+                <thead>
+                  <tr>
+                    <th scope="col"></th>
+                    <th scope="col">In Backpack</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {REALM_MATERIALS.map((k) => (
+                    <tr key={k}>
+                      <th scope="row">{REALM_TOOL_NAMES[k]}</th>
+                      <td>
+                        <input aria-label={`${REALM_TOOL_NAMES[k]} saved`} value={form.savedEntries[k]} onChange={(e) => set("savedEntries", { ...form.savedEntries, [k]: e.target.value })} placeholder="0" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             {full && (
               <div className="full-only">
                 <label className="check">
@@ -453,30 +491,6 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
                   <small>Five at 30 Dawnium, five at 50, then 100 each.</small>
                 </label>
 
-                <h3 className="subhead">Realm tools saved up</h3>
-                <p className="hint">
-                  Tools already in your Backpack, on top of the ones the daily tasks give. Filled in from a Backpack screenshot when the tools show in it.
-                </p>
-                <div className="table-wrap flat">
-                  <table className="input-table">
-                    <thead>
-                      <tr>
-                        <th scope="col"></th>
-                        <th scope="col">In Backpack</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {REALM_MATERIALS.map((k) => (
-                        <tr key={k}>
-                          <th scope="row">{REALM_TOOL_NAMES[k]}</th>
-                          <td>
-                            <input aria-label={`${REALM_TOOL_NAMES[k]} saved`} value={form.savedEntries[k]} onChange={(e) => set("savedEntries", { ...form.savedEntries, [k]: e.target.value })} placeholder="0" />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
                 {rule && (
                   <label className="field">
                     <span>Rank (sets Realm, gathering and shop amounts)</span>

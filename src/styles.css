@@ -432,9 +432,10 @@ tr.dawn-cheap td { color: #4ade80; font-weight: 700; }
 .system-head small { color: var(--muted); font-weight: 600; }
 .system-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; }
 .cart-list { display: grid; gap: 6px; }
-.cart-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) 28px; gap: 8px; align-items: center; font-weight: 600; font-size: 0.9rem; }
-.cart-row input { padding: 7px 10px; }
+.cart-row { display: grid; grid-template-columns: 62px minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 6px; align-items: center; font-weight: 600; font-size: 0.9rem; }
+.cart-row input { padding: 7px 8px; min-width: 0; }
 .cart-row small { color: var(--muted); }
+.cart-head { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .realm-picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 8px; }
 .realm-picks .field span { font-size: 0.78rem; }
 .balance td { font-variant-numeric: tabular-nums; white-space: nowrap; }
