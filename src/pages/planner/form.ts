@@ -13,6 +13,8 @@ type Triple = { rola: string; ore: string; sand: string };
 
 /** Everything the planner asks for beyond the shared character fields; kept as typed text. */
 export interface PlannerForm {
+  /** Simple asks for one level per system and Cart income only; Full shows every slot and stockpile. */
+  mode: "simple" | "full";
   seasonEnd: string;
   resetTime: string;
   boostHours: string;
@@ -42,6 +44,7 @@ const blankRealm = (): Record<RealmMaterial, string> => ({ ore: "", rola: "", es
 const blankIncome = () => ({ have: "", cartPerHour: "", perDay: "" });
 
 export const DEFAULT_PLANNER: PlannerForm = {
+  mode: "simple",
   seasonEnd: "",
   resetTime: "",
   boostHours: "2",

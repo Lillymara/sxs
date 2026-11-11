@@ -2,6 +2,7 @@ import type { PlannerResult } from "../../lib/planner/plan";
 import { formatXpShort } from "../../lib/xp";
 
 const fmt = (x: number) => Math.round(x).toLocaleString();
+const ICONS: Record<string, string> = { character: "🛏️", gear: "⚔️", skill: "✨", fantomon: "🐾", relic: "💎" };
 const short = (x: number) => formatXpShort(Math.round(x));
 const when = (d: Date | null, now: Date) =>
   d === null
@@ -25,10 +26,16 @@ export function Summary({ result, now }: { result: PlannerResult | null; now: Da
 
   return (
     <section className="card results" aria-live="polite">
-      <p className="eyebrow">Season {rule.season} Primostars</p>
-      <p className="big-time">+{fmt(score.earned)}</p>
+      <p className="eyebrow">Season {rule.season} projection</p>
+      <div className="proj-big">
+        <span className="proj-num">+{fmt(score.earned)}</span>
+        <span className="proj-label">
+          Primostars
+          <small>a floor, not a forecast</small>
+        </span>
+      </div>
       <p className="eta">
-        {fmt(score.starsFromScore)} from {fmt(score.total)} points + {score.fixedStars} fixed · total {fmt(score.projectedTotal)}
+        {score.fixedStars} fixed + {fmt(score.starsFromScore)} earned · total {fmt(score.projectedTotal)}
         {score.rating && <> · rating {score.rating}</>}
       </p>
       {goalSet &&
@@ -36,31 +43,27 @@ export function Summary({ result, now }: { result: PlannerResult | null; now: Da
           <p className="note good">Goal of {fmt(score.goal)} reached, with {fmt(score.difference)} to spare.</p>
         ) : (
           <p className="note warn">
-            {fmt(short_)} Primostars short of {fmt(score.goal)}. You need about {fmt(short_ * rule.pointsPerStar)} more points.
+            {fmt(short_)} short of {fmt(score.goal)}. About {fmt(short_ * rule.pointsPerStar)} more points needed.
           </p>
         ))}
 
-      <h3 className="subhead">Score</h3>
-      <table>
-        <thead>
-          <tr>
-            <th scope="col"></th>
-            <th scope="col">Levels</th>
-            <th scope="col">× pts</th>
-            <th scope="col">Points</th>
-          </tr>
-        </thead>
-        <tbody>
-          {score.categories.map((c) => (
-            <tr key={c.key}>
-              <th scope="row">{c.label}</th>
-              <td>{c.key === "character" ? c.seasonLevels.toFixed(2) : fmt(c.seasonLevels)}</td>
-              <td>{c.weight}</td>
-              <td>{fmt(c.points)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <ul className="proj-systems">
+        {score.categories.map((c) => (
+          <li key={c.key}>
+            <span>
+              <span aria-hidden>{ICONS[c.key]}</span> {c.label}
+            </span>
+            <span className="proj-lv">{c.key === "character" ? c.seasonLevels.toFixed(1) : fmt(c.seasonLevels)} lv</span>
+            <span className="proj-pts">{fmt(c.points)} pts</span>
+          </li>
+        ))}
+        <li className="proj-total">
+          <span>Total</span>
+          <span />
+          <span className="proj-pts">{fmt(score.total)} pts</span>
+        </li>
+      </ul>
+      <p className="hint">Levels above the season floor, times each system's points per level. 1 Primostar per {rule.pointsPerStar} points.</p>
 
       <h3 className="subhead">Upgrade costs</h3>
       <dl className="stats two">
