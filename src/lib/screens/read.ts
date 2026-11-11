@@ -16,7 +16,7 @@ import {
   type SeasonLevels,
   type Word,
 } from "./parse";
-import { BAG_ITEMS, THUMB, findIcons, findPlate, firstAmount, identify, trimNumber, whiteInk, type BagItem, type Ink } from "./backpack";
+import { BAG_ITEMS, THUMB, findIcons, findPlate, firstAmount, firstPillNumber, identify, trimNumber, whiteInk, type BagItem, type Ink } from "./backpack";
 import { parseAmount } from "../xp";
 
 export interface ScreenRead {
@@ -146,6 +146,21 @@ async function getDigitWorker(mode: keyof typeof DIGIT_MODES): Promise<Worker> {
   return w;
 }
 
+/**
+ * The top bar gets a reader of its own: Tesseract adapts to what a worker has already read, and after
+ * small item counts or Cart rows it tends to drop the K beside the top bar's + buttons.
+ */
+let topWorkerPromise: Promise<Worker> | null = null;
+async function getTopWorker(): Promise<Worker> {
+  topWorkerPromise ??= import("tesseract.js").then(async ({ createWorker }) => {
+    const w = await createWorker("eng");
+    await w.setParameters(DIGIT_MODES.topBar);
+    return w;
+  });
+  topWorkerPromise.catch(() => (topWorkerPromise = null));
+  return topWorkerPromise;
+}
+
 async function recognize(worker: Worker, canvas: HTMLCanvasElement): Promise<{ text: string; words: Word[] }> {
   const { data } = await worker.recognize(canvas, {}, { blocks: true, text: true });
   const words: Word[] = [];
@@ -250,6 +265,7 @@ async function readBackpack(full: HTMLCanvasElement): Promise<Pick<ScreenRead, "
   const scale = full.width / work.width;
   const icons = findIcons(pixels(work)).map((b) => ({ x: b.x * scale, y: b.y * scale, w: b.w * scale, h: b.h * scale }));
   const templates = await bagTemplates();
+  const rola = await readTopRola(full);
 
   // Identify first; if two icons look like the same item, keep the closer match.
   const best = new Map<BagItem, { distance: number; icon: (typeof icons)[number] }>();
@@ -279,10 +295,44 @@ async function readBackpack(full: HTMLCanvasElement): Promise<Pick<ScreenRead, "
     if (Number.isFinite(value)) bag[item] = value;
   }
 
+  return { bag, rola };
+}
+
+/**
+ * Rola: the first amount in the top bar. The K/M after it sits right against a + button and is
+ * sometimes dropped, so try the bar as is and enlarged, and prefer a read that keeps its K/M/B.
+ */
+async function readTopRola(full: HTMLCanvasElement): Promise<number | undefined> {
   const top = crop(full, full.width * 0.4, full.height * 0.025, full.width, full.height * 0.1);
-  const rolaText = firstAmount((await (await getDigitWorker("topBar")).recognize(top)).data.text);
-  const rola = rolaText ? parseAmount(rolaText) : NaN;
-  return { bag, rola: Number.isFinite(rola) ? rola : undefined };
+  const big = document.createElement("canvas");
+  big.width = top.width * 2;
+  big.height = top.height * 2;
+  const ctx = big.getContext("2d")!;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(top, 0, 0, big.width, big.height);
+  // The amount alone, cut out as the item counts are: reliably keeps its K.
+  const enlarged = document.createElement("canvas");
+  enlarged.width = top.width * 3;
+  enlarged.height = top.height * 3;
+  const ectx = enlarged.getContext("2d")!;
+  ectx.imageSmoothingQuality = "high";
+  ectx.drawImage(top, 0, 0, enlarged.width, enlarged.height);
+  const number = firstPillNumber(pixels(enlarged));
+  if (number) {
+    const text = (await (await getDigitWorker("count")).recognize(inkCanvas(number))).data.text.replace(/\s/g, "");
+    const value = parseAmount(text);
+    if (/^\d[\d.]*[KMB]$/.test(text) && Number.isFinite(value)) return value;
+  }
+  const reader = await getTopWorker();
+  let fallback: number | undefined;
+  for (const canvas of [top, big, masked(top)]) {
+    const text = firstAmount((await reader.recognize(canvas)).data.text);
+    const value = text ? parseAmount(text) : NaN;
+    if (!Number.isFinite(value)) continue;
+    if (/[KMB]$/i.test(text!)) return value;
+    fallback ??= value;
+  }
+  return fallback;
 }
 
 /** Reads one screenshot. `seasonHint` is used to turn EXP into a level when the screenshot set has no season screen. */

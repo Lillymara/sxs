@@ -247,6 +247,71 @@ export function trimNumber(img: Ink): Ink | null {
   return { width, height, ink };
 }
 
+/**
+ * The first amount in the top bar (Rola), as ink. The bar is a row of dark pills, each with an icon,
+ * a white amount and a yellow + button. White text inside the dark band is kept; light page showing
+ * between the pills touches the band's edge and is dropped. Characters are then taken left to right
+ * until the gap before the next pill.
+ */
+export function firstPillNumber(p: Pixels): Ink | null {
+  const dark = (x: number, y: number) => {
+    const [r, g, b] = rgb(p, x, y);
+    return Math.max(r, g, b) < 80;
+  };
+  const rows: number[] = [];
+  for (let y = 0; y < p.height; y++) {
+    let n = 0;
+    for (let x = 0; x < p.width; x++) n += dark(x, y) ? 1 : 0;
+    if (n / p.width > 0.3) rows.push(y);
+  }
+  if (rows.length < 4) return null;
+  const top = Math.min(...rows), bottom = Math.max(...rows);
+  const band = { width: p.width, height: bottom - top + 1, ink: new Uint8Array(p.width * (bottom - top + 1)) };
+  for (let y = top; y <= bottom; y++) {
+    for (let x = 0; x < p.width; x++) {
+      const [r, g, b] = rgb(p, x, y);
+      const lo = Math.min(r, g, b), hi = Math.max(r, g, b);
+      band.ink[(y - top) * p.width + x] = lo >= 175 && hi - lo < 45 ? 1 : 0;
+    }
+  }
+  const H = band.height;
+  // Text is about half the pill's height; the coin's highlights reach nearer its edges.
+  const inside = blobs(band).filter((b) => b.n >= 8 && b.y0 > 0 && b.y1 < H - 1 && b.y1 - b.y0 <= H * 0.62);
+  const tallest = Math.max(0, ...inside.map((b) => b.y1 - b.y0));
+  if (!tallest) return null;
+  const tall = inside.filter((b) => b.y1 - b.y0 >= tallest * 0.6);
+  // The amounts' characters share a baseline; the icons' highlights don't.
+  const near = (a: Blob, b: Blob) => Math.abs(a.y1 - b.y1) <= tallest * 0.1;
+  const line = tall.reduce<Blob | undefined>((best, b) => (!best || tall.filter((o) => near(o, b)).length > tall.filter((o) => near(o, best)).length ? b : best), undefined);
+  if (!line) return null;
+  const chars = tall.filter((b) => near(b, line)).sort((a, b) => a.x0 - b.x0);
+  const h = tallest;
+  const kept: Blob[] = [chars[0]];
+  let right = chars[0].x1;
+  for (const b of chars.slice(1)) {
+    if (b.x0 - right > 0.7 * h) break;
+    kept.push(b);
+    right = Math.max(right, b.x1);
+  }
+  const base = Math.max(...kept.map((b) => b.y1));
+  const x0 = Math.min(...kept.map((b) => b.x0));
+  // Small shapes on the baseline between the characters: a decimal point.
+  for (const b of inside) {
+    if (kept.includes(b) || b.x0 < x0 || b.x1 > right) continue;
+    if (Math.abs(b.y1 - base) <= 0.18 * h && b.y1 - b.y0 <= 0.35 * h) kept.push(b);
+  }
+  const y0 = Math.min(...kept.map((b) => b.y0)), y1 = Math.max(...kept.map((b) => b.y1));
+  const width = right - x0 + 1, height = y1 - y0 + 1;
+  const ink = new Uint8Array(width * height);
+  for (const b of kept) {
+    for (const i of b.pixels) {
+      const x = i % band.width, y = (i / band.width) | 0;
+      ink[(y - y0) * width + (x - x0)] = 1;
+    }
+  }
+  return { width, height, ink };
+}
+
 /** First number in the top bar, e.g. "529K+36.3K+112" -> "529K" (Rola). */
 export function firstAmount(text: string): string | undefined {
   const m = text.replace(/\s/g, "").match(/\d[\d.,]*[KMB]?/);
