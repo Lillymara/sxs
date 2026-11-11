@@ -100,6 +100,11 @@ export function upgradeCosts(
   return c;
 }
 
+/** Highest levels a season allows by its end, whatever the character level (Season 1 confirmed in game). */
+export const SEASON_END_CAPS: Record<number, { character: number; skill: number; fantomon: number; relic: number }> = {
+  1: { character: 130, skill: 130, fantomon: 140, relic: 14 },
+};
+
 export interface ProgressionCaps {
   gear: number | null;
   skill: number | null;
@@ -118,6 +123,15 @@ export function progressionCaps(rule: SeasonRule, characterLevel: number): Progr
     const next = S2_PROGRESSION_CAPS.find((r) => r.level > lv);
     return { gear: row.gear, skill: row.skill, fantomon: row.fantomon, relic: row.relic, nextAt: next?.level ?? null };
   }
-  const relic = lv < 100 ? 10 : Math.max(10, Math.floor(lv / 10) + 1);
-  return { gear: null, skill: null, fantomon: null, relic, nextAt: (relic) * 10 };
+  const byLevel = lv < 100 ? 10 : Math.max(10, Math.floor(lv / 10) + 1);
+  const end = SEASON_END_CAPS[rule.season];
+  const relic = end ? Math.min(byLevel, end.relic) : byLevel;
+  return {
+    gear: null,
+    skill: end?.skill ?? null,
+    fantomon: end?.fantomon ?? null,
+    relic,
+    // Relics rise by one every 10 character levels until the season's last cap.
+    nextAt: end && relic >= end.relic ? null : relic * 10,
+  };
 }

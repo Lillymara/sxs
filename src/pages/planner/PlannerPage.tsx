@@ -71,6 +71,9 @@ function Card({ icon, title, aside, wide, children }: { icon: string; title: str
 
 /** The shared value of every slot, or "" when they differ. */
 const mixed = (rows: SlotForm[], key: keyof SlotForm) => rows.some((r) => r[key] !== rows[0][key]);
+/** True when any slot is planned past the cap. */
+const overCap = (rows: SlotForm[], cap: number | null) =>
+  cap !== null && rows.some((r) => r.planned !== "" && Number(r.planned.replace(/^\+/, "")) > cap);
 /** What Simple mode shows: the shared level, or the range when slots differ (e.g. "135–140"). */
 const shown = (rows: SlotForm[], key: keyof SlotForm) => {
   if (!mixed(rows, key)) return rows[0]?.[key] ?? "";
@@ -214,6 +217,12 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
                 {t && <> · {fmt(t.xpHours)} EXP hours</>}
               </p>
             )}
+            {result?.character.cappedAt !== undefined && (
+              <p className="hint">
+                Season {season} stops at level {result.character.cappedAt}. The {formatXpShort(result.character.banked ?? 0)} EXP you'd earn past it is
+                banked, not scored.
+              </p>
+            )}
             {result && !result.character.ok && <p className="error">No EXP data for that level in Season {season}.</p>}
             {result?.character.stoppedAt !== undefined && <p className="error">EXP data runs out at level {result.character.stoppedAt}.</p>}
             {full && (
@@ -285,6 +294,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
                           <span aria-hidden>{s.icon}</span> {s.label}
                         </b>
                         {rule && <small>+{rule.weights[s.key]} pts / lv</small>}
+                        {capOf(s.key) != null && <small>Cap {prefix}{capOf(s.key)}</small>}
                       </span>
                       <input
                         aria-label={`${s.label} current level`}
@@ -298,7 +308,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
                       <span aria-hidden>→</span>
                       <input
                         aria-label={`${s.label} planned level`}
-                        className={bad ? "silly" : undefined}
+                        className={bad ? "silly" : overCap(rows, capOf(s.key)) ? "over-cap" : undefined}
                         value={shown(rows, "planned")}
                         onFocus={(e) => mixed(rows, "planned") && e.target.select()}
                         title={mixed(rows, "planned") ? "Slots differ (see Full). Typing here sets them all." : undefined}
@@ -315,7 +325,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
                     </div>
                   );
                 })}
-                <p className="hint">"Fill min" puts the rest of your goal on that system. A range like 135–140 means the slots differ: see each one in Full, or type one level to set them all.</p>
+                <p className="hint">"Fill min" puts the rest of your goal on that system. Levels past a cap are counted at the cap. A range like 135–140 means the slots differ: see each one in Full, or type one level to set them all.</p>
               </div>
             )}
           </Card>
