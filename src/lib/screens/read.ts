@@ -204,7 +204,7 @@ function bagTemplates() {
           const img = new Image();
           img.onload = () => resolve([item, thumbnail(img, 0, 0, img.naturalWidth, img.naturalHeight)]);
           img.onerror = reject;
-          img.src = `${import.meta.env.BASE_URL}art/bag/${item}.png`;
+          img.src = `${import.meta.env.BASE_URL}art/bag/${item}.png?v=${__BUILD_ID__}`;
         }),
     ),
   ).then((pairs) => Object.fromEntries(pairs));

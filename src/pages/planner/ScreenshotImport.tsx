@@ -18,6 +18,8 @@ const TOOL_LABELS = { ore: "Iron Hammers", rola: "Gold Pickaxes", essence: "Worn
 const LEVEL_LABELS = { gear: "Gear", skill: "Skills", fantomon: "Fantomons", relic: "Relics" } as const;
 
 const ART = `${import.meta.env.BASE_URL}art/screens/`;
+/** Example image URL, stamped with the build so an updated example isn't hidden behind the browser cache. */
+const example = (img: string) => `${ART}${img}?v=${__BUILD_ID__}`;
 
 /** One example per screen the reader understands. Example images have every number blurred. */
 const GUIDE = [
@@ -144,8 +146,8 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
         <ol className="shot-steps">
           {GUIDE.map((g, i) => (
             <li key={g.key} className="shot-step">
-              <a href={`${ART}${g.img}`} target="_blank" rel="noreferrer" className="shot-thumb" title="Open the full example">
-                <img src={`${ART}${g.img}`} alt={`Example ${g.title} screenshot, with the part that's read outlined`} loading="lazy" />
+              <a href={example(g.img)} target="_blank" rel="noreferrer" className="shot-thumb" title="Open the full example">
+                <img src={example(g.img)} alt={`Example ${g.title} screenshot, with the part that's read outlined`} loading="lazy" />
               </a>
               <div>
                 <p className="shot-step-title">
