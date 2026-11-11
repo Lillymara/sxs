@@ -10,9 +10,11 @@ const KIND_LABELS: Record<ScreenRead["kind"], string> = {
   cart: "Cart",
   progression: "Season progression",
   character: "Character",
+  backpack: "Backpack",
   unknown: "Not recognised",
 };
 const CART_LABELS: Record<CartKey, string> = { rola: "Rola", ore: "Ore", essence: "Essence", sand: "Sand", treats: "Treats" };
+const TOOL_LABELS = { ore: "Iron Hammers", rola: "Gold Pickaxes", essence: "Worn Knuckles", sand: "Sand Shovels" } as const;
 const LEVEL_LABELS = { gear: "Gear", skill: "Skills", fantomon: "Fantomons", relic: "Relics" } as const;
 
 const ART = `${import.meta.env.BASE_URL}art/screens/`;
@@ -50,6 +52,14 @@ const GUIDE = [
     where: "tap the Thrilling Event chest in the top right, choose the Season event (for example S1. Witching Hours), then tap Progression at the bottom.",
     fills: "the season and your Gear, Skill, Fantomon and Relic levels.",
     reads: "Reads the points under each Season level (and the season from the title), then turns points into levels.",
+  },
+  {
+    key: "backpack",
+    title: "Backpack",
+    img: "backpack.jpg",
+    where: "open your Backpack (the Item screen). Scroll so your materials and Realm tools show; take more than one screenshot if they don't fit.",
+    fills: "Rola, Ore, Essence, Sand and Treats on hand, plus saved Realm tools (Full mode).",
+    reads: "Recognises the outlined items by their icons and reads each count. Chrono Sand grades are added as White Sand, and treat grades as Basic Treats.",
   },
 ];
 
@@ -111,7 +121,7 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
     return pieces.reduce((a, v) => a + v - rule.floor, 0) !== total;
   })();
   const count = found
-    ? [found.season, found.level, found.xp, found.rate, found.gearPieces, ...Object.values(found.cart), ...Object.values(found.levels)].filter((v) => v !== undefined).length
+    ? [found.season, found.level, found.xp, found.rate, found.gearPieces, ...Object.values(found.cart), ...Object.values(found.levels), ...Object.values(found.have ?? {}), ...Object.values(found.tools ?? {})].filter((v) => v !== undefined).length
     : 0;
 
   return (
@@ -125,7 +135,7 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
         </button>
       </div>
       <p className="hint">
-        Take up to four screenshots in the game, then pick them here. They're read on your device and never uploaded, and you check
+        Take screenshots of the screens below in the game, then pick them here. They're read on your device and never uploaded, and you check
         everything before it goes into the planner.
       </p>
 
@@ -160,7 +170,7 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
           <ul>
             <li>Screenshot the <b>whole screen</b>. Don't crop or zoom: the reader finds numbers by where they sit.</li>
             <li>Close any pop-up, tooltip or chat that covers the numbers.</li>
-            <li>Any phone or tablet size works. Pick all four at once, in any order, or just the ones you want.</li>
+            <li>Any phone or tablet size works. Pick them all at once, in any order, or just the ones you want.</li>
             <li>Take them together, so the numbers match each other.</li>
             <li>The outlined parts in the examples are what's read. Everything else is ignored.</li>
             <li>If something reads wrong, just fix it in the box before filling the planner.</li>
@@ -218,6 +228,17 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
                 {gearMismatch && (
                   <p className="hint warn shot-mismatch">The gear pieces don't add up to the season Gear total. One of them may be misread, so check both.</p>
                 )}
+                {CART_KEYS.map((k) =>
+                  field(
+                    `${CART_LABELS[k]} on hand`,
+                    found.have?.[k],
+                    (v) => setFound({ ...found, have: { ...found.have, [k]: v } }),
+                    k === "sand" ? "In White Sand (Rare ×5, Epic ×25)" : k === "treats" ? "As Basic Treats (Premium ×8, Deluxe ×40)" : undefined,
+                  ),
+                )}
+                {(["ore", "rola", "essence", "sand"] as const).map((k) =>
+                  field(TOOL_LABELS[k], found.tools?.[k], (v) => setFound({ ...found, tools: { ...found.tools, [k]: v } }), "Saved Realm tools"),
+                )}
                 {(Object.keys(LEVEL_LABELS) as (keyof typeof LEVEL_LABELS)[]).map((k) =>
                   field(
                     `${LEVEL_LABELS[k]} season level`,
@@ -240,6 +261,8 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
                     xp: clean(found.xp),
                     rate: clean(found.rate),
                     gearPieces: clean(found.gearPieces),
+                    have: Object.fromEntries(Object.entries(found.have ?? {}).filter(([, v]) => clean(v))),
+                    tools: Object.fromEntries(Object.entries(found.tools ?? {}).filter(([, v]) => clean(v))),
                     cart: Object.fromEntries(Object.entries(found.cart).filter(([, v]) => clean(v))),
                     levels: Object.fromEntries(Object.entries(found.levels).filter(([, v]) => clean(v))),
                   });

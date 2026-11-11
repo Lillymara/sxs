@@ -3,6 +3,7 @@ import type { Character } from "../../components/CharacterForm";
 import { getRule } from "../../data/seasons";
 import type { ScreenRead } from "../../lib/screens/read";
 import { levelFromNeed, type SeasonLevels } from "../../lib/screens/parse";
+import type { BagItem } from "../../lib/screens/backpack";
 import type { PlannerForm, SlotForm } from "./form";
 
 export type CartKey = "rola" | "ore" | "essence" | "sand" | "treats";
@@ -18,7 +19,14 @@ export interface Found {
   levels: Partial<Record<Exclude<keyof SeasonLevels, "character">, string>>;
   /** Each gear piece's level from the Character screen, like "140, 137, 135, 135, 135". */
   gearPieces?: string;
+  /** Backpack: amounts on hand (Sand in White Sand, treats as Basic Treats). */
+  have?: Partial<Record<CartKey, string>>;
+  /** Backpack: saved Realm tools, by the Realm they're for. */
+  tools?: Partial<Record<Exclude<CartKey, "treats">, string>>;
 }
+
+/** Treat EXP by grade, as the game's feed values. Totals are given in Basic Treats (50 EXP). */
+const TREAT_EXP = { basicTreats: 50, premiumTreats: 400, deluxeTreats: 2000 } as const;
 
 /** Five gear levels from text like "140, 137, 135, 135, 135", or undefined. */
 export function readGearPieces(text?: string): number[] | undefined {
@@ -29,6 +37,7 @@ export function readGearPieces(text?: string): number[] | undefined {
 /** Combines several screenshots' reads; the season screen's season wins over the planner's. */
 export function mergeReads(reads: ScreenRead[], seasonHint: number): Found {
   const found: Found = { cart: {}, levels: {} };
+  const bag: Partial<Record<BagItem, number>> = {};
   const seasonRead = reads.find((r) => r.season)?.season;
   const season = seasonRead ?? seasonHint;
   if (seasonRead) found.season = String(seasonRead);
@@ -40,6 +49,9 @@ export function mergeReads(reads: ScreenRead[], seasonHint: number): Found {
       if (level) found.level = String(level);
     }
     if (r.gear) found.gearPieces = r.gear.join(", ");
+    if (r.rola !== undefined) (found.have ??= {}).rola = String(r.rola);
+    // Backpack pages are combined first, since one screen rarely holds every item.
+    if (r.bag) Object.assign(bag, r.bag);
     if (r.cart) for (const k of CART_KEYS) if (r.cart[k] !== undefined) found.cart[k] = String(r.cart[k]);
     if (r.levels) {
       for (const k of ["gear", "skill", "fantomon", "relic"] as const) {
@@ -47,6 +59,25 @@ export function mergeReads(reads: ScreenRead[], seasonHint: number): Found {
         if (v !== undefined) found.levels[k] = String(v);
       }
     }
+  }
+  if (Object.keys(bag).length) {
+    const b = bag;
+    const have = (found.have ??= {});
+    if (b.ore !== undefined) have.ore = String(b.ore);
+    if (b.essence !== undefined) have.essence = String(b.essence);
+    // Sand counts as White Sand: Rare is 5, Epic 25.
+    if (b.sand !== undefined || b.rareSand !== undefined || b.epicSand !== undefined) {
+      have.sand = String(Math.round((b.sand ?? 0) + 5 * (b.rareSand ?? 0) + 25 * (b.epicSand ?? 0)));
+    }
+    if (b.basicTreats !== undefined || b.premiumTreats !== undefined || b.deluxeTreats !== undefined) {
+      const exp = (Object.keys(TREAT_EXP) as (keyof typeof TREAT_EXP)[]).reduce((a, k) => a + (b[k] ?? 0) * TREAT_EXP[k], 0);
+      have.treats = String(Math.round(exp / TREAT_EXP.basicTreats));
+    }
+    const tools = (found.tools ??= {});
+    if (b.hammer !== undefined) tools.ore = String(b.hammer);
+    if (b.pickaxe !== undefined) tools.rola = String(b.pickaxe);
+    if (b.knuckles !== undefined) tools.essence = String(b.knuckles);
+    if (b.shovel !== undefined) tools.sand = String(b.shovel);
   }
   return found;
 }
@@ -73,6 +104,17 @@ export function applyFound(found: Found, character: Character, form: PlannerForm
   for (const k of CART_KEYS) {
     const v = found.cart[k];
     if (v !== undefined) f.income[k] = { ...f.income[k], cartPerHour: v };
+  }
+  for (const k of CART_KEYS) {
+    const v = found.have?.[k];
+    if (v !== undefined) f.income[k] = { ...f.income[k], have: v };
+  }
+  if (found.tools) {
+    f.savedEntries = { ...f.savedEntries };
+    for (const k of ["ore", "rola", "essence", "sand"] as const) {
+      const v = found.tools[k];
+      if (v !== undefined) f.savedEntries[k] = v;
+    }
   }
   const rule = getRule(Number(c.season));
   if (rule) {

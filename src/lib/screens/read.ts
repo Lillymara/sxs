@@ -16,6 +16,8 @@ import {
   type SeasonLevels,
   type Word,
 } from "./parse";
+import { BAG_ITEMS, THUMB, findIcons, findPlate, firstAmount, identify, trimNumber, whiteInk, type BagItem, type Ink } from "./backpack";
+import { parseAmount } from "../xp";
 
 export interface ScreenRead {
   file: string;
@@ -30,6 +32,10 @@ export interface ScreenRead {
   /** Character screen: each gear piece's level, when all five badges read. */
   gear?: number[];
   levels?: SeasonLevels;
+  /** Backpack: amounts of the items the planner uses. */
+  bag?: Partial<Record<BagItem, number>>;
+  /** Backpack top bar: Rola on hand. */
+  rola?: number;
 }
 
 const WIDTH = 1200;
@@ -126,15 +132,17 @@ export function getWorker(): Promise<Worker> {
  * A second reader for digits only, so the page reader's settings never change. Every use sets both
  * of its settings first, so it never relies on defaults.
  */
-async function getDigitWorker(mode: "cartRow" | "gearBadges"): Promise<Worker> {
+const DIGIT_MODES = {
+  cartRow: { tessedit_char_whitelist: "+0123456789/h", tessedit_pageseg_mode: SINGLE_LINE },
+  gearBadges: { tessedit_char_whitelist: "+0123456789", tessedit_pageseg_mode: SPARSE },
+  count: { tessedit_char_whitelist: "0123456789.KMB", tessedit_pageseg_mode: SINGLE_LINE },
+  topBar: { tessedit_char_whitelist: "0123456789.KMB+", tessedit_pageseg_mode: SINGLE_LINE },
+};
+async function getDigitWorker(mode: keyof typeof DIGIT_MODES): Promise<Worker> {
   rowWorkerPromise ??= import("tesseract.js").then(({ createWorker }) => createWorker("eng"));
   rowWorkerPromise.catch(() => (rowWorkerPromise = null));
   const w = await rowWorkerPromise;
-  await w.setParameters(
-    mode === "cartRow"
-      ? { tessedit_char_whitelist: "+0123456789/h", tessedit_pageseg_mode: SINGLE_LINE }
-      : { tessedit_char_whitelist: "+0123456789", tessedit_pageseg_mode: SPARSE },
-  );
+  await w.setParameters(DIGIT_MODES[mode]);
   return w;
 }
 
@@ -145,6 +153,138 @@ async function recognize(worker: Worker, canvas: HTMLCanvasElement): Promise<{ t
   return { text: data.text ?? "", words };
 }
 
+/** The screenshot at its own resolution (capped at 2000 px wide), for reading small text. */
+async function fullCanvas(file: File): Promise<HTMLCanvasElement> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 2000 / bitmap.width);
+  const c = document.createElement("canvas");
+  c.width = Math.round(bitmap.width * scale);
+  c.height = Math.round(bitmap.height * scale);
+  const ctx = c.getContext("2d")!;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(bitmap, 0, 0, c.width, c.height);
+  bitmap.close();
+  return c;
+}
+
+/** Icon finding works on a smooth copy this wide: enough detail for exact boxes, small enough to be quick. */
+const ICON_WORK = 600;
+function smoothDraw(dst: HTMLCanvasElement, src: HTMLCanvasElement) {
+  const ctx = dst.getContext("2d")!;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(src, 0, 0, dst.width, dst.height);
+}
+
+const pixels = (c: HTMLCanvasElement) => c.getContext("2d")!.getImageData(0, 0, c.width, c.height);
+
+/** A 12×12 thumbnail of an area, lightly blurred first so devices with different scaling compare alike. */
+function thumbnail(src: CanvasImageSource, x: number, y: number, w: number, h: number): Uint8ClampedArray {
+  const blurred = document.createElement("canvas");
+  blurred.width = Math.round(w);
+  blurred.height = Math.round(h);
+  const bctx = blurred.getContext("2d")!;
+  bctx.filter = `blur(${(w / 60).toFixed(2)}px)`;
+  bctx.drawImage(src, x, y, w, h, 0, 0, blurred.width, blurred.height);
+  const small = document.createElement("canvas");
+  small.width = small.height = THUMB;
+  const sctx = small.getContext("2d")!;
+  sctx.imageSmoothingQuality = "high";
+  sctx.drawImage(blurred, 0, 0, THUMB, THUMB);
+  return sctx.getImageData(0, 0, THUMB, THUMB).data;
+}
+
+let templatesPromise: Promise<Partial<Record<BagItem, Uint8ClampedArray>>> | null = null;
+/** Reference icons for each Backpack item the planner uses (public/art/bag). */
+function bagTemplates() {
+  templatesPromise ??= Promise.all(
+    BAG_ITEMS.map(
+      (item) =>
+        new Promise<[BagItem, Uint8ClampedArray]>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve([item, thumbnail(img, 0, 0, img.naturalWidth, img.naturalHeight)]);
+          img.onerror = reject;
+          img.src = `${import.meta.env.BASE_URL}art/bag/${item}.png`;
+        }),
+    ),
+  ).then((pairs) => Object.fromEntries(pairs));
+  templatesPromise.catch(() => (templatesPromise = null));
+  return templatesPromise;
+}
+
+/** Ink as a black-on-white canvas with its text scaled to about 36 px tall, which suits the reader. */
+function inkCanvas(ink: Ink): HTMLCanvasElement {
+  const scale = 36 / Math.max(1, ink.height);
+  const pad = 12;
+  const src = document.createElement("canvas");
+  src.width = ink.width;
+  src.height = ink.height;
+  const sctx = src.getContext("2d")!;
+  const img = sctx.createImageData(ink.width, ink.height);
+  for (let i = 0; i < ink.ink.length; i++) {
+    const v = ink.ink[i] ? 0 : 255;
+    img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = v;
+    img.data[i * 4 + 3] = 255;
+  }
+  sctx.putImageData(img, 0, 0);
+  const out = document.createElement("canvas");
+  out.width = Math.max(1, Math.round(ink.width * scale)) + pad * 2;
+  out.height = 36 + pad * 2;
+  const ctx = out.getContext("2d")!;
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, out.width, out.height);
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(src, pad, pad, out.width - pad * 2, 36);
+  return out;
+}
+
+/**
+ * Backpack: find every item icon, identify the ones the planner uses, and read each one's count from
+ * its corner plate. Rola comes from the first number in the top bar.
+ */
+async function readBackpack(full: HTMLCanvasElement): Promise<Pick<ScreenRead, "bag" | "rola">> {
+  const work = document.createElement("canvas");
+  work.width = ICON_WORK;
+  work.height = Math.round((full.height * ICON_WORK) / full.width);
+  smoothDraw(work, full);
+  const scale = full.width / work.width;
+  const icons = findIcons(pixels(work)).map((b) => ({ x: b.x * scale, y: b.y * scale, w: b.w * scale, h: b.h * scale }));
+  const templates = await bagTemplates();
+
+  // Identify first; if two icons look like the same item, keep the closer match.
+  const best = new Map<BagItem, { distance: number; icon: (typeof icons)[number] }>();
+  for (const icon of icons) {
+    const match = identify(thumbnail(full, icon.x, icon.y, icon.w, icon.h), templates);
+    if (match && (!best.has(match.item) || match.distance < best.get(match.item)!.distance)) best.set(match.item, { distance: match.distance, icon });
+  }
+
+  const counter = await getDigitWorker("count");
+  const bag: Partial<Record<BagItem, number>> = {};
+  for (const [item, { icon }] of best) {
+    const corner = crop(full, icon.x + icon.w * 0.2, icon.y + icon.h * 0.6, icon.x + icon.w * 0.99, icon.y + icon.h * 0.97);
+    const plate = findPlate(pixels(corner));
+    if (!plate) continue;
+    const plateCanvas = crop(corner, plate.x, plate.y, plate.x + plate.w, plate.y + plate.h);
+    // Enlarge before picking out the text, as the counts are small.
+    const big = document.createElement("canvas");
+    big.width = plateCanvas.width * 3;
+    big.height = plateCanvas.height * 3;
+    const bctx = big.getContext("2d")!;
+    bctx.imageSmoothingQuality = "high";
+    bctx.drawImage(plateCanvas, 0, 0, big.width, big.height);
+    const number = trimNumber(whiteInk(pixels(big)));
+    if (!number) continue;
+    const text = (await counter.recognize(inkCanvas(number))).data.text.replace(/\s/g, "");
+    const value = parseAmount(text);
+    if (Number.isFinite(value)) bag[item] = value;
+  }
+
+  const top = crop(full, full.width * 0.4, full.height * 0.025, full.width, full.height * 0.1);
+  const rolaText = firstAmount((await (await getDigitWorker("topBar")).recognize(top)).data.text);
+  const rola = rolaText ? parseAmount(rolaText) : NaN;
+  return { bag, rola: Number.isFinite(rola) ? rola : undefined };
+}
+
 /** Reads one screenshot. `seasonHint` is used to turn EXP into a level when the screenshot set has no season screen. */
 export async function readScreenshot(file: File, seasonHint: number): Promise<ScreenRead> {
   const worker = await getWorker();
@@ -153,8 +293,19 @@ export async function readScreenshot(file: File, seasonHint: number): Promise<Sc
   const plain = await recognize(worker, canvas);
   const sharp = await recognize(worker, sharpCanvas);
   const text = `${plain.text}\n${sharp.text}`;
-  const kind = classify(text);
+  let kind = classify(text);
+  // The Backpack has almost no words, so look for its grid of item icons instead.
+  let full: HTMLCanvasElement | null = null;
+  if (kind === "unknown") {
+    full = await fullCanvas(file);
+    const work = document.createElement("canvas");
+    work.width = ICON_WORK;
+    work.height = Math.round((full.height * ICON_WORK) / full.width);
+    smoothDraw(work, full);
+    if (findIcons(pixels(work)).length >= 12) kind = "backpack";
+  }
   const out: ScreenRead = { file: file.name, kind };
+  if (kind === "backpack" && full) Object.assign(out, await readBackpack(full));
 
   if (kind === "bed") Object.assign(out, parseBed(plain.text).rate ? parseBed(plain.text) : parseBed(sharp.text));
 

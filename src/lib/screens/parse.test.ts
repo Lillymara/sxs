@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { firstAmount } from "./backpack";
 import { cartRowCentres, parseGearBadges, classify, levelFromNeed, parseBed, parseCartValue, parseCharacterXp, parseProgression, parseSeason, type Word } from "./parse";
 
 const word = (text: string, x: number, y: number): Word => ({ text, bbox: { x0: x, y0: y, x1: x + 60, y1: y + 30 } });
@@ -52,5 +53,10 @@ describe("screenshot parsing", () => {
     expect(Math.abs(rows.centres[2] - 1248)).toBeLessThan(15);
     expect(parseCartValue("+9315/h")).toBe(9315);
     expect(parseCartValue("+1,029/h")).toBe(1029);
+  });
+
+  it("takes Rola from the start of the Backpack top bar", () => {
+    expect(firstAmount("529K+136.3K+11124")).toBe("529K");
+    expect(firstAmount("378K+ 43.82K+")).toBe("378K");
   });
 });

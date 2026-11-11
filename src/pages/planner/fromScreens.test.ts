@@ -51,4 +51,37 @@ describe("filling the planner from screenshots", () => {
     const { form: f } = applyFound({ ...found, season: "1", levels: { gear: "182" } }, character, DEFAULT_PLANNER);
     expect(f.gear.map((g) => g.current)).toEqual(["140", "137", "135", "135", "135"]);
   });
+
+  it("turns Backpack amounts into planner materials and saved Realm tools", () => {
+    const found = mergeReads(
+      [
+        {
+          file: "bag",
+          kind: "backpack",
+          rola: 529000,
+          bag: { ore: 191000, essence: 551000, sand: 55100, rareSand: 2220, epicSand: 15300, basicTreats: 30800, premiumTreats: 90, deluxeTreats: 32, hammer: 41, pickaxe: 182, knuckles: 343, shovel: 392 },
+        },
+      ],
+      1,
+    );
+    // Sand: 55,100 + 5 x 2,220 + 25 x 15,300; treats: (30,800 x 50 + 90 x 400 + 32 x 2,000) / 50
+    expect(found.have).toEqual({ rola: "529000", ore: "191000", essence: "551000", sand: "448700", treats: "32800" });
+    expect(found.tools).toEqual({ ore: "41", rola: "182", essence: "343", sand: "392" });
+    const { form: f } = applyFound(found, character, DEFAULT_PLANNER);
+    expect(f.income.sand.have).toBe("448700");
+    expect(f.savedEntries).toEqual({ ore: "41", rola: "182", essence: "343", sand: "392" });
+  });
+
+  it("combines several Backpack pages before working out totals", () => {
+    const found = mergeReads(
+      [
+        { file: "p1", kind: "backpack", rola: 378000, bag: { shovel: 464, knuckles: 395, pickaxe: 91, hammer: 111 } },
+        { file: "p2", kind: "backpack", rola: 378000, bag: { rareSand: 8840, sand: 824000, ore: 9380, essence: 63700, basicTreats: 73 } },
+        { file: "p3", kind: "backpack", bag: { epicSand: 100 } },
+      ],
+      1,
+    );
+    expect(found.have).toMatchObject({ sand: String(824000 + 5 * 8840 + 25 * 100), treats: "73", ore: "9380" });
+    expect(found.tools).toEqual({ ore: "111", rola: "91", essence: "395", sand: "464" });
+  });
 });

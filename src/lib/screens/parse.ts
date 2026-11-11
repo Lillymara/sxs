@@ -8,7 +8,7 @@ export interface Word {
   bbox: { x0: number; y0: number; x1: number; y1: number };
 }
 
-export type ScreenKind = "bed" | "cart" | "progression" | "character" | "unknown";
+export type ScreenKind = "bed" | "cart" | "progression" | "character" | "backpack" | "unknown";
 
 /** Which game screen this is, from its words. */
 export function classify(text: string): ScreenKind {
