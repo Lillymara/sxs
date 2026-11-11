@@ -63,8 +63,12 @@ const STEPS: Step[] = [
         pick yours. Everything depends on how much time is left.
       </>,
       <>
-        <b>Full mode</b> also has your daily reset time, boost hours per reset, and an option to <b>save bed EXP for next season</b> (the
-        last hours of bed EXP are held back).
+        <b>Save bed EXP</b> and <b>Save Cart resources</b> for next season are on by default (36 hours each), as nearly every player
+        should do this. The planner tells you when to stop claiming the bed and the Cart, and leaves those hours out of this season. Untick
+        them if you won't save.
+      </>,
+      <>
+        <b>Full mode</b> also has your daily reset time and boost hours per reset.
       </>,
     ],
   },

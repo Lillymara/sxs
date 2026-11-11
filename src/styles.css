@@ -1007,3 +1007,5 @@ button.wheel-hub:disabled { cursor: progress; }
   .guide-where tr { display: grid; gap: 2px; padding: 8px 0; border-bottom: 1px solid var(--line); }
   .guide-where th, .guide-where td { border: 0; padding: 0; }
 }
+.save-next { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.save-next em.chip { font-style: normal; margin-left: 6px; font-size: 0.66rem; padding: 2px 7px; vertical-align: 1px; }

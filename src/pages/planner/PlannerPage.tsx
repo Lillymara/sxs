@@ -192,6 +192,34 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                 This season needs <b>{fmt(result.score.scoreNeeded)}</b> points (1 Primostar per {rule.pointsPerStar}, plus {rule.fixedStars} fixed).
               </p>
             )}
+            <div className="fields save-next">
+              <label className="check span-2">
+                <input type="checkbox" checked={form.saveBed} onChange={(e) => set("saveBed", e.target.checked)} />
+                <span>
+                  Save bed EXP for next season <em className="chip">Recommended</em>
+                  <small>Stop claiming the bed for the last hours so its EXP carries into next season. Reset boosts inside that window still count.</small>
+                </span>
+              </label>
+              {form.saveBed && (
+                <Field label="Bed hours to save" value={form.saveBedHours} onChange={(v) => set("saveBedHours", v)} placeholder="36" hint="Max 36." />
+              )}
+              <label className="check span-2">
+                <input type="checkbox" checked={form.saveCart !== false} onChange={(e) => set("saveCart", e.target.checked)} />
+                <span>
+                  Save Cart resources for next season <em className="chip">Recommended</em>
+                  <small>Stop claiming the Cart for the last hours so its resources carry into next season. They're left out of this season's materials.</small>
+                </span>
+              </label>
+              {form.saveCart !== false && (
+                <Field label="Cart hours to save" value={form.saveCartHours ?? "36"} onChange={(v) => set("saveCartHours", v)} placeholder="36" hint="Max 36." />
+              )}
+              {(t?.saveStart || t?.cartSaveStart) && (
+                <p className="hint span-2">
+                  {t?.saveStart && <>Stop claiming the bed {formatEta(0, t.saveStart)}. </>}
+                  {t?.cartSaveStart && <>Stop claiming the Cart {formatEta(0, t.cartSaveStart)}.</>}
+                </p>
+              )}
+            </div>
             {full && (
               <div className="fields full-only">
                 <Field
@@ -202,17 +230,6 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                   hint={form.resetTime ? undefined : "13:00 UTC in your time."}
                 />
                 <Field label="Boost hours per reset" value={form.boostHours} onChange={(v) => set("boostHours", v)} placeholder="2" />
-                <label className="check span-2">
-                  <input type="checkbox" checked={form.saveBed} onChange={(e) => set("saveBed", e.target.checked)} />
-                  <span>
-                    Save bed EXP for next season
-                    <small>The last natural bed hours are held back. Reset boosts inside that window still count.</small>
-                  </span>
-                </label>
-                {form.saveBed && (
-                  <Field label="Hours to save" value={form.saveBedHours} onChange={(v) => set("saveBedHours", v)} placeholder="36" hint="Max 36." />
-                )}
-                {t?.saveStart && <p className="hint span-2">Start saving {formatEta(0, t.saveStart)}.</p>}
               </div>
             )}
           </Card>

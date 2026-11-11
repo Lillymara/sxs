@@ -102,6 +102,17 @@ describe("time", () => {
     expect(t.boostHours).toBe(20);
     expect(t.xpHours).toBe(240 - 36 + 20);
   });
+
+  it("leaves saved Cart hours out of this season's Cart output", () => {
+    const start = new Date(2026, 9, 17, 0, 0);
+    const end = new Date(2026, 9, 27, 0, 0);
+    const base = { start, end, resetTime: "16:00", boostHoursPerReset: 2, saveBedHours: 0 };
+    const off = summarizeTime(base);
+    const on = summarizeTime({ ...base, saveCartHours: 36 });
+    expect(off.productionHours - on.productionHours).toBe(36);
+    expect(on.cartSaveStart?.getTime()).toBe(end.getTime() - 36 * 3_600_000);
+    expect(on.xpHours).toBe(off.xpHours); // Bed EXP isn't affected
+  });
 });
 
 describe("planSeason", () => {

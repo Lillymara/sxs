@@ -67,8 +67,21 @@ const pageFromHash = (): Page => {
 
 export default function App() {
   const [character, setCharacter] = usePersistentState<Character>("sxs.character", DEFAULT_CHARACTER);
+  // Read before the planner state saves itself back with the new defaults filled in.
+  const [plannerFromBeforeCartSave] = useState(() => {
+    try {
+      const raw = localStorage.getItem("sxs.planner");
+      return !!raw && !raw.includes('"saveCart"');
+    } catch {
+      return false;
+    }
+  });
   const [planner, setPlanner] = usePersistentState<PlannerForm>("sxs.planner", DEFAULT_PLANNER);
   const [serverChoice, setServerChoice] = usePersistentState<ServerChoice>("sxs.server", DEFAULT_SERVER);
+  // Planners saved before Cart saving existed: switch bed and Cart saving on once, as nearly everyone should.
+  useEffect(() => {
+    if (plannerFromBeforeCartSave) setPlanner((p) => ({ ...p, saveBed: true, saveCart: true, saveCartHours: p.saveCartHours || "36" }));
+  }, [plannerFromBeforeCartSave, setPlanner]);
   const [page, setPage] = useState<Page>(pageFromHash);
   const [now, setNow] = useState(() => new Date());
 

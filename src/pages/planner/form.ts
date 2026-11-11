@@ -21,6 +21,9 @@ export interface PlannerForm {
   boostHours: string;
   saveBed: boolean;
   saveBedHours: string;
+  /** Leave the Cart's last hours unclaimed for next season. Missing in old saves. */
+  saveCart?: boolean;
+  saveCartHours?: string;
   statues: string;
   statuesPerDay: string;
   primostarsNow: string;
@@ -57,8 +60,10 @@ export const DEFAULT_PLANNER: PlannerForm = {
   seasonEnd: "",
   resetTime: "",
   boostHours: "2",
-  saveBed: false,
+  saveBed: true,
   saveBedHours: "36",
+  saveCart: true,
+  saveCartHours: "36",
   statues: "",
   statuesPerDay: "",
   primostarsNow: "",
@@ -144,6 +149,7 @@ export function toPlannerInput(c: Character, xpIntoLevel: number, f: PlannerForm
     resetTime: f.resetTime || d.resetTime,
     boostHoursPerReset: n(f.boostHours, 2),
     saveBedHours: f.saveBed ? n(f.saveBedHours, 36) : 0,
+    saveCartHours: f.saveCart !== false ? n(f.saveCartHours ?? "", 36) : 0,
     level,
     xpIntoLevel,
     xpPerHour: n(c.rate),
