@@ -2,14 +2,14 @@ import type { ReactNode } from "react";
 import { CharacterForm, type Character } from "../../components/CharacterForm";
 import { Field } from "../../components/Field";
 import { DAWNIUM_REFRESH_COSTS, getRule } from "../../data/seasons";
-import type { Material, PlannerResult, RealmMaterial } from "../../lib/planner/plan";
+import { DAILY_TASKS, REALM_TOOL_NAMES, SHOP_REFRESH_COSTS, rolaBuyCost, shopRefreshCost } from "../../data/gameConfig";
+import type { Material, PlannerResult } from "../../lib/planner/plan";
 import type { SlotCategory } from "../../lib/planner/score";
 import { REALM_MATERIALS } from "../../lib/planner/plan";
-import { formatDuration, formatEta, getSeason } from "../../lib/xp";
+import { formatDuration, formatEta, formatXpShort, getSeason } from "../../lib/xp";
 import {
   DEFAULT_EXP_PER_TREAT,
   GEAR_NAMES,
-  STAMINA_YIELD_DEFAULTS,
   effectiveSeasonEnd,
   type PlannerForm,
   type SlotForm,
@@ -41,7 +41,6 @@ const MATERIAL_LABELS: Record<Material, string> = {
 };
 /** In the order the Cart screen lists them. */
 const CART_ORDER: Material[] = ["rola", "ore", "essence", "sand", "treats"];
-const REALM_TOOLS: Record<RealmMaterial, string> = { ore: "Hammers", rola: "Rola entries", essence: "Gloves", sand: "Shovels" };
 const fmt = (x: number) => Math.round(x).toLocaleString();
 
 type SlotField = "gear" | "skills" | "fantomons" | "relics";
@@ -81,7 +80,6 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
   const floor = rule?.floor ?? 0;
   const caps = result?.caps;
   const t = result?.time;
-  const staminaDefaults = STAMINA_YIELD_DEFAULTS[season];
   const problems = findProblems(character, form, rule, table);
   const silly = problems.messages.length > 0;
   const range = (count: number, label: (i: number) => string) => Array.from({ length: count }, (_, i) => label(i));
@@ -351,7 +349,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
           </Card>
 
           <Card icon="📅" title="Each day">
-            <h3 className="subhead">Material Realm refreshes</h3>
+            <h3 className="subhead">Material Realms</h3>
             <div className="realm-picks">
               {REALM_MATERIALS.map((k) => (
                 <label key={k} className="field">
@@ -359,42 +357,91 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
                   <select value={form.refreshes[k] || "0"} onChange={(e) => set("refreshes", { ...form.refreshes, [k]: e.target.value })}>
                     {Array.from({ length: 11 }, (_, n) => (
                       <option key={n} value={n}>
-                        {n}
+                        {n} {n === 1 ? "refresh" : "refreshes"}
                       </option>
                     ))}
                   </select>
                 </label>
               ))}
             </div>
-            {result && (
-              <p className="pcard-foot">
-                {fmt(result.dawniumPerDay)} Dawnium a day
-                {days > 0 && <> · {fmt(result.dawniumPerDay * Math.ceil(days))} by season end</>}
-                <br />
-                <small className="hint">
-                  Each refresh is 5 entries; the 5 free daily-quest entries per Realm are added for you. First two cost {realmCost(1)} each.{" "}
+            {result && days > 0 && (
+              <div className="tool-summary">
+                <p>
+                  By season end you'll have{" "}
+                  {REALM_MATERIALS.map((k, i) => (
+                    <span key={k}>
+                      {i > 0 && (i === REALM_MATERIALS.length - 1 ? " and " : ", ")}
+                      <b>{fmt(result.realmTools[k])}</b> {REALM_TOOL_NAMES[k]}
+                    </span>
+                  ))}
+                  {form.dailyTasks !== false && <>, daily tasks included</>}.
+                </p>
+                {result.realmYields && (
+                  <p className="hint">
+                    Each run: ~{fmt(result.realmYields.ore)} Ore · ~{fmt(result.realmYields.rola)} Rola · ~{fmt(result.realmYields.essence)} Essence · ~
+                    {fmt(result.realmYields.sand)} Sand.
+                  </p>
+                )}
+                <p className="hint">
+                  Refreshes cost <b>{fmt(result.dawniumPerDay - rolaBuyCost(Number(form.rolaBuys) || 0))}</b> Dawnium a day. First two {realmCost(1)} each.{" "}
                   <a href="#/dawnium">Dawnium Guide →</a>
-                </small>
-              </p>
+                </p>
+              </div>
             )}
+
+            <h3 className="subhead">Home Shop</h3>
+            <label className="field">
+              <span>Refreshes a day</span>
+              <select value={form.shopRefreshes || "0"} onChange={(e) => set("shopRefreshes", e.target.value)}>
+                {Array.from({ length: SHOP_REFRESH_COSTS.length + 1 }, (_, n) => (
+                  <option key={n} value={n}>
+                    {n === 0 ? "None (free shelf only)" : `${n} · ${formatXpShort(shopRefreshCost(n))} Rola a day`}
+                  </option>
+                ))}
+              </select>
+              <small>Each shelf lists about 1.5 stacks each of Ore, Sand, Essence and treats. Spare Rola buys whatever is still short.</small>
+            </label>
+
             {full && (
               <div className="full-only">
+                <label className="check">
+                  <input type="checkbox" checked={form.dailyTasks !== false} onChange={(e) => set("dailyTasks", e.target.checked)} />
+                  <span>
+                    I clear the daily tasks
+                    <small>
+                      They pay {DAILY_TASKS.stamina} Stamina, {Object.values(DAILY_TASKS.realmTools).reduce((a, b) => a + b, 0)} Realm tools and{" "}
+                      {result ? fmt(DAILY_TASKS.rolaBase * result.scale) : `${DAILY_TASKS.rolaBase} × rank`} Rola a day.
+                    </small>
+                  </span>
+                </label>
+                <label className="field">
+                  <span>Rola bought with Dawnium a day</span>
+                  <select value={form.rolaBuys || "0"} onChange={(e) => set("rolaBuys", e.target.value)}>
+                    {Array.from({ length: 21 }, (_, n) => (
+                      <option key={n} value={n}>
+                        {n === 0
+                          ? "None"
+                          : `${n} · ${result ? formatXpShort(n * 1500 * result.scale) : n * 1500} Rola for ${fmt(rolaBuyCost(n))} Dawnium`}
+                      </option>
+                    ))}
+                  </select>
+                  <small>Five at 30 Dawnium, five at 50, then 100 each.</small>
+                </label>
+
                 <div className="table-wrap flat">
                   <table className="input-table">
                     <thead>
                       <tr>
                         <th scope="col"></th>
-                        <th scope="col">Saved entries</th>
+                        <th scope="col">Saved tools</th>
                       </tr>
                     </thead>
                     <tbody>
                       {REALM_MATERIALS.map((k) => (
                         <tr key={k}>
-                          <th scope="row">
-                            {MATERIAL_LABELS[k].replace(" (White eq.)", "")} <small>({REALM_TOOLS[k]})</small>
-                          </th>
+                          <th scope="row">{REALM_TOOL_NAMES[k]}</th>
                           <td>
-                            <input aria-label={`${k} saved entries`} value={form.savedEntries[k]} onChange={(e) => set("savedEntries", { ...form.savedEntries, [k]: e.target.value })} placeholder="0" />
+                            <input aria-label={`${REALM_TOOL_NAMES[k]} saved`} value={form.savedEntries[k]} onChange={(e) => set("savedEntries", { ...form.savedEntries, [k]: e.target.value })} placeholder="0" />
                           </td>
                         </tr>
                       ))}
@@ -403,7 +450,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
                 </div>
                 {rule && (
                   <label className="field">
-                    <span>Realm rank</span>
+                    <span>Rank (sets Realm, gathering and shop amounts)</span>
                     <select value={form.realmTier} onChange={(e) => set("realmTier", e.target.value as PlannerForm["realmTier"])}>
                       <option value="auto">Auto ({rule.realmRankName} III)</option>
                       {[1, 2, 3].map((tier) => (
@@ -415,31 +462,54 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
                   </label>
                 )}
 
-                <h3 className="subhead">Stamina & overworld</h3>
-                <p className="hint">Stamina refills 140 a day, plus 50 from the daily quest. Big nodes cost 5 and give 10× (50 a week in total).</p>
+                <h3 className="subhead">Stamina & gathering</h3>
+                <p className="hint">
+                  Stamina refills 5 an hour{form.dailyTasks !== false && <>, plus {DAILY_TASKS.stamina} from the daily tasks</>}
+                  {result && <> ({fmt(result.stamina)} by season end)</>}. Each gather costs 5. Gathers sometimes find a free Grand Mine worth 2×, and
+                  mines other players share are capped at 50 a week.
+                </p>
                 <div className="table-wrap flat">
                   <table className="input-table">
                     <thead>
                       <tr>
                         <th scope="col"></th>
                         <th scope="col">Stamina %</th>
-                        <th scope="col">Big nodes / wk</th>
+                        <th scope="col">Shared mines / wk</th>
                         <th scope="col">Per stamina</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {(["rola", "ore", "sand"] as const).map((k) => (
+                      {(["rola", "ore", "sand", "essence"] as const).map((k) => (
                         <tr key={k}>
                           <th scope="row">{MATERIAL_LABELS[k].replace(" (White eq.)", "")}</th>
-                          <td><input aria-label={`${k} stamina percent`} value={form.staminaSplit[k]} onChange={(e) => set("staminaSplit", { ...form.staminaSplit, [k]: e.target.value })} placeholder="0" /></td>
-                          <td><input aria-label={`${k} big nodes per week`} value={form.bigNodes[k]} onChange={(e) => set("bigNodes", { ...form.bigNodes, [k]: e.target.value })} placeholder="0" /></td>
-                          <td><input aria-label={`${k} per stamina`} value={form.staminaYield[k]} onChange={(e) => set("staminaYield", { ...form.staminaYield, [k]: e.target.value })} placeholder={staminaDefaults ? String(staminaDefaults[k]) : "?"} /></td>
+                          <td>
+                            <input aria-label={`${k} stamina percent`} value={form.staminaSplit[k] ?? ""} onChange={(e) => set("staminaSplit", { ...form.staminaSplit, [k]: e.target.value })} placeholder="0" />
+                          </td>
+                          <td>
+                            {k === "essence" ? (
+                              <span className="hint">—</span>
+                            ) : (
+                              <input aria-label={`${k} shared mines per week`} value={form.bigNodes[k]} onChange={(e) => set("bigNodes", { ...form.bigNodes, [k]: e.target.value })} placeholder="0" />
+                            )}
+                          </td>
+                          <td>
+                            {k === "essence" ? (
+                              <span className="hint">{result ? fmt(result.gatherPerStamina.essence) : "—"}</span>
+                            ) : (
+                              <input
+                                aria-label={`${k} per stamina`}
+                                value={form.staminaYield[k]}
+                                onChange={(e) => set("staminaYield", { ...form.staminaYield, [k]: e.target.value })}
+                                placeholder={result ? fmt(result.gatherPerStamina[k]) : "auto"}
+                              />
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                {!staminaDefaults && <p className="hint">Per-stamina yields are only known for Season 2. Enter what a regular node gives you.</p>}
+                <p className="hint">Per stamina is worked out from your rank. Only enter it to override.</p>
                 <Field label="Dungeon Ore per day" value={form.dungeonOrePerDay} onChange={(v) => set("dungeonOrePerDay", v)} placeholder="0" />
               </div>
             )}

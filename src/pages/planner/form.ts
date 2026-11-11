@@ -10,6 +10,7 @@ export interface SlotForm {
 }
 
 type Triple = { rola: string; ore: string; sand: string };
+type StaminaSplit = Triple & { essence?: string };
 
 /** Everything the planner asks for beyond the shared character fields; kept as typed text. */
 export interface PlannerForm {
@@ -29,7 +30,7 @@ export interface PlannerForm {
   fantomons: SlotForm[];
   relics: SlotForm[];
   income: Record<Material, { have: string; cartPerHour: string; perDay: string }>;
-  staminaSplit: Triple;
+  staminaSplit: StaminaSplit;
   bigNodes: Triple;
   staminaYield: Triple;
   dungeonOrePerDay: string;
@@ -37,6 +38,12 @@ export interface PlannerForm {
   savedEntries: Record<RealmMaterial, string>;
   realmTier: "auto" | "1" | "2" | "3";
   expPerTreat: string;
+  /** Count the daily tasks' Stamina, Realm tools and Rola. Missing in old saves = on. */
+  dailyTasks?: boolean;
+  /** Home Shop refreshes a day. */
+  shopRefreshes?: string;
+  /** Rola bought with Dawnium a day. */
+  rolaBuys?: string;
 }
 
 const blankSlots = (n: number): SlotForm[] => Array.from({ length: n }, () => ({ current: "", planned: "" }));
@@ -59,7 +66,7 @@ export const DEFAULT_PLANNER: PlannerForm = {
   fantomons: blankSlots(4),
   relics: blankSlots(20),
   income: { ore: blankIncome(), rola: blankIncome(), essence: blankIncome(), sand: blankIncome(), treats: blankIncome() },
-  staminaSplit: { rola: "", ore: "", sand: "" },
+  staminaSplit: { rola: "", ore: "", sand: "", essence: "" },
   bigNodes: { rola: "", ore: "", sand: "" },
   staminaYield: { rola: "", ore: "", sand: "" },
   dungeonOrePerDay: "",
@@ -67,14 +74,13 @@ export const DEFAULT_PLANNER: PlannerForm = {
   savedEntries: blankRealm(),
   realmTier: "auto",
   expPerTreat: "",
+  dailyTasks: true,
+  shopRefreshes: "",
+  rolaBuys: "",
 };
 
 export const GEAR_NAMES = ["Helmet", "Armor", "Boots", "Main Hand", "Off Hand"];
 
-/** Per-stamina overworld yields known for a season (Season 2 from Avalon's calculator). */
-export const STAMINA_YIELD_DEFAULTS: Record<number, { rola: number; ore: number; sand: number }> = {
-  2: { rola: 2800, ore: 240, sand: 236 },
-};
 export const DEFAULT_EXP_PER_TREAT = 50;
 
 /** Blank or unreadable -> fallback; otherwise the parsed number. A leading "+" (as relics show) is fine. */
@@ -124,12 +130,8 @@ export function toPlannerInput(c: Character, xpIntoLevel: number, f: PlannerForm
   const end = new Date(effectiveSeasonEnd(f, d, now));
   if (!Number.isFinite(end.getTime())) return null;
 
-  const yields = STAMINA_YIELD_DEFAULTS[season];
-  const triple = (t: Triple, def?: { rola: number; ore: number; sand: number }) => ({
-    rola: n(t.rola, def?.rola ?? 0),
-    ore: n(t.ore, def?.ore ?? 0),
-    sand: n(t.sand, def?.sand ?? 0),
-  });
+  // Saved forms from before a field existed may lack it, so read every key defensively.
+  const triple = (t: Partial<Triple> | undefined) => ({ rola: n(t?.rola ?? ""), ore: n(t?.ore ?? ""), sand: n(t?.sand ?? "") });
   const realm = (r: Record<RealmMaterial, string>) =>
     Object.fromEntries(REALM_MATERIALS.map((k) => [k, n(r[k])])) as Record<RealmMaterial, number>;
 
@@ -155,14 +157,17 @@ export function toPlannerInput(c: Character, xpIntoLevel: number, f: PlannerForm
       Object.entries(f.income).map(([k, v]) => [k, { have: n(v.have), cartPerHour: n(v.cartPerHour), perDay: n(v.perDay) }]),
     ) as PlannerInput["income"],
     overworld: {
-      split: triple(f.staminaSplit),
+      split: { ...triple(f.staminaSplit), essence: n(f.staminaSplit?.essence ?? "") },
       bigNodesPerWeek: triple(f.bigNodes),
-      yieldPerStamina: triple(f.staminaYield, yields),
+      yieldPerStamina: triple(f.staminaYield),
       dungeonOrePerDay: n(f.dungeonOrePerDay),
     },
     refreshes: realm(f.refreshes),
     savedEntries: realm(f.savedEntries),
     realmTier: f.realmTier === "auto" ? 3 : Number(f.realmTier),
     expPerTreat: n(f.expPerTreat, DEFAULT_EXP_PER_TREAT),
+    dailyTasks: f.dailyTasks !== false,
+    shopRefreshes: n(f.shopRefreshes ?? ""),
+    rolaBuys: n(f.rolaBuys ?? ""),
   };
 }

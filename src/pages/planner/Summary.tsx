@@ -88,16 +88,17 @@ export function Summary({ result, now }: { result: PlannerResult | null; now: Da
         </p>
       )}
 
-      <h3 className="subhead">Materials by season end</h3>
+      <h3 className="subhead">Material balance by season end</h3>
       <div className="table-wrap flat">
-        <table>
+        <table className="balance">
           <thead>
             <tr>
               <th scope="col"></th>
               <th scope="col">Need</th>
-              <th scope="col">Passive</th>
-              <th scope="col">Short</th>
-              <th scope="col">Realm runs</th>
+              <th scope="col">Income</th>
+              <th scope="col">Realms</th>
+              <th scope="col">Shop</th>
+              <th scope="col">Left</th>
             </tr>
           </thead>
           <tbody>
@@ -106,41 +107,53 @@ export function Summary({ result, now }: { result: PlannerResult | null; now: Da
                 <th scope="row">{m.label.replace(" (White eq.)", "")}</th>
                 <td>{m.unknownCost ? `${short(m.need)}+?` : short(m.need)}</td>
                 <td>{short(m.passive)}</td>
-                <td className={m.shortfall > 0 ? "bad" : "ok"}>{m.shortfall > 0 ? short(m.shortfall) : "—"}</td>
-                <td>
-                  {m.realmEntriesNeeded === null
-                    ? m.key === "treats"
-                      ? "—"
-                      : "?"
-                    : m.realmEntriesNeeded > 0
-                      ? `${fmt(m.realmEntriesNeeded)}/${fmt(m.entriesAvailable ?? 0)}`
-                      : "0"}
-                </td>
+                <td>{m.fromRealm > 0 ? short(m.fromRealm) : "—"}</td>
+                <td>{m.fromShop > 0 ? short(m.fromShop) : "—"}</td>
+                <td className={m.balance < -0.5 ? "bad" : "ok"}>{m.balance < -0.5 ? `−${short(-m.balance)}` : `+${short(m.balance)}`}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p className="hint">Sand is in White Sand. Realm runs: entries you must use / entries you'll have.</p>
+      <p className="hint">
+        Income is what you have plus Cart, gathering and daily Rola. What's still short is covered by the Realm runs you'll have, then the Home
+        Shop. Green is spare; red still needs finding. Sand is in White Sand.
+        {(() => {
+          const rolaLine = materials.find((m) => m.key === "rola");
+          const shopRola = materials.reduce((a, m) => a + m.shopRola, 0);
+          return shopRola > 0 || result.shopRefreshRolaPerDay > 0 ? (
+            <>
+              {" "}
+              Rola need includes <b>{short(shopRola)}</b> for shop buys
+              {result.shopRefreshRolaPerDay > 0 && <> and {short(result.shopRefreshRolaPerDay * result.time.resets.length)} for refreshes</>}
+              {rolaLine && rolaLine.balance < 0 && <>, more than your Rola covers</>}.
+            </>
+          ) : null;
+        })()}
+      </p>
 
       {(() => {
-        const shortEntries = materials.filter((m) => m.entriesLeft !== null && m.entriesLeft < 0);
+        const realmLines = materials.filter((m) => m.realmEntriesNeeded !== null && m.realmEntriesNeeded > 0);
         const treats = materials.find((m) => m.key === "treats");
         return (
           <>
             {result.realmEntriesNeeded === null ? (
-              <p className="note warn">Realm yields are unknown for this season, so entry counts can't be worked out.</p>
-            ) : result.realmEntriesNeeded === 0 ? (
-              <p className="note good">No Material Realm runs needed. Passive income covers the plan.</p>
+              <p className="note warn">Realm yields are unknown for this season, so Realm runs can't be worked out.</p>
+            ) : realmLines.length === 0 ? (
+              <p className="note good">No Material Realm runs needed. Income covers the plan.</p>
             ) : (
-              <p className={`note ${shortEntries.length ? "warn" : ""}`}>
-                Use <b>{fmt(result.realmEntriesNeeded)}</b> Realm entries in total.
-                {shortEntries.length > 0 && <> Not enough entries for {shortEntries.map((m) => m.label).join(", ")}.</>}
-              </p>
+              <ul className="ready-list">
+                {realmLines.map((m) => (
+                  <li key={m.key}>
+                    <span>{m.label.replace(" (White eq.)", "")} Realm runs</span>
+                    <span className={m.entriesLeft !== null && m.entriesLeft < 0 ? "bad" : undefined}>
+                      {fmt(m.realmEntriesNeeded ?? 0)} needed / {fmt(m.entriesAvailable ?? 0)} tools
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
-            {treats && treats.shortfall > 0 && (
-              <p className="note warn">{fmt(treats.shortfall)} more treats needed for the Fantomon plan.</p>
-            )}
+            {treats && treats.balance < -0.5 && <p className="note warn">{fmt(-treats.balance)} more treats needed for the Fantomon plan.</p>}
           </>
         );
       })()}
@@ -164,6 +177,8 @@ export function Summary({ result, now }: { result: PlannerResult | null; now: Da
       <dl className="stats two">
         <div><dt>Dawnium / day</dt><dd>{fmt(result.dawniumPerDay)}</dd></div>
         <div><dt>Stamina this season</dt><dd>{fmt(result.stamina)}</dd></div>
+        {result.rolaBoughtPerDay > 0 && <div><dt>Rola bought / day</dt><dd>{short(result.rolaBoughtPerDay)}</dd></div>}
+        {result.shopRefreshRolaPerDay > 0 && <div><dt>Shop refreshes / day</dt><dd>{short(result.shopRefreshRolaPerDay)} Rola</dd></div>}
       </dl>
     </section>
   );

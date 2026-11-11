@@ -24,8 +24,9 @@ describe("upgrade costs", () => {
   it("prices the first scored level of each category", () => {
     expect(gearStepCost(s2, 131)).toBe(16630);
     expect(skillStepCost(s2, 131)).toBe(12025);
-    expect(relicStepCost(s2, 14)).toEqual({ blue: 0, purple: 1350, white: 33750 });
-    expect(relicStepCost(s1, 11)).toEqual({ blue: 3200, purple: 0, white: 16000 });
+    // Every relic level also costs Rola: matches the game's relic tables (28,800 and 60,750).
+    expect(relicStepCost(s2, 14)).toEqual({ blue: 0, purple: 1350, white: 33750, rola: 60750 });
+    expect(relicStepCost(s1, 11)).toEqual({ blue: 3200, purple: 0, white: 16000, rola: 28800 });
     expect(fantomonStepExp(s2, 131)).toBe(57370);
   });
 
@@ -128,7 +129,7 @@ describe("planSeason", () => {
       treats: { have: 0, cartPerHour: 0, perDay: 0 },
     },
     overworld: {
-      split: { rola: 0, ore: 0, sand: 0 },
+      split: { rola: 0, ore: 0, sand: 0, essence: 0 },
       bigNodesPerWeek: { rola: 0, ore: 0, sand: 0 },
       yieldPerStamina: { rola: 2800, ore: 240, sand: 236 },
       dungeonOrePerDay: 0,
@@ -137,6 +138,9 @@ describe("planSeason", () => {
     savedEntries: { ore: 0, rola: 0, essence: 0, sand: 0 },
     realmTier: 3,
     expPerTreat: 50,
+    dailyTasks: true,
+    shopRefreshes: 0,
+    rolaBuys: 0,
   };
 
   it("projects EXP over real hours plus reset boosts", () => {
@@ -154,13 +158,46 @@ describe("planSeason", () => {
     const r = planSeason({
       ...base,
       refreshes: { ore: 2, rola: 0, essence: 0, sand: 0 },
-      overworld: { ...base.overworld, split: { rola: 0, ore: 100, sand: 0 } },
+      overworld: { ...base.overworld, split: { rola: 0, ore: 100, sand: 0, essence: 0 } },
     })!;
     const ore = r.materials.find((m) => m.key === "ore")!;
     expect(ore.entriesAvailable).toBe(10 * (2 * 5 + 5));
-    // 240h * 140/24 + 10 resets * 50 = 1900 stamina -> 1900 * 240 ore
-    expect(ore.fromOverworld).toBeCloseTo(1900 * 240);
+    // Stamina: 240h * 5/hr + 10 resets * 40 from daily tasks = 1600 -> 1600 * 240 ore
+    expect(r.stamina).toBe(1600);
+    expect(ore.fromOverworld).toBeCloseTo(1600 * 240);
     expect(r.dawniumPerDay).toBe(120);
+    // The daily tasks give 10 Sand Shovels, not 5.
+    expect(r.realmTools.sand).toBe(10 * 10);
+  });
+
+  it("works out gathering yields from the rank when none is entered", () => {
+    const r = planSeason({ ...base, overworld: { ...base.overworld, yieldPerStamina: { rola: 0, ore: 0, sand: 0 } } })!;
+    // Season 2, Champion III: scale 11.8. Ore per gather 120 x 11.8, per Stamina / 5, plus ~5.1% Grand Mines at 2x.
+    expect(r.scale).toBe(11.8);
+    expect(r.gatherPerStamina.ore).toBeGreaterThan((120 * 11.8) / 5);
+    expect(r.gatherPerStamina.ore).toBeLessThan(((120 * 11.8) / 5) * 1.11);
+    expect(r.gatherPerStamina.essence).toBeCloseTo((150 * 11.8) / 5);
+  });
+
+  it("adds daily-task Rola and Rola bought with Dawnium", () => {
+    const off = planSeason({ ...base, dailyTasks: false })!;
+    const on = planSeason({ ...base, rolaBuys: 5 })!;
+    const rola = (r: typeof on) => r.materials.find((m) => m.key === "rola")!.passive;
+    // 10 resets x (2,000 + 5 x 1,500) x 11.8
+    expect(rola(on) - rola(off)).toBeCloseTo(10 * (2000 + 5 * 1500) * 11.8);
+    expect(on.dawniumPerDay).toBe(5 * 30);
+  });
+
+  it("buys what's still short in the Home Shop and charges it in Rola", () => {
+    const r = planSeason({ ...base, gear: slots(5, 130, 132), shopRefreshes: 2 })!;
+    const ore = r.materials.find((m) => m.key === "ore")!;
+    const rola = r.materials.find((m) => m.key === "rola")!;
+    // No income or Realms, so the shop covers what it can: 1.5 listings x 3 shelves x 10 days x 1,500 Ore.
+    expect(ore.shopSupply).toBeCloseTo(1.5 * 3 * 10 * 1500);
+    expect(ore.fromShop).toBe(Math.min(ore.need, ore.shopSupply));
+    expect(ore.shopRola).toBeCloseTo(ore.fromShop * 10 * 0.8);
+    // Rola need = gear Rola + shop purchases + 10 days of refreshes (4k + 8k).
+    expect(rola.need).toBeCloseTo(r.costs.rola + ore.shopRola + 10 * 12000);
   });
 
   it("works out Realm entries for a shortfall", () => {

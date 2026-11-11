@@ -406,6 +406,13 @@ tr.dawn-cheap td { color: #4ade80; font-weight: 700; }
 .cart-row small { color: var(--muted); }
 .realm-picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 8px; }
 .realm-picks .field span { font-size: 0.78rem; }
+.balance td { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.balance td.ok { color: #15803d; font-weight: 700; }
+:root[data-tone="dark"] .balance td.ok { color: #4ade80; }
+.balance td.bad { font-weight: 700; }
+.tool-summary { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); }
+.tool-summary p { margin: 0; font-size: 0.88rem; line-height: 1.5; }
+.tool-summary b { color: var(--accent); }
 .proj-big { display: flex; align-items: baseline; gap: 10px; margin: 2px 0 2px; }
 .proj-num { font-size: 3rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .proj-label { display: grid; font-weight: 800; font-size: 1.1rem; color: var(--accent); }

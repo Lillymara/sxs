@@ -74,9 +74,10 @@ export const SEASON_RULES: SeasonRule[] = [
     ratingThresholds: [0, 10000, 15700, 21400, 27100, 30000, 32800],
   },
   {
-    season: 6, rank: "Godtouched", floor: 250, relicFloor: 26, relicBase: 25, fixedStars: 200, pointsPerStar: 3,
-    weights: { character: 100, gear: 13, skill: 4, fantomon: 5, relic: 18 },
-    realmRankName: "Godtouched",
+    season: 6, rank: "Godtouched", floor: 250, relicFloor: 26, relicBase: 25, fixedStars: 200, pointsPerStar: 2.6,
+    // Scoring from the game's season_score config (via kakotheris's extraction).
+    weights: { character: 100, gear: 20, skill: 6, fantomon: 12, relic: 35 },
+    realmMultipliers: [100, 110, 120], realmRankName: "Ethereal",
   },
 ];
 

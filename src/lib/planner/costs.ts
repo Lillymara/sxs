@@ -1,5 +1,6 @@
 // Upgrade-cost formulas from extracted client tables.
 import fantomonData from "../../data/fantomon_exp.json";
+import { RELIC_ROLA_PER_SAND } from "../../data/gameConfig";
 import { S2_PROGRESSION_CAPS, type SeasonRule } from "../../data/seasons";
 
 const FANTOMON_EXP = fantomonData as Record<string, { start: number; exp: number[] }>;
@@ -21,14 +22,15 @@ export function skillStepCost(rule: SeasonRule, L: number): number | null {
 }
 
 /** Sand to raise one relic to +L, in that season's tier and as White Sand equivalent. */
-export function relicStepCost(rule: SeasonRule, L: number): { blue: number; purple: number; white: number } | null {
+export function relicStepCost(rule: SeasonRule, L: number): { blue: number; purple: number; white: number; rola: number } | null {
   const bless = L - rule.relicBase;
   const limit = rule.season <= 2 ? 15 : 18;
   if (!rule.costs || bless < 1 || bless > limit) return null;
   const amount = rule.costs.relicBaseCost + (bless - 1) * rule.costs.relicRate;
+  const rola = amount * (RELIC_ROLA_PER_SAND[rule.season] ?? 45);
   return rule.costs.relicTier === "blue"
-    ? { blue: amount, purple: 0, white: amount * 5 }
-    : { blue: 0, purple: amount, white: amount * 25 };
+    ? { blue: amount, purple: 0, white: amount * 5, rola }
+    : { blue: 0, purple: amount, white: amount * 25, rola };
 }
 
 /** Feed EXP to raise one Fantomon to level L. */
@@ -93,6 +95,7 @@ export function upgradeCosts(
     c.blueSand += v.blue;
     c.purpleSand += v.purple;
     c.sand += v.white;
+    c.rola += v.rola;
   });
   return c;
 }

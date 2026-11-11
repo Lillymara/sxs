@@ -1,4 +1,19 @@
-import { DAILY_QUEST_ENTRIES, DAWNIUM_REFRESH_COSTS, ENTRIES_PER_REFRESH, getRule, type SeasonRule } from "../../data/seasons";
+import { DAWNIUM_REFRESH_COSTS, ENTRIES_PER_REFRESH, getRule, type SeasonRule } from "../../data/seasons";
+import {
+  DAILY_TASKS,
+  GATHER_BASE,
+  GRAND_MINE,
+  GRAND_MINE_RATE,
+  ROLA_BUY,
+  SHOP_LISTINGS_PER_SHELF,
+  SHOP_PRICE_MULTIPLIER,
+  SHOP_STACKS,
+  SHOP_UNIT_PRICE,
+  STAMINA_PER_GATHER,
+  STAMINA_REGEN_PER_HOUR,
+  rolaBuyCost,
+  shopRefreshCost,
+} from "../../data/gameConfig";
 import { expToNext, getSeason } from "../xp";
 import { progressionCaps, upgradeCosts, type ProgressionCaps, type Slot, type UpgradeCosts } from "./costs";
 import { realmYieldsPerEntry, type RealmYields } from "./realm";
@@ -16,12 +31,14 @@ export interface MaterialIncome {
   perDay: number;
 }
 
+type Gathered = "rola" | "ore" | "sand" | "essence";
+
 export interface OverworldInput {
-  /** Share of stamina spent on each node type, in percent. */
-  split: { rola: number; ore: number; sand: number };
-  /** Big nodes harvested per week by type (50 a week across all types). */
+  /** Share of stamina spent on each gather type, in percent. */
+  split: Record<Gathered, number>;
+  /** Grand Mines other players share with you, per week by type (50 a week across all types). */
   bigNodesPerWeek: { rola: number; ore: number; sand: number };
-  /** Material from one stamina on a regular node. Big nodes give 10x for 5 stamina. */
+  /** Material per stamina on a regular gather; 0 means work it out from the rank. */
   yieldPerStamina: { rola: number; ore: number; sand: number };
   dungeonOrePerDay: number;
 }
@@ -49,6 +66,12 @@ export interface PlannerInput extends TimeInput {
   realmTier: number;
   /** Fantomon feed EXP per treat. */
   expPerTreat: number;
+  /** Whether the daily tasks are done (Stamina, Realm tools and Rola). */
+  dailyTasks: boolean;
+  /** Home Shop refreshes bought per day (0–10). */
+  shopRefreshes: number;
+  /** Rola bought with Dawnium per day. */
+  rolaBuys: number;
 }
 
 export interface CharacterProjection {
@@ -82,6 +105,15 @@ export interface MaterialLine {
   /** When passive income alone covers the need (null = not by season end). */
   readyAt: Date | null;
   unknownCost: boolean;
+  /** Covered by the Realm entries you'll have. */
+  fromRealm: number;
+  /** Bought in the Home Shop, and the Rola it costs. */
+  fromShop: number;
+  shopRola: number;
+  /** What the Home Shop would list over the season, if bought out. */
+  shopSupply: number;
+  /** Income + Realm + shop − need: positive is spare, negative is still short. */
+  balance: number;
 }
 
 export interface PlannerResult {
@@ -96,6 +128,15 @@ export interface PlannerResult {
   realmEntriesNeeded: number | null;
   dawniumPerDay: number;
   stamina: number;
+  /** Rank scale used for gathering, the shop and Rola purchases. */
+  scale: number;
+  /** Material per Stamina used when no override is given. */
+  gatherPerStamina: Record<Gathered, number>;
+  /** Rola spent on Home Shop refreshes per day, and Rola bought with Dawnium per day. */
+  shopRefreshRolaPerDay: number;
+  rolaBoughtPerDay: number;
+  /** Realm tools over the season, by Realm. */
+  realmTools: Record<RealmMaterial, number>;
   /** Per category: the lowest plan that reaches the goal with everything else as planned. */
   minimum: Record<SlotCategory, MinimumPlan>;
 }
@@ -108,9 +149,6 @@ const LABELS: Record<Material, string> = {
   treats: "Treats",
 };
 
-/** Stamina regenerates 140 a day, plus 50 from the daily quest at each reset. */
-const STAMINA_PER_DAY = 140;
-const STAMINA_PER_RESET = 50;
 
 /**
  * Character EXP over the season. The rate is constant between resets and steps up
@@ -172,16 +210,22 @@ function projectCharacter(input: PlannerInput, time: TimeSummary): CharacterProj
   };
 }
 
-function overworldGains(o: OverworldInput, stamina: number, weeks: number, resets: number) {
-  const gain = (k: "rola" | "ore" | "sand") => {
-    const spent = (stamina * Math.max(0, o.split[k])) / 100;
-    const big = Math.min(Math.max(0, o.bigNodesPerWeek[k]) * weeks, Math.floor(spent / 5));
-    return big * 10 * o.yieldPerStamina[k] + (spent - big * 5) * o.yieldPerStamina[k];
+/** Overworld gathering over the season: Stamina gathers plus shared Grand Mines. */
+function overworldGains(o: OverworldInput, perStamina: Record<Gathered, number>, perGather: Record<Gathered, number>, stamina: number, weeks: number, resets: number) {
+  // Shared Grand Mines are capped across all types, and each pays 2x a gather for no Stamina.
+  const shared = { rola: Math.max(0, o.bigNodesPerWeek.rola), ore: Math.max(0, o.bigNodesPerWeek.ore), sand: Math.max(0, o.bigNodesPerWeek.sand) };
+  const total = shared.rola + shared.ore + shared.sand;
+  const capScale = total > GRAND_MINE.sharedPerWeek ? GRAND_MINE.sharedPerWeek / total : 1;
+  const gain = (k: Gathered) => {
+    const spent = (stamina * Math.max(0, o.split[k] || 0)) / 100;
+    const mines = k === "essence" ? 0 : shared[k] * capScale * weeks * perGather[k] * GRAND_MINE.multiplier;
+    return spent * perStamina[k] + mines;
   };
   return {
     rola: gain("rola"),
     ore: gain("ore") + Math.max(0, o.dungeonOrePerDay) * resets,
     sand: gain("sand"),
+    essence: gain("essence"),
   };
 }
 
@@ -237,8 +281,58 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
   const realmYields = multiplier ? realmYieldsPerEntry(multiplier) : null;
 
   const resets = time.resets.length;
-  const stamina = time.realHours * (STAMINA_PER_DAY / 24) + resets * STAMINA_PER_RESET;
-  const overworld = overworldGains(input.overworld, stamina, time.realDays / 7, resets);
+  // The rank scale: the season's rank tier, which also sets Realm, gathering and shop amounts.
+  const scale = multiplier ?? 1;
+  const daily = input.dailyTasks;
+
+  // Stamina: 5 an hour, plus the daily tasks' 40.
+  const stamina = time.realHours * STAMINA_REGEN_PER_HOUR + (daily ? resets * DAILY_TASKS.stamina : 0);
+  const perGather: Record<Gathered, number> = {
+    rola: GATHER_BASE.rola * scale,
+    ore: GATHER_BASE.ore * scale,
+    sand: GATHER_BASE.sand * scale,
+    essence: GATHER_BASE.essence * scale,
+  };
+  // Per Stamina, counting the Grand Mines that gathers turn up (not on combat targets).
+  const gatherPerStamina = Object.fromEntries(
+    (Object.keys(perGather) as Gathered[]).map((k) => [
+      k,
+      (perGather[k] * (1 + (k === "essence" ? 0 : GRAND_MINE_RATE * GRAND_MINE.multiplier))) / STAMINA_PER_GATHER,
+    ]),
+  ) as Record<Gathered, number>;
+  const y = input.overworld.yieldPerStamina;
+  const perStamina: Record<Gathered, number> = {
+    rola: y.rola > 0 ? y.rola : gatherPerStamina.rola,
+    ore: y.ore > 0 ? y.ore : gatherPerStamina.ore,
+    sand: y.sand > 0 ? y.sand : gatherPerStamina.sand,
+    essence: gatherPerStamina.essence,
+  };
+  const overworld = overworldGains(input.overworld, perStamina, perGather, stamina, time.realDays / 7, resets);
+
+  // Daily Rola: the daily tasks pay 2,000 x scale; Dawnium buys 1,500 x scale a purchase.
+  const rolaBoughtPerDay = Math.max(0, input.rolaBuys) * ROLA_BUY.base * scale;
+  const extraRola = resets * ((daily ? DAILY_TASKS.rolaBase * scale : 0) + rolaBoughtPerDay);
+
+  // Home Shop: a free shelf each day plus one per refresh, each listing about 1.5 stacks per material.
+  const shopRefreshes = Math.min(10, Math.max(0, Math.floor(input.shopRefreshes)));
+  const shopRefreshRolaPerDay = shopRefreshCost(shopRefreshes);
+  const stack = SHOP_STACKS[input.season];
+  const listings = SHOP_LISTINGS_PER_SHELF * (1 + shopRefreshes) * Math.max(0, time.realDays);
+  const treatsPerListing = stack && input.expPerTreat > 0 ? stack.treatExp / input.expPerTreat : 0;
+  const shopSupply: Record<Material, number> = {
+    ore: stack ? listings * stack.ore : 0,
+    sand: stack ? listings * stack.sand : 0,
+    essence: stack ? listings * stack.essence : 0,
+    treats: listings * treatsPerListing,
+    rola: 0,
+  };
+  const shopUnitRola: Record<Material, number> = {
+    ore: SHOP_UNIT_PRICE.ore * SHOP_PRICE_MULTIPLIER,
+    sand: SHOP_UNIT_PRICE.sand * SHOP_PRICE_MULTIPLIER,
+    essence: SHOP_UNIT_PRICE.essence * SHOP_PRICE_MULTIPLIER,
+    treats: SHOP_UNIT_PRICE.treatExp * input.expPerTreat * SHOP_PRICE_MULTIPLIER,
+    rola: 0,
+  };
 
   const needs: Record<Material, number> = {
     ore: costs.ore,
@@ -249,33 +343,41 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
   };
   const unknown: Record<Material, boolean> = {
     ore: costs.unknownFrom.gear !== undefined,
-    rola: costs.unknownFrom.gear !== undefined,
+    rola: costs.unknownFrom.gear !== undefined || costs.unknownFrom.relic !== undefined,
     essence: costs.unknownFrom.skill !== undefined,
     sand: costs.unknownFrom.relic !== undefined,
     treats: costs.unknownFrom.fantomon !== undefined,
   };
 
+  const realmTools = Object.fromEntries(
+    REALM_MATERIALS.map((k) => [
+      k,
+      Math.max(0, input.savedEntries[k]) + resets * (Math.max(0, input.refreshes[k]) * ENTRIES_PER_REFRESH + (daily ? DAILY_TASKS.realmTools[k] : 0)),
+    ]),
+  ) as Record<RealmMaterial, number>;
+
   let realmEntriesNeeded: number | null = 0;
-  const materials: MaterialLine[] = (Object.keys(LABELS) as Material[]).map((key) => {
+  /** One material's balance: income, then the Realm entries you'll have, then the Home Shop. */
+  const line = (key: Material, need: number): MaterialLine => {
     const inc = input.income[key];
     const fromCart = Math.max(0, inc.cartPerHour) * time.productionHours;
-    const fromOverworld = key === "ore" || key === "rola" || key === "sand" ? overworld[key] : 0;
-    const passive = Math.max(0, inc.have) + fromCart + Math.max(0, inc.perDay) * time.realDays + fromOverworld;
-    const shortfall = Math.max(0, needs[key] - passive);
+    const fromOverworld = key === "treats" ? 0 : overworld[key];
+    const passive = Math.max(0, inc.have) + fromCart + Math.max(0, inc.perDay) * time.realDays + fromOverworld + (key === "rola" ? extraRola : 0);
+    const shortfall = Math.max(0, need - passive);
 
     const isRealm = key !== "treats";
     const realmYield = isRealm && realmYields ? realmYields[key] : null;
     const entriesNeeded = !isRealm ? null : shortfall === 0 ? 0 : realmYield ? Math.ceil(shortfall / realmYield) : null;
-    const entriesAvailable = isRealm
-      ? Math.max(0, input.savedEntries[key]) + resets * (Math.max(0, input.refreshes[key]) * ENTRIES_PER_REFRESH + DAILY_QUEST_ENTRIES)
-      : null;
+    const entriesAvailable = isRealm ? realmTools[key as RealmMaterial] : null;
     if (isRealm) {
       realmEntriesNeeded = realmEntriesNeeded === null || entriesNeeded === null ? null : realmEntriesNeeded + entriesNeeded;
     }
+    const fromRealm = realmYield && entriesAvailable ? Math.min(shortfall, entriesAvailable * realmYield) : 0;
+    const fromShop = Math.min(shortfall - fromRealm, shopSupply[key]);
     return {
       key,
       label: LABELS[key],
-      need: needs[key],
+      need,
       passive,
       fromCart,
       fromOverworld,
@@ -284,15 +386,44 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
       realmEntriesNeeded: entriesNeeded,
       entriesAvailable,
       entriesLeft: entriesAvailable !== null && entriesNeeded !== null ? entriesAvailable - entriesNeeded : null,
-      readyAt: unknown[key] ? null : readyTime(needs[key], inc, time.realHours > 0 ? fromOverworld / time.realHours : 0, input, time),
+      readyAt: unknown[key] ? null : readyTime(need, inc, time.realHours > 0 ? (fromOverworld + (key === "rola" ? extraRola : 0)) / time.realHours : 0, input, time),
       unknownCost: unknown[key],
+      fromRealm,
+      fromShop,
+      shopRola: fromShop * shopUnitRola[key],
+      shopSupply: shopSupply[key],
+      balance: passive + fromRealm + fromShop - need,
     };
-  });
+  };
 
-  const dawniumPerDay = REALM_MATERIALS.reduce(
-    (a, k) => a + DAWNIUM_REFRESH_COSTS.slice(0, Math.min(10, Math.max(0, input.refreshes[k]))).reduce((x, y) => x + y, 0),
-    0,
-  );
+  // Everything but Rola first, since Home Shop purchases are paid in Rola.
+  const others = (["ore", "essence", "sand", "treats"] as Material[]).map((k) => line(k, needs[k]));
+  const shopRolaTotal = others.reduce((a, m) => a + m.shopRola, 0) + shopRefreshRolaPerDay * resets;
+  const rola = line("rola", needs.rola + shopRolaTotal);
+  const order: Material[] = ["ore", "rola", "essence", "sand", "treats"];
+  const materials = order.map((k) => (k === "rola" ? rola : others.find((m) => m.key === k)!));
 
-  return { rule, time, character, caps, score, costs, materials, realmYields, realmEntriesNeeded, dawniumPerDay, stamina, minimum };
+  const dawniumPerDay =
+    REALM_MATERIALS.reduce((a, k) => a + DAWNIUM_REFRESH_COSTS.slice(0, Math.min(10, Math.max(0, input.refreshes[k]))).reduce((x, y) => x + y, 0), 0) +
+    rolaBuyCost(Math.max(0, Math.floor(input.rolaBuys)));
+
+  return {
+    rule,
+    time,
+    character,
+    caps,
+    score,
+    costs,
+    materials,
+    realmYields,
+    realmEntriesNeeded,
+    dawniumPerDay,
+    stamina,
+    minimum,
+    scale,
+    gatherPerStamina,
+    shopRefreshRolaPerDay,
+    rolaBoughtPerDay,
+    realmTools,
+  };
 }
