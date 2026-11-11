@@ -16,6 +16,8 @@ export function classify(text: string): ScreenKind {
   if (/exp\s*\/?\s*hr/.test(t) || /base exp yield/.test(t)) return "bed";
   if (/season (gear|skill|relic|fantomon|character) level/.test(t)) return "progression";
   if (/cart/.test(t) && /\/h\b/.test(t)) return "cart";
+  // The season's Gear tab also lists ATK/DEF/SPD bonuses, but isn't the Character screen.
+  if (/gear rating|total bonus stats/.test(t)) return "unknown";
   if (/\batk\b/.test(t) && /\bdef\b/.test(t) && /\bspd\b/.test(t)) return "character";
   return "unknown";
 }

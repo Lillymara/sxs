@@ -70,8 +70,16 @@ function Card({ icon, title, aside, wide, children }: { icon: string; title: str
 }
 
 /** The shared value of every slot, or "" when they differ. */
-const common = (rows: SlotForm[], key: keyof SlotForm) => (rows.every((r) => r[key] === rows[0][key]) ? rows[0][key] : "");
 const mixed = (rows: SlotForm[], key: keyof SlotForm) => rows.some((r) => r[key] !== rows[0][key]);
+/** What Simple mode shows: the shared level, or the range when slots differ (e.g. "135–140"). */
+const shown = (rows: SlotForm[], key: keyof SlotForm) => {
+  if (!mixed(rows, key)) return rows[0]?.[key] ?? "";
+  const nums = rows.map((r) => Number(r[key].replace(/^\+/, ""))).filter((v, i) => rows[i][key] !== "" && Number.isFinite(v));
+  if (!nums.length) return "";
+  const lo = Math.min(...nums), hi = Math.max(...nums);
+  const plus = rows.some((r) => r[key].startsWith("+")) ? "+" : "";
+  return nums.length < rows.length || lo !== hi ? `${plus}${lo}–${hi}` : `${plus}${lo}`;
+};
 
 export function PlannerPage({ character, onCharacterChange, form, onChange, result, now, defaults, server }: Props) {
   const season = Number(character.season);
@@ -281,7 +289,9 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
                       <input
                         aria-label={`${s.label} current level`}
                         className={bad ? "silly" : undefined}
-                        value={common(rows, "current")}
+                        value={shown(rows, "current")}
+                        onFocus={(e) => mixed(rows, "current") && e.target.select()}
+                        title={mixed(rows, "current") ? "Slots differ (see Full). Typing here sets them all." : undefined}
                         onChange={(e) => setAll("current", e.target.value)}
                         placeholder={mixed(rows, "current") ? "mixed" : `${prefix}${baselineOf(s.field)}`}
                       />
@@ -289,7 +299,9 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
                       <input
                         aria-label={`${s.label} planned level`}
                         className={bad ? "silly" : undefined}
-                        value={common(rows, "planned")}
+                        value={shown(rows, "planned")}
+                        onFocus={(e) => mixed(rows, "planned") && e.target.select()}
+                        title={mixed(rows, "planned") ? "Slots differ (see Full). Typing here sets them all." : undefined}
                         onChange={(e) => setAll("planned", e.target.value)}
                         placeholder={mixed(rows, "planned") ? "mixed" : "same"}
                       />
@@ -303,7 +315,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
                     </div>
                   );
                 })}
-                <p className="hint">"Fill min" puts the rest of your goal on that system. "mixed" means the slots differ (set in Full).</p>
+                <p className="hint">"Fill min" puts the rest of your goal on that system. A range like 135–140 means the slots differ: see each one in Full, or type one level to set them all.</p>
               </div>
             )}
           </Card>

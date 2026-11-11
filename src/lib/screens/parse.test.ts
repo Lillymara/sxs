@@ -11,6 +11,7 @@ describe("screenshot parsing", () => {
     expect(classify("(Q] Cart © Quick Claim | +554/h | +546/h")).toBe("cart");
     expect(classify("S1. Witching Hours | Season Gear Level Season Skill Level | 7600 pts")).toBe("progression");
     expect(classify("438K/1.53M | ATK DEF HP SPD | 278K 296K")).toBe("character");
+    expect(classify("S1. Witching Hours | Gear Rating SS | Total Bonus Stats | ATK 0% DEF 0% SPD 0%")).toBe("unknown");
     expect(classify("Item 378K 27.4K")).toBe("unknown");
   });
 
