@@ -12,31 +12,52 @@ interface Props {
   prefix?: string;
   /** Inputs that can't happen in the game, as "index:current" / "index:planned". */
   invalid?: Set<string>;
+  /** What one slot is called, for the "Set every …" label (e.g. "skill"). */
+  noun?: string;
+  /** A one-tap current level for every slot, e.g. the character's level for skills. */
+  quick?: { label: string; value: string };
 }
 
 /** Current → planned levels for a group of slots, with "set all" shortcuts. */
-export function SlotTable({ names, rows, onChange, baseline, cap, prefix = "", invalid }: Props) {
+export function SlotTable({ names, rows, onChange, baseline, cap, prefix = "", invalid, noun = "slot", quick }: Props) {
   const [allCurrent, setAllCurrent] = useState("");
   const [allPlanned, setAllPlanned] = useState("");
 
   const update = (i: number, key: keyof SlotForm, value: string) =>
     onChange(rows.map((r, j) => (j === i ? { ...r, [key]: value } : r)));
-  const setAll = (key: keyof SlotForm, value: string) => onChange(rows.map((r) => ({ ...r, [key]: value })));
+  /** Fills every slot with whichever levels were typed; a blank box leaves that column alone. */
+  const applyAll = () => {
+    if (!allCurrent.trim() && !allPlanned.trim()) return;
+    onChange(
+      rows.map((r) => ({
+        current: allCurrent.trim() ? allCurrent.trim() : r.current,
+        planned: allPlanned.trim() ? allPlanned.trim() : r.planned,
+      })),
+    );
+  };
+  const onEnter = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      applyAll();
+    }
+  };
 
   return (
     <div className="slots">
       <div className="slot-all">
-        <span>All</span>
-        <div className="inline-set">
-          <input aria-label="Set every current level" value={allCurrent} onChange={(e) => setAllCurrent(e.target.value)} placeholder={baseline} />
-          <button type="button" onClick={() => setAll("current", allCurrent)}>Set</button>
-        </div>
+        <span className="slot-all-label">Set every {noun}</span>
+        <input aria-label={`Every ${noun}: current level`} value={allCurrent} onChange={(e) => setAllCurrent(e.target.value)} onKeyDown={onEnter} placeholder={`now · ${prefix}${baseline}`} />
         <span aria-hidden>→</span>
-        <div className="inline-set">
-          <input aria-label="Set every planned level" value={allPlanned} onChange={(e) => setAllPlanned(e.target.value)} placeholder={baseline} />
-          <button type="button" onClick={() => setAll("planned", allPlanned)}>Set</button>
-        </div>
+        <input aria-label={`Every ${noun}: planned level`} value={allPlanned} onChange={(e) => setAllPlanned(e.target.value)} onKeyDown={onEnter} placeholder="plan" />
+        <button type="button" className="set-all" onClick={applyAll} disabled={!allCurrent.trim() && !allPlanned.trim()}>
+          Set all
+        </button>
       </div>
+      {quick && (
+        <button type="button" className="link-button slot-quick" onClick={() => onChange(rows.map((r) => ({ ...r, current: quick.value })))}>
+          {quick.label}
+        </button>
+      )}
       <div className="slot-grid">
         {rows.map((r, i) => {
           const over = cap !== null && r.planned !== "" && Number(r.planned.replace(/^\+/, "")) > cap;

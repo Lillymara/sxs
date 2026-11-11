@@ -46,11 +46,11 @@ const CART_ORDER: Material[] = ["rola", "ore", "essence", "sand", "treats"];
 const fmt = (x: number) => Math.round(x).toLocaleString();
 
 type SlotField = "gear" | "skills" | "fantomons" | "relics";
-const SYSTEMS: { field: SlotField; key: SlotCategory; label: string; icon: string; material: string; noun: string; plus?: boolean }[] = [
-  { field: "gear", key: "gear", label: "Gear", icon: "⚔️", material: "Ore & Rola", noun: "gear" },
-  { field: "skills", key: "skill", label: "Skills & Charms", icon: "✨", material: "Essence", noun: "skills" },
-  { field: "fantomons", key: "fantomon", label: "Fantomons", icon: "🐾", material: "Treats", noun: "Fantomons" },
-  { field: "relics", key: "relic", label: "Relics", icon: "💎", material: "Sand", noun: "relics", plus: true },
+const SYSTEMS: { field: SlotField; key: SlotCategory; label: string; icon: string; material: string; noun: string; one: string; plus?: boolean }[] = [
+  { field: "gear", key: "gear", label: "Gear", icon: "⚔️", material: "Ore & Rola", noun: "gear", one: "gear piece" },
+  { field: "skills", key: "skill", label: "Skills & Charms", icon: "✨", material: "Essence", noun: "skills", one: "skill" },
+  { field: "fantomons", key: "fantomon", label: "Fantomons", icon: "🐾", material: "Treats", noun: "Fantomons", one: "Fantomon" },
+  { field: "relics", key: "relic", label: "Relics", icon: "💎", material: "Sand", noun: "relics", one: "relic", plus: true },
 ];
 
 /** One labelled card in the planner grid. */
@@ -241,6 +241,8 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
                       baseline={baselineOf(s.field)}
                       cap={cap ?? null}
                       prefix={s.plus ? "+" : ""}
+                      noun={s.one}
+                      quick={s.field === "skills" && character.level.trim() ? { label: `Now = my level (${character.level.trim()}) for every skill`, value: character.level.trim() } : undefined}
                     />
                     <div className="system-foot">
                       {cap != null && <span className="hint">Cap by season end: {s.plus ? "+" : ""}{cap}</span>}
