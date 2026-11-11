@@ -5,7 +5,8 @@ import { DAWNIUM_REFRESH_COSTS, getRule } from "../../data/seasons";
 import { DAILY_TASKS, REALM_TOOL_NAMES, SHOP_REFRESH_COSTS, rolaBuyCost, shopRefreshCost } from "../../data/gameConfig";
 import type { Material, PlannerResult } from "../../lib/planner/plan";
 import type { SlotCategory } from "../../lib/planner/score";
-import { REALM_MATERIALS } from "../../lib/planner/plan";
+import { REALM_MATERIALS, type RealmMaterial } from "../../lib/planner/plan";
+import { RealmSuggest } from "./RealmSuggest";
 import { formatDuration, formatEta, formatXpShort, getSeason } from "../../lib/xp";
 import {
   DEFAULT_EXP_PER_TREAT,
@@ -440,6 +441,11 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
 
           <Card icon="📅" title="Each day">
             <h3 className="subhead">Material Realms</h3>
+            <RealmSuggest
+              result={result}
+              current={Object.fromEntries(REALM_MATERIALS.map((k) => [k, Number(form.refreshes[k]) || 0])) as Record<RealmMaterial, number>}
+              onPick={(split) => set("refreshes", Object.fromEntries(REALM_MATERIALS.map((k) => [k, String(split[k])])) as PlannerForm["refreshes"])}
+            />
             <div className="realm-picks">
               {REALM_MATERIALS.map((k) => (
                 <label key={k} className="field">

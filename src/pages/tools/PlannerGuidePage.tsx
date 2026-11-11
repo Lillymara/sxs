@@ -144,8 +144,10 @@ const STEPS: Step[] = [
     intro: "What you do every day to top up materials.",
     points: [
       <>
-        <b>Material Realms:</b> how many Dawnium refreshes you buy for each Realm a day. The box underneath shows the tools you'll have by season
-        end and what each run gives. See the <a href="#/dawnium">Dawnium Guide</a> for sensible splits.
+        <b>Material Realms:</b> how many Dawnium refreshes you buy for each Realm a day, written Ore/Rola/Essence/Sand (like 2/2/2/2 or
+        4/2/4/4). The planner suggests a split <b>to reach your goal</b> and one <b>for your planned levels</b>, next to the usual presets,
+        each with its Dawnium cost a day and by season end. Tap one to use it (then tap <b>Use this plan</b> again so the levels match), or set
+        each Realm yourself. See the <a href="#/dawnium">Dawnium Guide</a> for advice.
       </>,
       <>
         <b>Home Shop:</b> refreshes a day. The shop only spends Rola you have spare, after upgrades.

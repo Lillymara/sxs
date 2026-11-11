@@ -23,6 +23,14 @@ import { summarizeTime, type TimeInput, type TimeSummary } from "./time";
 
 export type Material = "ore" | "rola" | "essence" | "sand" | "treats";
 export type RealmMaterial = Exclude<Material, "treats">;
+/** A daily Realm refresh split and its Dawnium cost; `capped` Realms would need more than 10 a day. */
+export interface RealmSplit {
+  perDay: Record<RealmMaterial, number>;
+  dawniumPerDay: number;
+  dawniumTotal: number;
+  capped: RealmMaterial[];
+}
+
 export const REALM_MATERIALS: RealmMaterial[] = ["ore", "rola", "essence", "sand"];
 
 export interface MaterialIncome {
@@ -144,6 +152,10 @@ export interface PlannerResult {
   realmTools: Record<RealmMaterial, number>;
   /** Refined Ore for gear (every 5 levels): need, on hand, gathered by season end (4 spots a day), and what's left. */
   refinedOre: { need: number; have: number; gathered: number; left: number };
+  /** Fewest daily Realm refreshes that cover what's still short, with their Dawnium cost; null without Realm data. */
+  realmSuggestion: RealmSplit | null;
+  /** Refreshes the goal would need (planned with up to 10 a day), and whether even that reaches it. */
+  goalRealms: (RealmSplit & { reachable: boolean }) | null;
   /** The cheapest plan across every system that reaches the goal, or null with no goal to reach. */
   goalPlan: (GoalPlan & { reachableTotal: number }) | null;
   /** Per category: the lowest plan that reaches the goal with everything else as planned. */
@@ -470,6 +482,55 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
     reachableTotal: input.primostarsNow + rule.fixedStars + Math.floor((baseScore.total + goalRoute.pointsAdded) / rule.pointsPerStar + 1e-9),
   };
 
+  // Suggested Realm refreshes: per Realm, the fewest daily refreshes whose runs (with saved tools and
+  // the daily tasks' free ones) cover a shortfall. Two targets: the levels planned now, and the goal.
+  const refreshesFor = (short: Record<RealmMaterial, number>) => {
+    if (!realmYields || resets <= 0) return null;
+    const perDay: Record<RealmMaterial, number> = { ore: 0, rola: 0, essence: 0, sand: 0 };
+    const capped: RealmMaterial[] = [];
+    for (const k of REALM_MATERIALS) {
+      const runsNeeded = short[k] > 0 ? Math.ceil(short[k] / realmYields[k]) : 0;
+      const free = Math.max(0, input.savedEntries[k]) + (daily ? resets * DAILY_TASKS.realmTools[k] : 0);
+      const n = Math.ceil(Math.max(0, runsNeeded - free) / (resets * ENTRIES_PER_REFRESH));
+      if (n > 10) capped.push(k);
+      perDay[k] = Math.min(10, n);
+    }
+    const dawnium = REALM_MATERIALS.reduce((a, k) => a + DAWNIUM_REFRESH_COSTS.slice(0, perDay[k]).reduce((x, y) => x + y, 0), 0);
+    return { perDay, dawniumPerDay: dawnium, dawniumTotal: dawnium * resets, capped };
+  };
+  const passiveOf = (k: Material) => materials.find((x) => x.key === k)!.passive;
+  const realmSuggestion = refreshesFor(
+    Object.fromEntries(REALM_MATERIALS.map((k) => [k, materials.find((x) => x.key === k)!.shortfall])) as Record<RealmMaterial, number>,
+  );
+  // For the goal: plan it as if every Realm had 10 refreshes a day, then ask what that plan really needs.
+  const goalRealms = (() => {
+    if (!goalRoute || !realmYields || resets <= 0) return null;
+    const maxRuns = (k: RealmMaterial) =>
+      (Math.max(0, input.savedEntries[k]) + resets * (10 * ENTRIES_PER_REFRESH + (daily ? DAILY_TASKS.realmTools[k] : 0))) * realmYields[k];
+    const route = planForGoal(rule, {
+      gear: input.gear,
+      skills: input.skills,
+      fantomons: input.fantomons,
+      relics: input.relics,
+      caps: { gear: caps.gear, skill: caps.skill, fantomon: caps.fantomon, relic: caps.relic },
+      pointsNeeded: score.scoreNeeded - baseScore.total,
+      budget: {
+        ore: passiveOf("ore") + maxRuns("ore"),
+        rola: Math.max(0, passiveOf("rola") + maxRuns("rola") - refreshRola),
+        essence: passiveOf("essence") + maxRuns("essence"),
+        sand: passiveOf("sand") + maxRuns("sand"),
+        fantomonExp: passiveOf("treats") * Math.max(0, input.expPerTreat),
+      },
+    });
+    const split = refreshesFor({
+      ore: route.spent.ore - passiveOf("ore"),
+      rola: route.spent.rola + refreshRola - passiveOf("rola"),
+      essence: route.spent.essence - passiveOf("essence"),
+      sand: route.spent.sand - passiveOf("sand"),
+    });
+    return split && { ...split, reachable: route.pointsShort === 0 };
+  })();
+
   const dawniumPerDay =
     REALM_MATERIALS.reduce((a, k) => a + DAWNIUM_REFRESH_COSTS.slice(0, Math.min(10, Math.max(0, input.refreshes[k]))).reduce((x, y) => x + y, 0), 0) +
     rolaBuyCost(Math.max(0, Math.floor(input.rolaBuys)));
@@ -494,6 +555,8 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
     rolaBoughtPerDay,
     realmTools,
     goalPlan,
+    realmSuggestion,
+    goalRealms,
     refinedOre: {
       need: costs.forgeStones,
       have: Math.max(0, input.refinedOre ?? 0),
