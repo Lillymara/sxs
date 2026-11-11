@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { firstAmount } from "./backpack";
-import { cartRowCentres, parseGearBadges, classify, levelFromNeed, parseBed, parseCartValue, parseCharacterXp, parseProgression, parseSeason, type Word } from "./parse";
+import { cartValuesInOrder, cartRowCentres, parseGearBadges, classify, levelFromNeed, parseBed, parseCartValue, parseCharacterXp, parseProgression, parseSeason, type Word } from "./parse";
 
 const word = (text: string, x: number, y: number): Word => ({ text, bbox: { x0: x, y0: y, x1: x + 60, y1: y + 30 } });
 
@@ -59,5 +59,14 @@ describe("screenshot parsing", () => {
   it("takes Rola from the start of the Backpack top bar", () => {
     expect(firstAmount("529K+136.3K+11124")).toBe("529K");
     expect(firstAmount("378K+ 43.82K+")).toBe("378K");
+  });
+
+  it("takes the Cart's eight lines in order when all are read", () => {
+    const w = (text: string, y: number): Word => ({ text, bbox: { x0: 100, x1: 200, y0: y - 10, y1: y + 10 } });
+    const values = ["+10125/h", "+550/h", "+550/h", "+1036/h", "+784/h", "+2/h", "+739/h", "+39/h"];
+    const words = [w("Cart", 50), ...values.map((t, i) => w(t, 100 + i * 60)), ...values.map((t, i) => w(t, 101 + i * 60))];
+    expect(cartValuesInOrder(words)).toEqual({ rola: 10125, wood: 550, stone: 550, ore: 1036, essence: 784, gear: 2, sand: 739, treats: 39 });
+    // A line missed: no guessing.
+    expect(cartValuesInOrder(words.filter((x) => x.text !== "+784/h"))).toBeUndefined();
   });
 });

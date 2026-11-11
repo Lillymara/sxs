@@ -4,6 +4,7 @@ import type { PSM, Worker } from "tesseract.js";
 import {
   CART_ROWS,
   cartRowCentres,
+  cartValuesInOrder,
   classify,
   levelFromNeed,
   parseBed,
@@ -378,15 +379,27 @@ export async function readScreenshot(file: File, seasonHint: number): Promise<Sc
 
   if (kind === "cart") {
     const words = [...sharp.words, ...plain.words];
-    const rows = cartRowCentres(words);
+    // All eight lines read cleanly from the whole panel: take them in order, no measuring needed.
+    const inOrder = cartValuesInOrder(sharp.words) ?? cartValuesInOrder(plain.words) ?? cartValuesInOrder(words);
+    const rows = inOrder ? null : cartRowCentres(words);
+    if (inOrder) out.cart = inOrder;
     if (rows) {
       const rowWorker = await getDigitWorker("cartRow");
       out.cart = {};
+      const used = new Set<Word>();
       for (let k = 0; k < CART_ROWS.length; k++) {
         const y = rows.centres[k];
         // A value already read cleanly from the whole panel ("+10854/h") wins.
-        const clean = words.find((w) => /^\+\d[\d,]*\/h$/.test(w.text) && Math.abs((w.bbox.y0 + w.bbox.y1) / 2 - y) < rows.pitch * 0.4);
+        // A line never fills two rows (the plain and masked reads of it count as one).
+        const clean = words.find(
+          (w) =>
+            !used.has(w) &&
+            /^\+\d[\d,]*\/h$/.test(w.text) &&
+            Math.abs((w.bbox.y0 + w.bbox.y1) / 2 - y) < rows.pitch * 0.4 &&
+            ![...used].some((u) => Math.abs((u.bbox.y0 + u.bbox.y1) / 2 - (w.bbox.y0 + w.bbox.y1) / 2) < rows.pitch * 0.3),
+        );
         if (clean) {
+          used.add(clean);
           out.cart[CART_ROWS[k]] = parseCartValue(clean.text);
           continue;
         }

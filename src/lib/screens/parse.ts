@@ -179,6 +179,26 @@ export function parseGearBadges(words: Word[]): number[] | undefined {
   return levels.length === 5 ? levels : undefined;
 }
 
+/**
+ * The Cart's rows straight from the panel's text: every "+N/h" in order from top to bottom. Two reads
+ * of the same row (plain and masked image) are merged by height. Only used when exactly one value per
+ * row was found, so a missed or extra line never shifts the rows.
+ */
+export function cartValuesInOrder(words: Word[]): Partial<Record<(typeof CART_ROWS)[number], number>> | undefined {
+  const hits = words
+    .filter((w) => /^\+\d[\d,]*\/h$/.test(w.text))
+    .map((w) => ({ y: midY(w), h: w.bbox.y1 - w.bbox.y0, v: Number(w.text.slice(1, -2).replace(/,/g, "")) }))
+    .sort((a, b) => a.y - b.y);
+  const rows: { y: number; v: number }[] = [];
+  for (const hit of hits) {
+    const last = rows[rows.length - 1];
+    if (last && Math.abs(hit.y - last.y) < Math.max(hit.h, 8)) continue;
+    rows.push(hit);
+  }
+  if (rows.length !== CART_ROWS.length) return undefined;
+  return Object.fromEntries(CART_ROWS.map((k, i) => [k, rows[i].v]));
+}
+
 /** A Cart row's value, from its own recognized text like "+9315/h". */
 export function parseCartValue(text: string): number | undefined {
   const m = text.replace(/\s/g, "").match(/\+?(\d[\d,]*)/);
