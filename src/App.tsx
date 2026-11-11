@@ -19,6 +19,7 @@ const FantomonsPage = lazy(() => import("./pages/tools/FantomonsPage").then((m) 
 const CompanionsPage = lazy(() => import("./pages/tools/CompanionsPage").then((m) => ({ default: m.CompanionsPage })));
 const SpendingPage = lazy(() => import("./pages/tools/SpendingPage").then((m) => ({ default: m.SpendingPage })));
 const DawniumPage = lazy(() => import("./pages/tools/DawniumPage").then((m) => ({ default: m.DawniumPage })));
+const PlannerGuidePage = lazy(() => import("./pages/tools/PlannerGuidePage").then((m) => ({ default: m.PlannerGuidePage })));
 const WorldMapPage = lazy(() => import("./pages/tools/WorldMapPage").then((m) => ({ default: m.WorldMapPage })));
 
 /** Self-contained reference tools, each loaded only when opened. */
@@ -29,6 +30,7 @@ const SIMPLE_PAGES = {
   map: WorldMapPage,
   spending: SpendingPage,
   dawnium: DawniumPage,
+  guide: PlannerGuidePage,
 };
 
 const DEFAULT_CHARACTER: Character = {
@@ -44,7 +46,8 @@ const DEFAULT_CHARACTER: Character = {
 
 type Page = "timer" | "planner" | "calendar" | keyof typeof SIMPLE_PAGES;
 type Group = "Plan" | "Info";
-const PAGES: { id: Page; group: Group; label: string; title: string; lede: string; wide?: boolean }[] = [
+/** `hidden` pages are reached by link only, not the menu. */
+const PAGES: { id: Page; group: Group; label: string; title: string; lede: string; wide?: boolean; hidden?: boolean }[] = [
   { id: "timer", group: "Plan", label: "Level Timer", title: "Level Timer", lede: "Enter your character and XP rate to see when you'll reach your next level." },
   { id: "planner", group: "Plan", label: "Season Planner", title: "Season Planner", lede: "Plan your season's Primostars, upgrades and materials, from now until the season ends.", wide: true },
   { id: "calendar", group: "Plan", label: "Server Calendar", title: "Server Calendar", lede: "Your server's day, season dates, dungeon releases, weekly events and their rewards." },
@@ -53,6 +56,7 @@ const PAGES: { id: Page; group: Group; label: string; title: string; lede: strin
   { id: "companions", group: "Info", label: "Companions", title: "Companions", lede: "Companion stat bonuses by friendship level, favorite gifts, unlocks and the classes they suit.", wide: true },
   { id: "map", group: "Info", label: "World Map", title: "World Map", lede: "Lucky Wheels, unlockable areas and their loot, region by region.", wide: true },
   { id: "spending", group: "Info", label: "Spending Guide", title: "Spending Guide", lede: "If you do spend: which deals give you the most, and which to skip.", wide: true },
+  { id: "guide", group: "Plan", label: "Planner Guide", title: "How to use the Season Planner", lede: "Step by step: what each part of the planner asks for, what it does, and how to read the results.", wide: true, hidden: true },
   { id: "dawnium", group: "Info", label: "Dawnium Guide", title: "Dawnium Guide", lede: "Where your Dawnium (and Rola) does the most good, and what to skip.", wide: true },
 ];
 
@@ -169,7 +173,7 @@ export default function App() {
           {(["Plan", "Info"] as Group[]).map((g) => (
             <div key={g} className="tab-group">
               <span className="tab-group-label">{g}</span>
-              {PAGES.filter((p) => p.group === g).map((p) => (
+              {PAGES.filter((p) => p.group === g && !p.hidden).map((p) => (
                 <a key={p.id} href={p.id === "timer" ? "#/" : `#/${p.id}`} aria-current={p.id === page ? "page" : undefined}>
                   {p.label}
                 </a>

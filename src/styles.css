@@ -971,3 +971,16 @@ button.wheel-hub:disabled { cursor: progress; }
 }
 .goal-lower { display: grid; gap: 6px; }
 .goal-lower-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Planner guide: banner on the planner, and the guide page. */
+.guide-banner { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--text); text-decoration: none; font-size: 0.9rem; margin-bottom: 12px; }
+.guide-banner:hover { border-color: var(--accent); }
+.guide-banner b { color: var(--accent); }
+.guide-quick { margin: 0 0 12px; padding-left: 1.3rem; display: grid; gap: 6px; }
+.guide-links { margin: 12px 0 0; }
+.guide-links .spin-button { display: inline-block; text-decoration: none; }
+.guide-toc { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.guide-toc a { font-size: 0.8rem; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--text); text-decoration: none; }
+.guide-toc a:hover { border-color: var(--accent); color: var(--accent); }
+.guide-steps > li { scroll-margin-top: 90px; }
+.guide-notes { margin: 0; padding-left: 1.2rem; display: grid; gap: 6px; }

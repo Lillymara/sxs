@@ -115,6 +115,12 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
   return (
     <div className="planner">
       <div className="planner-form">
+        <a className="guide-banner" href="#/guide">
+          <span aria-hidden>📖</span>
+          <span>
+            <b>New to the planner?</b> Read the step-by-step guide to what everything does →
+          </span>
+        </a>
         <div className="mode-switch" role="group" aria-label="Planner detail">
           {(["simple", "full"] as const).map((m) => (
             <button key={m} type="button" aria-pressed={form.mode === m} onClick={() => set("mode", m)}>
