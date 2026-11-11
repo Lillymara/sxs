@@ -903,3 +903,11 @@ button.wheel-hub:disabled { cursor: progress; }
 .item-odds small { display: block; color: var(--muted); font-size: 0.7rem; }
 .item-odds .odds { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--accent); }
 .item-odds .odds-bar { position: absolute; left: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+
+/* Season Planner: the stamina section's plain-language notes. */
+.gather-facts {
+  margin: 0.25rem 0 0.75rem;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.3rem;
+}

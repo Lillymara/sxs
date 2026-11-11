@@ -453,12 +453,16 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
                   <small>Five at 30 Dawnium, five at 50, then 100 each.</small>
                 </label>
 
+                <h3 className="subhead">Realm tools saved up</h3>
+                <p className="hint">
+                  Tools already in your Backpack, on top of the ones the daily tasks give. Filled in from a Backpack screenshot when the tools show in it.
+                </p>
                 <div className="table-wrap flat">
                   <table className="input-table">
                     <thead>
                       <tr>
                         <th scope="col"></th>
-                        <th scope="col">Saved tools</th>
+                        <th scope="col">In Backpack</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -489,18 +493,35 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
 
                 <h3 className="subhead">Stamina & gathering</h3>
                 <p className="hint">
-                  Stamina refills 5 an hour{form.dailyTasks !== false && <>, plus {DAILY_TASKS.stamina} from the daily tasks</>}
-                  {result && <> ({fmt(result.stamina)} by season end)</>}. Each gather costs 5. Gathers sometimes find a free Grand Mine worth 2×, and
-                  mines other players share are capped at 50 a week.
+                  Out in the world map you spend Stamina to gather from Rola, Ore, Sand and Essence spots. Tell the planner how you usually split
+                  your Stamina and it adds what you'd gather to your materials.
                 </p>
+                <ul className="hint gather-facts">
+                  <li>
+                    You get 5 Stamina an hour{form.dailyTasks !== false && <> plus {DAILY_TASKS.stamina} from the daily tasks</>}
+                    {result && <>: about <b>{fmt(result.stamina)}</b> by season end</>}. Each gather costs 5.
+                  </li>
+                  <li>
+                    <b>Share of Stamina:</b> what percent goes to each kind. For example, 50 Rola and 50 Ore. Leave it blank if you don't gather.
+                  </li>
+                  <li>
+                    <b>Shared Grand Mines:</b> big mines other players find and share with you. Each pays double and costs no Stamina, up to 50 a
+                    week in total.
+                  </li>
+                  <li>
+                    <b>Per Stamina:</b> already worked out from your rank, including the Grand Mines your own gathers sometimes find. Only change
+                    it if your gathers pay a different amount.
+                  </li>
+                </ul>
                 <div className="table-wrap flat">
                   <table className="input-table">
                     <thead>
                       <tr>
                         <th scope="col"></th>
-                        <th scope="col">Stamina %</th>
-                        <th scope="col">Shared mines / wk</th>
-                        <th scope="col">Per stamina</th>
+                        <th scope="col">Share of Stamina %</th>
+                        <th scope="col">Shared Grand Mines / week</th>
+                        <th scope="col">Per Stamina</th>
+                        <th scope="col">By season end</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -529,13 +550,29 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
                               />
                             )}
                           </td>
+                          <td>
+                            <span className="hint">{result ? `+${formatXpShort(result.gathered[k])}` : "—"}</span>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                <p className="hint">Per stamina is worked out from your rank. Only enter it to override.</p>
-                <Field label="Dungeon Ore per day" value={form.dungeonOrePerDay} onChange={(v) => set("dungeonOrePerDay", v)} placeholder="0" />
+                {(() => {
+                  const total = (["rola", "ore", "sand", "essence"] as const).reduce((t, k) => t + (Number(form.staminaSplit[k]) || 0), 0);
+                  return total > 100 ? (
+                    <p className="hint warn">Your shares add up to {total}%. They should total 100% or less.</p>
+                  ) : total > 0 && total < 100 ? (
+                    <p className="hint">{100 - total}% of your Stamina isn't gathering (for example, it goes on fights).</p>
+                  ) : null;
+                })()}
+                <Field
+                  label="Ore from dungeons per day"
+                  value={form.dungeonOrePerDay}
+                  onChange={(v) => set("dungeonOrePerDay", v)}
+                  placeholder="0"
+                  hint="Ore your daily dungeon runs give, if you want it counted. It's added to the Ore gathered above."
+                />
               </div>
             )}
           </Card>

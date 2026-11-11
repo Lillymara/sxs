@@ -132,6 +132,8 @@ export interface PlannerResult {
   scale: number;
   /** Material per Stamina used when no override is given. */
   gatherPerStamina: Record<Gathered, number>;
+  /** Gathered in the overworld by season end (Stamina gathers, shared Grand Mines and dungeon Ore). */
+  gathered: Record<Gathered, number>;
   /** Rola spent on Home Shop refreshes per day, and Rola bought with Dawnium per day. */
   shopRefreshRolaPerDay: number;
   rolaBoughtPerDay: number;
@@ -430,6 +432,7 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
     minimum,
     scale,
     gatherPerStamina,
+    gathered: overworld,
     shopRefreshRolaPerDay,
     rolaBoughtPerDay,
     realmTools,
