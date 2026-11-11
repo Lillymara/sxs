@@ -422,6 +422,35 @@ export async function readScreenshot(file: File, seasonHint: number): Promise<Sc
         if (out.cart[CART_ROWS[k]] === undefined && fallback !== undefined) out.cart[CART_ROWS[k]] = fallback;
       }
     }
+    // A note of what was seen, kept in this browser only, to track down misreads on other devices.
+    try {
+      const plus = (ws: Word[]) => ws.filter((w) => /[+/]/.test(w.text)).map((w) => `${w.text}@${Math.round(w.bbox.x0)},${Math.round((w.bbox.y0 + w.bbox.y1) / 2)}`);
+      localStorage.setItem(
+        "sxs.debug.cart",
+        JSON.stringify({
+          at: new Date().toISOString(),
+          ua: navigator.userAgent,
+          size: [canvas.width, canvas.height],
+          plain: plain.text.slice(0, 1500),
+          sharp: sharp.text.slice(0, 1500),
+          plainWords: plus(plain.words),
+          sharpWords: plus(sharp.words),
+          title: words.filter((w) => /cart/i.test(w.text)).map((w) => `${w.text}@${Math.round((w.bbox.y0 + w.bbox.y1) / 2)}`),
+          rows: rows && { centres: rows.centres.map(Math.round), pitch: Math.round(rows.pitch), valueX: Math.round(rows.valueX) },
+          inOrder: !!inOrder,
+          cart: out.cart,
+          thumbs: [canvas, sharpCanvas].map((c) => {
+            const t = document.createElement("canvas");
+            t.width = 240;
+            t.height = Math.round((c.height * 240) / c.width);
+            t.getContext("2d")!.drawImage(c, 0, 0, t.width, t.height);
+            return t.toDataURL("image/jpeg", 0.7);
+          }),
+        }),
+      );
+    } catch {
+      // Storage unavailable: no note.
+    }
   }
 
   return out;
