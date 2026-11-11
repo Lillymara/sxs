@@ -9,6 +9,7 @@ import {
   parseBed,
   parseCartValue,
   parseCharacterXp,
+  parseGearBadges,
   parseProgression,
   parseSeason,
   type ScreenKind,
@@ -26,12 +27,15 @@ export interface ScreenRead {
   need?: string;
   rate?: number;
   cart?: Partial<Record<(typeof CART_ROWS)[number], number>>;
+  /** Character screen: each gear piece's level, when all five badges read. */
+  gear?: number[];
   levels?: SeasonLevels;
 }
 
 const WIDTH = 1200;
 // Page segmentation mode by value, so the recognizer itself only loads when first used.
 const SINGLE_LINE = "7" as unknown as PSM;
+const SPARSE = "11" as unknown as PSM;
 
 /** The screenshot scaled to a fixed width, which keeps text sizes (and our thresholds) consistent. */
 async function loadCanvas(file: File): Promise<HTMLCanvasElement> {
@@ -69,6 +73,33 @@ function masked(src: HTMLCanvasElement): HTMLCanvasElement {
   return out;
 }
 
+/**
+ * The gear area of the Character screen (20–60% down), at the screenshot's own resolution with only
+ * the light mint-green badge text kept: bright, and at least as green as it is red or blue.
+ */
+async function gearBand(file: File): Promise<HTMLCanvasElement> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 2000 / bitmap.width);
+  const top = Math.round(bitmap.height * 0.2), height = Math.round(bitmap.height * 0.4);
+  const c = document.createElement("canvas");
+  c.width = Math.round(bitmap.width * scale);
+  c.height = Math.round(height * scale);
+  const ctx = c.getContext("2d")!;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(bitmap, 0, top, bitmap.width, height, 0, 0, c.width, c.height);
+  bitmap.close();
+  const img = ctx.getImageData(0, 0, c.width, c.height);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    const v = (r + g + b) / 3 >= 160 && g - r >= 8 && g >= b ? 0 : 255;
+    d[i] = d[i + 1] = d[i + 2] = v;
+    d[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  return c;
+}
+
 function crop(src: HTMLCanvasElement, x0: number, y0: number, x1: number, y1: number): HTMLCanvasElement {
   // Whole pixels and no smoothing: a fractional offset blurs the black-and-white text.
   const left = Math.round(x0), top = Math.round(y0);
@@ -91,15 +122,20 @@ export function getWorker(): Promise<Worker> {
   workerPromise.catch(() => (workerPromise = null));
   return workerPromise;
 }
-/** A second reader set up once for single lines of Cart digits, so the page reader's settings never change. */
-function getRowWorker(): Promise<Worker> {
-  rowWorkerPromise ??= import("tesseract.js").then(async ({ createWorker }) => {
-    const w = await createWorker("eng");
-    await w.setParameters({ tessedit_char_whitelist: "+0123456789/h", tessedit_pageseg_mode: SINGLE_LINE });
-    return w;
-  });
+/**
+ * A second reader for digits only, so the page reader's settings never change. Every use sets both
+ * of its settings first, so it never relies on defaults.
+ */
+async function getDigitWorker(mode: "cartRow" | "gearBadges"): Promise<Worker> {
+  rowWorkerPromise ??= import("tesseract.js").then(({ createWorker }) => createWorker("eng"));
   rowWorkerPromise.catch(() => (rowWorkerPromise = null));
-  return rowWorkerPromise;
+  const w = await rowWorkerPromise;
+  await w.setParameters(
+    mode === "cartRow"
+      ? { tessedit_char_whitelist: "+0123456789/h", tessedit_pageseg_mode: SINGLE_LINE }
+      : { tessedit_char_whitelist: "+0123456789", tessedit_pageseg_mode: SPARSE },
+  );
+  return w;
 }
 
 async function recognize(worker: Worker, canvas: HTMLCanvasElement): Promise<{ text: string; words: Word[] }> {
@@ -127,6 +163,8 @@ export async function readScreenshot(file: File, seasonHint: number): Promise<Sc
     const xp = parseCharacterXp(plain.text).need ? parseCharacterXp(plain.text) : parseCharacterXp(sharp.text);
     Object.assign(out, xp);
     if (xp.need) out.level = levelFromNeed(seasonHint, xp.need);
+    const badges = await recognize(await getDigitWorker("gearBadges"), await gearBand(file));
+    out.gear = parseGearBadges(badges.words);
   }
 
   if (kind === "progression") {
@@ -141,7 +179,7 @@ export async function readScreenshot(file: File, seasonHint: number): Promise<Sc
     const words = [...sharp.words, ...plain.words];
     const rows = cartRowCentres(words);
     if (rows) {
-      const rowWorker = await getRowWorker();
+      const rowWorker = await getDigitWorker("cartRow");
       out.cart = {};
       for (let k = 0; k < CART_ROWS.length; k++) {
         const y = rows.centres[k];

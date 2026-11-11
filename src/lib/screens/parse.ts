@@ -165,6 +165,18 @@ export function cartRowCentres(words: Word[]): { centres: number[]; pitch: numbe
   return { centres, pitch, valueX: Math.min(...xs) };
 }
 
+/**
+ * Character screen: each gear piece's "+140" badge, read from the gear area. Only trusted when all
+ * five pieces are found, so a partial read never fills in a wrong set.
+ */
+export function parseGearBadges(words: Word[]): number[] | undefined {
+  const levels = words
+    .filter((w) => /^\+\d{2,3}$/.test(w.text))
+    .sort((a, b) => a.bbox.y0 - b.bbox.y0 || a.bbox.x0 - b.bbox.x0)
+    .map((w) => Number(w.text.slice(1)));
+  return levels.length === 5 ? levels : undefined;
+}
+
 /** A Cart row's value, from its own recognized text like "+9315/h". */
 export function parseCartValue(text: string): number | undefined {
   const m = text.replace(/\s/g, "").match(/\+?(\d[\d,]*)/);

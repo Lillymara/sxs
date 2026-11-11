@@ -16,6 +16,14 @@ export interface Found {
   rate?: string;
   cart: Partial<Record<CartKey, string>>;
   levels: Partial<Record<Exclude<keyof SeasonLevels, "character">, string>>;
+  /** Each gear piece's level from the Character screen, like "140, 137, 135, 135, 135". */
+  gearPieces?: string;
+}
+
+/** Five gear levels from text like "140, 137, 135, 135, 135", or undefined. */
+export function readGearPieces(text?: string): number[] | undefined {
+  const levels = (text ?? "").split(/[^\d]+/).filter(Boolean).map(Number);
+  return levels.length === 5 && levels.every((v) => v > 0) ? levels : undefined;
 }
 
 /** Combines several screenshots' reads; the season screen's season wins over the planner's. */
@@ -31,6 +39,7 @@ export function mergeReads(reads: ScreenRead[], seasonHint: number): Found {
       const level = levelFromNeed(season, r.need) ?? r.level;
       if (level) found.level = String(level);
     }
+    if (r.gear) found.gearPieces = r.gear.join(", ");
     if (r.cart) for (const k of CART_KEYS) if (r.cart[k] !== undefined) found.cart[k] = String(r.cart[k]);
     if (r.levels) {
       for (const k of ["gear", "skill", "fantomon", "relic"] as const) {
@@ -69,10 +78,12 @@ export function applyFound(found: Found, character: Character, form: PlannerForm
   if (rule) {
     const fields = { gear: "gear", skill: "skills", fantomon: "fantomons", relic: "relics" } as const;
     for (const [key, field] of Object.entries(fields) as [keyof typeof fields, (typeof fields)[keyof typeof fields]][]) {
-      const total = Number(found.levels[key]);
-      if (found.levels[key] === undefined || !Number.isFinite(total)) continue;
       const floor = key === "relic" ? rule.relicFloor : rule.floor;
-      const levels = spread(Math.max(0, Math.round(total)), f[field].length, floor);
+      // Exact gear levels from the Character screen beat an even spread of the season total.
+      const pieces = key === "gear" ? readGearPieces(found.gearPieces) : undefined;
+      const total = Number(found.levels[key]);
+      if (!pieces && (found.levels[key] === undefined || !Number.isFinite(total))) continue;
+      const levels = pieces ?? spread(Math.max(0, Math.round(total)), f[field].length, floor);
       f[field] = f[field].map((slot: SlotForm, i) => {
         const planned = Number(slot.planned.replace(/^\+/, ""));
         return { current: String(levels[i]), planned: slot.planned !== "" && planned < levels[i] ? "" : slot.planned };

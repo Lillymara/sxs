@@ -44,4 +44,11 @@ describe("filling the planner from screenshots", () => {
     expect(f.gear[0].planned).toBe(""); // 120 is below the new 140
     expect(f.relics[0]).toEqual({ current: "12", planned: "" });
   });
+
+  it("uses each gear piece's exact level from the Character screen", () => {
+    const found = mergeReads([{ file: "a", kind: "character", gear: [140, 137, 135, 135, 135] }], 1);
+    expect(found.gearPieces).toBe("140, 137, 135, 135, 135");
+    const { form: f } = applyFound({ ...found, season: "1", levels: { gear: "182" } }, character, DEFAULT_PLANNER);
+    expect(f.gear.map((g) => g.current)).toEqual(["140", "137", "135", "135", "135"]);
+  });
 });

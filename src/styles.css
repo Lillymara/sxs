@@ -320,6 +320,7 @@ input.silly { border-color: var(--error); color: var(--error); box-shadow: 0 0 0
 .shot-field input:placeholder-shown { border-style: dashed; }
 .shot-field small { font-weight: 400; color: var(--muted); font-size: 0.7rem; }
 .shot-review .spin-button { justify-self: start; }
+.shot-mismatch { grid-column: 1 / -1; margin: 0; }
 
 /* ---- Level Timer boosts ---- */
 .boosts { display: grid; gap: 10px; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }

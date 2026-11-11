@@ -2,7 +2,8 @@
 // after they check what was found.
 import { useState } from "react";
 import type { ScreenRead } from "../../lib/screens/read";
-import { CART_KEYS, mergeReads, type CartKey, type Found } from "./fromScreens";
+import { getRule } from "../../data/seasons";
+import { CART_KEYS, mergeReads, readGearPieces, type CartKey, type Found } from "./fromScreens";
 
 const KIND_LABELS: Record<ScreenRead["kind"], string> = {
   bed: "Bed",
@@ -23,8 +24,8 @@ const GUIDE = [
     title: "Character",
     img: "character.jpg",
     where: "your home screen: tap Character in the bottom bar.",
-    fills: "level and EXP into the level.",
-    reads: "Reads the EXP figure beside the level bar (like 438K/1.53M) and works your level out from it, so the big level number doesn't need to be clear.",
+    fills: "level, EXP into the level, and each gear piece's level.",
+    reads: "Reads the EXP figure beside the level bar (like 438K/1.53M) and works your level out from it, plus the +level badge on all five gear pieces.",
   },
   {
     key: "bed",
@@ -101,8 +102,16 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
       {hint && <small>{hint}</small>}
     </label>
   );
+  // The five gear pieces should add up to the season Gear total, when both were read.
+  const gearMismatch = (() => {
+    const pieces = readGearPieces(found?.gearPieces);
+    const rule = getRule(Number(found?.season) || season);
+    const total = Number(found?.levels.gear);
+    if (!pieces || !rule || !found?.levels.gear || !Number.isFinite(total)) return false;
+    return pieces.reduce((a, v) => a + v - rule.floor, 0) !== total;
+  })();
   const count = found
-    ? [found.season, found.level, found.xp, found.rate, ...Object.values(found.cart), ...Object.values(found.levels)].filter((v) => v !== undefined).length
+    ? [found.season, found.level, found.xp, found.rate, found.gearPieces, ...Object.values(found.cart), ...Object.values(found.levels)].filter((v) => v !== undefined).length
     : 0;
 
   return (
@@ -200,6 +209,15 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
                 {field("EXP into level", found.xp, (v) => setFound({ ...found, xp: v }))}
                 {field("EXP per hour", found.rate, (v) => setFound({ ...found, rate: v }))}
                 {CART_KEYS.map((k) => field(`Cart ${CART_LABELS[k]} / hr`, found.cart[k], (v) => setFound({ ...found, cart: { ...found.cart, [k]: v } })))}
+                {field(
+                  "Gear pieces",
+                  found.gearPieces,
+                  (v) => setFound({ ...found, gearPieces: v }),
+                  "Each piece's level from the Character screen. Used instead of the gear total.",
+                )}
+                {gearMismatch && (
+                  <p className="hint warn shot-mismatch">The gear pieces don't add up to the season Gear total. One of them may be misread, so check both.</p>
+                )}
                 {(Object.keys(LEVEL_LABELS) as (keyof typeof LEVEL_LABELS)[]).map((k) =>
                   field(
                     `${LEVEL_LABELS[k]} season level`,
@@ -221,6 +239,7 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
                     level: clean(found.level),
                     xp: clean(found.xp),
                     rate: clean(found.rate),
+                    gearPieces: clean(found.gearPieces),
                     cart: Object.fromEntries(Object.entries(found.cart).filter(([, v]) => clean(v))),
                     levels: Object.fromEntries(Object.entries(found.levels).filter(([, v]) => clean(v))),
                   });

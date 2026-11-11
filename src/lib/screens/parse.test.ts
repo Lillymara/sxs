@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cartRowCentres, classify, levelFromNeed, parseBed, parseCartValue, parseCharacterXp, parseProgression, parseSeason, type Word } from "./parse";
+import { cartRowCentres, parseGearBadges, classify, levelFromNeed, parseBed, parseCartValue, parseCharacterXp, parseProgression, parseSeason, type Word } from "./parse";
 
 const word = (text: string, x: number, y: number): Word => ({ text, bbox: { x0: x, y0: y, x1: x + 60, y1: y + 30 } });
 
@@ -35,6 +35,13 @@ describe("screenshot parsing", () => {
       word("1120", 300, 1455), word("pts", 380, 1455), word("2280pts", 720, 1443),
     ];
     expect(parseProgression(words, 1)).toEqual({ character: 16.32, gear: 200, skill: 128, fantomon: 80, relic: 40 });
+  });
+
+  it("reads all five gear badges, or none", () => {
+    // From the second device: right column, left column, interleaved by height.
+    const words = [word("+135", 1433, 244), word("4", 1213, 257), word("+140", 443, 350), word("+135", 1504, 497), word("+137", 443, 707), word("+135", 1456, 764)];
+    expect(parseGearBadges(words)).toEqual([135, 140, 135, 137, 135]);
+    expect(parseGearBadges(words.slice(0, 4))).toBeUndefined();
   });
 
   it("finds every Cart row from the title and the rows already read", () => {
