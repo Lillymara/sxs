@@ -74,29 +74,37 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
   const [error, setError] = useState("");
   const busy = statuses.some((s) => s.state === "waiting" || s.state === "reading");
 
+  /** Each pick adds to the screenshots already read, so they can be chosen one at a time (as phones tend to). */
   const read = async (files: File[]) => {
     if (!files.length) return;
     setError("");
-    setFound(null);
-    setStatuses(files.map((f) => ({ file: f.name, state: "waiting" })));
+    const start = statuses.length;
+    const earlier = statuses.flatMap((s) => (s.read ? [s.read] : []));
+    setStatuses((s) => [...s, ...files.map((f): Status => ({ file: f.name, state: "waiting" }))]);
     try {
       const { readScreenshot } = await import("../../lib/screens/read");
-      const reads: ScreenRead[] = [];
+      const reads: ScreenRead[] = [...earlier];
       for (let i = 0; i < files.length; i++) {
-        setStatuses((s) => s.map((x, j) => (j === i ? { ...x, state: "reading" } : x)));
+        const at = start + i;
+        setStatuses((s) => s.map((x, j) => (j === at ? { ...x, state: "reading" } : x)));
         try {
           const r = await readScreenshot(files[i], season);
           reads.push(r);
-          setStatuses((s) => s.map((x, j) => (j === i ? { ...x, state: "done", read: r } : x)));
+          setStatuses((s) => s.map((x, j) => (j === at ? { ...x, state: "done", read: r } : x)));
         } catch {
-          setStatuses((s) => s.map((x, j) => (j === i ? { ...x, state: "failed" } : x)));
+          setStatuses((s) => s.map((x, j) => (j === at ? { ...x, state: "failed" } : x)));
         }
       }
       setFound(mergeReads(reads, season));
     } catch {
       setError("The text reader couldn't load. Check your connection and try again.");
-      setStatuses([]);
+      setStatuses((s) => s.slice(0, start));
     }
+  };
+  const startOver = () => {
+    setStatuses([]);
+    setFound(null);
+    setError("");
   };
 
   if (!open) {
@@ -172,7 +180,7 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
           <ul>
             <li>Screenshot the <b>whole screen</b>. Don't crop or zoom: the reader finds numbers by where they sit.</li>
             <li>Close any pop-up, tooltip or chat that covers the numbers.</li>
-            <li>Any phone or tablet size works. Pick them all at once, in any order, or just the ones you want.</li>
+            <li>Any phone or tablet size works. Pick them all at once or one at a time, in any order, or just the ones you want.</li>
             <li>Take them together, so the numbers match each other.</li>
             <li>The outlined parts in the examples are what's read. Everything else is ignored.</li>
             <li>If something reads wrong, just fix it in the box before filling the planner.</li>
@@ -191,10 +199,24 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
             e.target.value = "";
           }}
         />
-        <span>{busy ? "Reading… the first time takes a little longer while the reader downloads." : "Choose screenshots"}</span>
+        <span>
+          {busy
+            ? "Reading… the first time takes a little longer while the reader downloads."
+            : statuses.length
+              ? "Add more screenshots"
+              : "Choose screenshots"}
+        </span>
       </label>
       {error && <p className="error">{error}</p>}
 
+      {statuses.length > 0 && !busy && (
+        <p className="hint">
+          Screenshots add up, so you can pick them one at a time.{" "}
+          <button type="button" className="link-button" onClick={startOver}>
+            Start over
+          </button>
+        </p>
+      )}
       {statuses.length > 0 && (
         <ul className="shot-status">
           {statuses.map((s, i) => (
@@ -269,8 +291,7 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
                     levels: Object.fromEntries(Object.entries(found.levels).filter(([, v]) => clean(v))),
                   });
                   setOpen(false);
-                  setStatuses([]);
-                  setFound(null);
+                  startOver();
                 }}
               >
                 Fill the planner
