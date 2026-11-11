@@ -11,6 +11,7 @@ export interface Pixels {
 /** Items the planner can use, by what they fill in. */
 export const BAG_ITEMS = [
   "ore",
+  "refinedOre",
   "essence",
   "sand",
   "rareSand",

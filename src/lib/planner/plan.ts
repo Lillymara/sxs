@@ -1,5 +1,5 @@
 import { DAWNIUM_REFRESH_COSTS, ENTRIES_PER_REFRESH, getRule, type SeasonRule } from "../../data/seasons";
-import {
+import { REFINED_ORE_GATHER,
   DAILY_TASKS,
   GATHER_BASE,
   GRAND_MINE,
@@ -73,6 +73,8 @@ export interface PlannerInput extends TimeInput {
   shopRefreshes: number;
   /** Rola bought with Dawnium per day. */
   rolaBuys: number;
+  /** Refined Ore on hand (optional in older callers). */
+  refinedOre?: number;
 }
 
 export interface CharacterProjection {
@@ -140,6 +142,8 @@ export interface PlannerResult {
   rolaBoughtPerDay: number;
   /** Realm tools over the season, by Realm. */
   realmTools: Record<RealmMaterial, number>;
+  /** Refined Ore for gear (every 5 levels): need, on hand, gathered by season end (4 spots a day), and what's left. */
+  refinedOre: { need: number; have: number; gathered: number; left: number };
   /** The cheapest plan across every system that reaches the goal, or null with no goal to reach. */
   goalPlan: GoalPlan | null;
   /** Per category: the lowest plan that reaches the goal with everything else as planned. */
@@ -485,5 +489,11 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
     rolaBoughtPerDay,
     realmTools,
     goalPlan,
+    refinedOre: {
+      need: costs.forgeStones,
+      have: Math.max(0, input.refinedOre ?? 0),
+      gathered: resets * REFINED_ORE_GATHER.perDay * REFINED_ORE_GATHER.each,
+      left: Math.max(0, input.refinedOre ?? 0) + resets * REFINED_ORE_GATHER.perDay * REFINED_ORE_GATHER.each - costs.forgeStones,
+    },
   };
 }

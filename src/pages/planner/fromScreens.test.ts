@@ -59,7 +59,7 @@ describe("filling the planner from screenshots", () => {
           file: "bag",
           kind: "backpack",
           rola: 529000,
-          bag: { ore: 191000, essence: 551000, sand: 55100, rareSand: 2220, epicSand: 15300, basicTreats: 30800, premiumTreats: 90, deluxeTreats: 32, hammer: 41, pickaxe: 182, knuckles: 343, shovel: 392 },
+          bag: { ore: 191000, refinedOre: 17600, essence: 551000, sand: 55100, rareSand: 2220, epicSand: 15300, basicTreats: 30800, premiumTreats: 90, deluxeTreats: 32, hammer: 41, pickaxe: 182, knuckles: 343, shovel: 392 },
         },
       ],
       1,
@@ -67,7 +67,9 @@ describe("filling the planner from screenshots", () => {
     // Sand: 55,100 + 5 x 2,220 + 25 x 15,300; treats: (30,800 x 50 + 90 x 400 + 32 x 2,000) / 50
     expect(found.have).toEqual({ rola: "529000", ore: "191000", essence: "551000", sand: "448700", treats: "32800" });
     expect(found.tools).toEqual({ ore: "41", rola: "182", essence: "343", sand: "392" });
+    expect(found.refinedOre).toBe("17600");
     const { form: f } = applyFound(found, character, DEFAULT_PLANNER);
+    expect(f.refinedOre).toBe("17600");
     expect(f.income.sand.have).toBe("448700");
     expect(f.savedEntries).toEqual({ ore: "41", rola: "182", essence: "343", sand: "392" });
   });

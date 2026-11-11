@@ -44,6 +44,8 @@ export interface PlannerForm {
   shopRefreshes?: string;
   /** Rola bought with Dawnium a day. */
   rolaBuys?: string;
+  /** Refined Ore on hand. */
+  refinedOre?: string;
 }
 
 const blankSlots = (n: number): SlotForm[] => Array.from({ length: n }, () => ({ current: "", planned: "" }));
@@ -169,5 +171,6 @@ export function toPlannerInput(c: Character, xpIntoLevel: number, f: PlannerForm
     dailyTasks: f.dailyTasks !== false,
     shopRefreshes: n(f.shopRefreshes ?? ""),
     rolaBuys: n(f.rolaBuys ?? ""),
+    refinedOre: n(f.refinedOre ?? ""),
   };
 }

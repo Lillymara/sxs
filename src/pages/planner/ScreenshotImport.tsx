@@ -60,7 +60,7 @@ const GUIDE = [
     title: "Backpack",
     img: "backpack.jpg",
     where: "open your Backpack (the Item screen). Scroll so your materials and Realm tools show; take more than one screenshot if they don't fit.",
-    fills: "Rola, Ore, Essence, Sand and Treats on hand, plus saved Realm tools (Full mode).",
+    fills: "Rola, Ore, Refined Ore, Essence, Sand and Treats on hand, plus saved Realm tools.",
     reads: "Recognises the outlined items by their icons and reads each count. Chrono Sand grades are added as White Sand, and treat grades as Basic Treats.",
   },
 ];
@@ -117,6 +117,7 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
       xp: clean(found.xp),
       rate: clean(found.rate),
       gearPieces: clean(found.gearPieces),
+      refinedOre: clean(found.refinedOre),
       have: Object.fromEntries(Object.entries(found.have ?? {}).filter(([, v]) => clean(v))),
       tools: Object.fromEntries(Object.entries(found.tools ?? {}).filter(([, v]) => clean(v))),
       cart: Object.fromEntries(Object.entries(found.cart).filter(([, v]) => clean(v))),
@@ -150,7 +151,7 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
     return pieces.reduce((a, v) => a + v - rule.floor, 0) !== total;
   })();
   const count = found
-    ? [found.season, found.level, found.xp, found.rate, found.gearPieces, ...Object.values(found.cart), ...Object.values(found.levels), ...Object.values(found.have ?? {}), ...Object.values(found.tools ?? {})].filter((v) => v !== undefined).length
+    ? [found.season, found.level, found.xp, found.rate, found.gearPieces, ...Object.values(found.cart), ...Object.values(found.levels), ...Object.values(found.have ?? {}), found.refinedOre, ...Object.values(found.tools ?? {})].filter((v) => v !== undefined).length
     : 0;
 
   return (
@@ -287,6 +288,7 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
                     k === "sand" ? "In White Sand (Rare ×5, Epic ×25)" : k === "treats" ? "As Basic Treats (Premium ×8, Deluxe ×40)" : undefined,
                   ),
                 )}
+                {field("Refined Ore on hand", found.refinedOre, (v) => setFound({ ...found, refinedOre: v }), "Gear needs it every 5 levels")}
                 {(["ore", "rola", "essence", "sand"] as const).map((k) =>
                   field(TOOL_LABELS[k], found.tools?.[k], (v) => setFound({ ...found, tools: { ...found.tools, [k]: v } }), "Saved Realm tools"),
                 )}

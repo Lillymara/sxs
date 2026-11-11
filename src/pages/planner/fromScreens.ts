@@ -21,6 +21,8 @@ export interface Found {
   gearPieces?: string;
   /** Backpack: amounts on hand (Sand in White Sand, treats as Basic Treats). */
   have?: Partial<Record<CartKey, string>>;
+  /** Backpack: Refined Ore, which gear needs every 5 levels. */
+  refinedOre?: string;
   /** Backpack: saved Realm tools, by the Realm they're for. */
   tools?: Partial<Record<Exclude<CartKey, "treats">, string>>;
 }
@@ -64,6 +66,7 @@ export function mergeReads(reads: ScreenRead[], seasonHint: number): Found {
     const b = bag;
     const have = (found.have ??= {});
     if (b.ore !== undefined) have.ore = String(b.ore);
+    if (b.refinedOre !== undefined) found.refinedOre = String(b.refinedOre);
     if (b.essence !== undefined) have.essence = String(b.essence);
     // Sand counts as White Sand: Rare is 5, Epic 25.
     if (b.sand !== undefined || b.rareSand !== undefined || b.epicSand !== undefined) {
@@ -109,6 +112,7 @@ export function applyFound(found: Found, character: Character, form: PlannerForm
     const v = found.have?.[k];
     if (v !== undefined) f.income[k] = { ...f.income[k], have: v };
   }
+  if (found.refinedOre !== undefined) f.refinedOre = found.refinedOre;
   if (found.tools) {
     f.savedEntries = { ...f.savedEntries };
     for (const k of ["ore", "rola", "essence", "sand"] as const) {

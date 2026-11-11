@@ -412,6 +412,13 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, resu
               </div>
             )}
             <p className="hint">Sand counts as White Sand (1 Blue = 5 White, 1 Purple = 25 White).</p>
+            <Field
+              label="Refined Ore on hand"
+              value={form.refinedOre ?? ""}
+              onChange={(v) => set("refinedOre", v)}
+              placeholder="0"
+              hint="Gear needs it every 5 levels. Rarely short: 4 map gathers a day and Ore Realms keep it topped up."
+            />
             {full && (
               <Field label="Fantomon EXP per treat" value={form.expPerTreat} onChange={(v) => set("expPerTreat", v)} placeholder={String(DEFAULT_EXP_PER_TREAT)} />
             )}

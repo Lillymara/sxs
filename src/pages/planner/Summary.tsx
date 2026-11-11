@@ -69,7 +69,7 @@ export function Summary({ result, now }: { result: PlannerResult | null; now: Da
       <dl className="stats two">
         <div><dt>Ore</dt><dd>{short(costs.ore)}</dd></div>
         <div><dt>Rola</dt><dd>{short(costs.rola)}</dd></div>
-        <div><dt>Forging stones</dt><dd>{fmt(costs.forgeStones)}</dd></div>
+        <div><dt>Refined Ore</dt><dd>{fmt(costs.forgeStones)}</dd></div>
         <div><dt>Essence</dt><dd>{short(costs.essence)}</dd></div>
         <div><dt>Fantomon EXP</dt><dd>{short(costs.fantomonExp)}</dd></div>
         <div>
@@ -112,12 +112,24 @@ export function Summary({ result, now }: { result: PlannerResult | null; now: Da
                 <td className={m.balance < -0.5 ? "bad" : "ok"}>{m.balance < -0.5 ? `−${short(-m.balance)}` : `+${short(m.balance)}`}</td>
               </tr>
             ))}
+            {result.refinedOre.need > 0 && (
+              <tr>
+                <th scope="row">Refined Ore</th>
+                <td>{short(result.refinedOre.need)}</td>
+                <td>{short(result.refinedOre.have + result.refinedOre.gathered)}</td>
+                <td>—</td>
+                <td>—</td>
+                <td className={result.refinedOre.left < -0.5 ? "bad" : "ok"}>
+                  {result.refinedOre.left < -0.5 ? `−${short(-result.refinedOre.left)}` : `+${short(result.refinedOre.left)}`}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
       <p className="hint">
         Income is what you have plus Cart, gathering and daily Rola. What's still short is covered by the Realm runs you'll have, then the Home
-        Shop, which only spends Rola you have spare. Green is spare; red still needs finding. Sand is in White Sand.
+        Shop, which only spends Rola you have spare. Green is spare; red still needs finding. Sand is in White Sand. Refined Ore counts what you have plus 4 map gathers a day (about 117 each); Ore Realms give more, so it's rarely short.
         {(() => {
           const shopRola = materials.reduce((a, m) => a + m.shopRola, 0);
           return shopRola > 0 || result.shopRefreshRolaPerDay > 0 ? (

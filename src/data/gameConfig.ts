@@ -26,6 +26,9 @@ export const REALM_TOOL_NAMES: Record<RealmMaterial, string> = {
 
 /** Overworld gathering: each attempt costs 5 Stamina and pays a base times the rank scale. */
 export const STAMINA_PER_GATHER = 5;
+/** Refined Ore spots on the world maps: 4 gathers a day, 115–120 each (from players). Ore Realms give some too. */
+export const REFINED_ORE_GATHER = { perDay: 4, each: 117 };
+
 export const GATHER_BASE = { rola: 1200, ore: 120, sand: 100, essence: 150 };
 
 /**
