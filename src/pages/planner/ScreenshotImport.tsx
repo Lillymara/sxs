@@ -14,6 +14,44 @@ const KIND_LABELS: Record<ScreenRead["kind"], string> = {
 const CART_LABELS: Record<CartKey, string> = { rola: "Rola", ore: "Ore", essence: "Essence", sand: "Sand", treats: "Treats" };
 const LEVEL_LABELS = { gear: "Gear", skill: "Skills", fantomon: "Fantomons", relic: "Relics" } as const;
 
+const ART = `${import.meta.env.BASE_URL}art/screens/`;
+
+/** One example per screen the reader understands. Example images have every number blurred. */
+const GUIDE = [
+  {
+    key: "character",
+    title: "Character",
+    img: "character.jpg",
+    where: "your home screen: tap Character in the bottom bar.",
+    fills: "level and EXP into the level.",
+    reads: "Reads the EXP figure beside the level bar (like 438K/1.53M) and works your level out from it, so the big level number doesn't need to be clear.",
+  },
+  {
+    key: "bed",
+    title: "Bed",
+    img: "bed.jpg",
+    where: "open your house and tap the Bed.",
+    fills: "EXP per hour.",
+    reads: "Reads the EXP/Hr line.",
+  },
+  {
+    key: "cart",
+    title: "Cart",
+    img: "cart.jpg",
+    where: "open your house and tap the Cart.",
+    fills: "hourly Rola, Ore, Essence, Sand and Treats.",
+    reads: "Reads every row's +amount/h. Rows are matched by their place in the list, so keep the whole Cart panel in view.",
+  },
+  {
+    key: "progression",
+    title: "Season → Progression",
+    img: "progression.jpg",
+    where: "open the Season screen (S1. Witching Hours, etc.) and tap Progression at the bottom.",
+    fills: "the season and your Gear, Skill, Fantomon and Relic levels.",
+    reads: "Reads the points under each Season level (and the season from the title), then turns points into levels.",
+  },
+];
+
 type Status = { file: string; state: "waiting" | "reading" | "done" | "failed"; read?: ScreenRead };
 
 export function ScreenshotImport({ season, onApply }: { season: number; onApply: (found: Found) => void }) {
@@ -78,22 +116,49 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
         </button>
       </div>
       <p className="hint">
-        Pick screenshots of these screens. They're read on your device and never uploaded. You check everything before it fills in.
+        Take up to four screenshots in the game, then pick them here. They're read on your device and never uploaded, and you check
+        everything before it goes into the planner.
       </p>
-      <ul className="shot-list">
-        <li>
-          <b>Character</b> (home screen): level and EXP
-        </li>
-        <li>
-          <b>Bed</b>: EXP per hour
-        </li>
-        <li>
-          <b>Cart</b>: hourly income
-        </li>
-        <li>
-          <b>Season → Progression</b>: season and system levels
-        </li>
-      </ul>
+
+      <details className="shot-guide" open={statuses.length === 0}>
+        <summary>How to take the screenshots</summary>
+        <ol className="shot-steps">
+          {GUIDE.map((g, i) => (
+            <li key={g.key} className="shot-step">
+              <a href={`${ART}${g.img}`} target="_blank" rel="noreferrer" className="shot-thumb" title="Open the full example">
+                <img src={`${ART}${g.img}`} alt={`Example ${g.title} screenshot, with the part that's read outlined`} loading="lazy" />
+              </a>
+              <div>
+                <p className="shot-step-title">
+                  <span className="dawn-rank small" aria-hidden>
+                    {i + 1}
+                  </span>
+                  {g.title}
+                </p>
+                <p>
+                  <b>Where:</b> {g.where}
+                </p>
+                <p>
+                  <b>Fills in:</b> {g.fills}
+                </p>
+                <p className="hint">{g.reads}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <div className="shot-tips">
+          <p className="shot-step-title">Tips for a clean read</p>
+          <ul>
+            <li>Screenshot the <b>whole screen</b>. Don't crop or zoom: the reader finds numbers by where they sit.</li>
+            <li>Close any pop-up, tooltip or chat that covers the numbers.</li>
+            <li>Any phone or tablet size works. Pick all four at once, in any order, or just the ones you want.</li>
+            <li>Take them together, so the numbers match each other.</li>
+            <li>The outlined parts in the examples are what's read. Everything else is ignored.</li>
+            <li>If something reads wrong, just fix it in the box before filling the planner.</li>
+          </ul>
+        </div>
+      </details>
+
       <label className={`shot-drop${busy ? " busy" : ""}`}>
         <input
           type="file"

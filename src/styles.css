@@ -291,8 +291,19 @@ input.silly { border-color: var(--error); color: var(--error); box-shadow: 0 0 0
 .shot-open:hover { border-style: solid; }
 .shot-card { display: grid; gap: 10px; border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
 .shot-card .hint { margin: 0; }
-.shot-list { margin: 0; padding-left: 20px; display: grid; gap: 2px; font-size: 0.88rem; color: var(--muted); }
-.shot-list b { color: var(--text); }
+.shot-guide { border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); }
+.shot-guide > summary { cursor: pointer; padding: 10px 14px; font-weight: 700; color: var(--accent); }
+.shot-guide[open] > summary { border-bottom: 1px solid var(--line); }
+.shot-steps { list-style: none; margin: 0; padding: 12px; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.shot-step { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 12px; align-items: start; padding: 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
+.shot-step p { margin: 0 0 4px; font-size: 0.85rem; line-height: 1.45; }
+.shot-step .hint { font-size: 0.78rem; }
+.shot-thumb { display: block; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); line-height: 0; }
+.shot-thumb img { width: 100%; height: auto; display: block; transition: transform 0.2s; }
+.shot-thumb:hover img { transform: scale(1.04); }
+.shot-step-title { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 0.95rem !important; margin-bottom: 6px !important; }
+.shot-tips { margin: 0 12px 12px; padding: 10px 14px; border-radius: 12px; border: 1px dashed var(--line); }
+.shot-tips ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 0.85rem; line-height: 1.45; }
 .shot-drop { position: relative; display: grid; place-items: center; padding: 18px; border-radius: 14px; border: 2px dashed var(--line); background: var(--surface-2); cursor: pointer; font-weight: 700; color: var(--accent); text-align: center; }
 .shot-drop:hover { border-color: var(--accent); }
 .shot-drop.busy { cursor: progress; color: var(--muted); }
