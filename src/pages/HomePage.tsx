@@ -34,7 +34,7 @@ export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
     <div className="home">
       <section className="hero">
         <div className="hero-text">
-          <p className="eyebrow">Sword x Staff companion</p>
+          <p className="eyebrow">Sword x Staff Tools</p>
           <h1>
             Plan your season. <span className="grad">Time every level.</span>
           </h1>

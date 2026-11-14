@@ -183,7 +183,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    document.title = page === "home" ? "SxS Tools · Sword x Staff companion by LM Things" : `${current.title} · SxS Tools`;
+    document.title = page === "home" ? "SxS Tools · Sword x Staff Tools by LM Things" : `${current.title} · SxS Tools`;
     window.scrollTo(0, 0);
   }, [current.title, page]);
 
