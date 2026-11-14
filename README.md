@@ -1,6 +1,6 @@
-# Sword x Staff Tools
+# SxS Tools by LM Things
 
-An unofficial web app for **Sword x Staff**: https://lillymara.github.io/sxs-tools/
+An unofficial web app for **Sword x Staff**: https://sxs.lmthings.com/
 
 - **Level Timer**: time to your next level (and a rough goal-level plan) from your current EXP and the XP/hr shown on your bed.
 - **Season Planner**: season-end level projection with daily reset boosts and the bed EXP save, Primostar score and goal,

@@ -13,6 +13,9 @@ import { ScreenshotImport } from "./pages/planner/ScreenshotImport";
 import { applyFound } from "./pages/planner/fromScreens";
 import { ColorChooser } from "./components/ColorChooser";
 import { InstallApp } from "./components/InstallApp";
+import { Brand, Sidebar, TabBar } from "./components/Nav";
+import type { IconName } from "./components/Icon";
+import { HomePage } from "./pages/HomePage";
 import type { ToolProps } from "./pages/tools/props";
 
 // The calendar carries the 720-server roster, so it loads only when opened.
@@ -53,28 +56,29 @@ const DEFAULT_CHARACTER: Character = {
   goalLevel: "",
 };
 
-type Page = "timer" | "planner" | "calendar" | keyof typeof SIMPLE_PAGES;
-type Group = "Plan" | "Info";
-/** `hidden` pages are reached by link only, not the menu. */
-const PAGES: { id: Page; group: Group; label: string; title: string; lede: string; wide?: boolean; hidden?: boolean }[] = [
-  { id: "timer", group: "Plan", label: "Level Timer", title: "Level Timer", lede: "Enter your character and XP rate to see when you'll reach your next level." },
-  { id: "planner", group: "Plan", label: "Season Planner", title: "Season Planner", lede: "Plan your season's Primostars, upgrades and materials, from now until the season ends.", wide: true },
-  { id: "calendar", group: "Plan", label: "Server Calendar", title: "Server Calendar", lede: "Your server's day, season dates, dungeon releases, weekly events and their rewards." },
-  { id: "costs", group: "Plan", label: "Upgrade Costs", title: "Upgrade Costs", lede: "What it takes to raise gear, skills, Fantomons or relics from one level to another.", wide: true },
-  { id: "conversion", group: "Plan", label: "Class Change", title: "Skills Conversion", lede: "See what each of your skills can turn into when you change class.", wide: true },
-  { id: "fantomons", group: "Info", label: "Fantomons", title: "Fantomons", lede: "Every Fantomon's stats, baby and adult forms, and abilities at any grade and level.", wide: true },
-  { id: "companions", group: "Info", label: "Companions", title: "Companions", lede: "Companion stat bonuses by friendship level, favorite gifts, unlocks and the classes they suit.", wide: true },
-  { id: "map", group: "Info", label: "World Map", title: "World Map", lede: "Lucky Wheels, unlockable areas and their loot, region by region.", wide: true },
-  { id: "spending", group: "Info", label: "Spending Guide", title: "Spending Guide", lede: "If you do spend: which deals give you the most, and which to skip.", wide: true },
-  { id: "guide", group: "Plan", label: "Planner Guide", title: "How to use the Season Planner", lede: "Step by step: what each part of the planner asks for, what it does, and how to read the results.", wide: true, hidden: true },
-  { id: "prep", group: "Info", label: "Season Prep", title: "Next-Season Prep", lede: "What to do as a season ends, timed for your server.", wide: true },
-  { id: "changes", group: "Info", label: "What's New", title: "What's New", lede: "Recent changes to the site, newest first.", wide: true, hidden: true },
-  { id: "dawnium", group: "Info", label: "Dawnium Guide", title: "Dawnium Guide", lede: "Where your Dawnium (and Rola) does the most good, and what to skip.", wide: true },
+type Page = "home" | "timer" | "planner" | "calendar" | keyof typeof SIMPLE_PAGES;
+type Group = "" | "Plan" | "Info";
+/** `hidden` pages are reached by link only, not the menu. `blurb` is the home page tile's line. */
+const PAGES: { id: Page; group: Group; label: string; icon: IconName; blurb: string; title: string; lede: string; wide?: boolean; hidden?: boolean }[] = [
+  { id: "home", group: "", label: "Home", icon: "home", blurb: "", title: "SxS Tools", lede: "", wide: true },
+  { id: "timer", group: "Plan", label: "Level Timer", icon: "timer", blurb: "When you'll reach your next level", title: "Level Timer", lede: "Enter your character and XP rate to see when you'll reach your next level." },
+  { id: "planner", group: "Plan", label: "Season Planner", icon: "planner", blurb: "Primostars, upgrades and materials for the season", title: "Season Planner", lede: "Plan your season's Primostars, upgrades and materials, from now until the season ends.", wide: true },
+  { id: "calendar", group: "Plan", label: "Server Calendar", icon: "calendar", blurb: "Your server's seasons, dungeons and events", title: "Server Calendar", lede: "Your server's day, season dates, dungeon releases, weekly events and their rewards." },
+  { id: "costs", group: "Plan", label: "Upgrade Costs", icon: "costs", blurb: "What any level range costs", title: "Upgrade Costs", lede: "What it takes to raise gear, skills, Fantomons or relics from one level to another.", wide: true },
+  { id: "conversion", group: "Plan", label: "Class Change", icon: "conversion", blurb: "What your skills become in a new class", title: "Skills Conversion", lede: "See what each of your skills can turn into when you change class.", wide: true },
+  { id: "fantomons", group: "Info", label: "Fantomons", icon: "fantomons", blurb: "Stats, forms and abilities", title: "Fantomons", lede: "Every Fantomon's stats, baby and adult forms, and abilities at any grade and level.", wide: true },
+  { id: "companions", group: "Info", label: "Companions", icon: "companions", blurb: "Bonuses, gifts and best classes", title: "Companions", lede: "Companion stat bonuses by friendship level, favorite gifts, unlocks and the classes they suit.", wide: true },
+  { id: "map", group: "Info", label: "World Map", icon: "map", blurb: "Lucky Wheels and unlockable areas", title: "World Map", lede: "Lucky Wheels, unlockable areas and their loot, region by region.", wide: true },
+  { id: "spending", group: "Info", label: "Spending Guide", icon: "spending", blurb: "Which deals are worth it", title: "Spending Guide", lede: "If you do spend: which deals give you the most, and which to skip.", wide: true },
+  { id: "guide", group: "Plan", label: "Planner Guide", icon: "guide", blurb: "", title: "How to use the Season Planner", lede: "Step by step: what each part of the planner asks for, what it does, and how to read the results.", wide: true, hidden: true },
+  { id: "prep", group: "Info", label: "Season Prep", icon: "prep", blurb: "What to do as a season ends", title: "Next-Season Prep", lede: "What to do as a season ends, timed for your server.", wide: true },
+  { id: "changes", group: "Info", label: "What's New", icon: "changes", blurb: "", title: "What's New", lede: "Recent changes to the site, newest first.", wide: true, hidden: true },
+  { id: "dawnium", group: "Info", label: "Dawnium Guide", icon: "dawnium", blurb: "Where Dawnium does the most good", title: "Dawnium Guide", lede: "Where your Dawnium (and Rola) does the most good, and what to skip.", wide: true },
 ];
 
 const pageFromHash = (): Page => {
   const id = window.location.hash.replace(/^#\//, "").replace(/\?.*$/, "");
-  return PAGES.some((p) => p.id === id) ? (id as Page) : "timer";
+  return PAGES.some((p) => p.id === id) ? (id as Page) : "home";
 };
 
 export default function App() {
@@ -166,7 +170,7 @@ export default function App() {
   );
 
   const plan = useMemo(() => {
-    if (page !== "planner" || !Number.isFinite(currentXp)) return null;
+    if ((page !== "planner" && page !== "home") || !Number.isFinite(currentXp)) return null;
     const input = toPlannerInput(character, currentXp, planner, timeDefaults, now);
     return input ? planSeason(input) : null;
   }, [page, character, currentXp, planner, timeDefaults, now]);
@@ -179,50 +183,57 @@ export default function App() {
   };
 
   useEffect(() => {
-    document.title = `${current.title} · Sword x Staff`;
-    // On narrow screens the nav scrolls sideways; keep the current tab visible.
-    const nav = document.querySelector(".tabs");
-    const active = nav?.querySelector<HTMLElement>('[aria-current="page"]');
-    if (nav && active && nav.scrollWidth > nav.clientWidth) {
-      const offset = active.getBoundingClientRect().left - nav.getBoundingClientRect().left + nav.scrollLeft;
-      nav.scrollTo({ left: offset - nav.clientWidth / 2 + active.offsetWidth / 2, behavior: "smooth" });
-    }
-  }, [current.title]);
+    document.title = page === "home" ? "SxS Tools · Sword x Staff companion by LM Things" : `${current.title} · SxS Tools`;
+    window.scrollTo(0, 0);
+  }, [current.title, page]);
+
+  const footerTools = (
+    <>
+      <ColorChooser />
+      <InstallApp />
+    </>
+  );
 
   return (
-    <div className={`shell ${current.wide ? "wide" : ""}`}>
+    <div className="app">
+      <Sidebar pages={PAGES} current={page} footer={footerTools} />
+      <div className="app-main">
       <div className="topbar">
-        <a className="brand" href="#/">
-          <span className="brand-mark" aria-hidden>⚔</span>
-          <span>
-            SxS Tools
-            <small>Sword x Staff companion</small>
-          </span>
-        </a>
-        <nav className="tabs" aria-label="Tools">
-          {(["Plan", "Info"] as Group[]).map((g) => (
-            <div key={g} className="tab-group">
-              <span className="tab-group-label">{g}</span>
-              {PAGES.filter((p) => p.group === g && !p.hidden).map((p) => (
-                <a key={p.id} href={p.id === "timer" ? "#/" : `#/${p.id}`} aria-current={p.id === page ? "page" : undefined}>
-                  {p.label}
-                </a>
-              ))}
-            </div>
-          ))}
-        </nav>
+        <Brand />
         <div className="top-actions">
           <ColorChooser />
         </div>
       </div>
-
+      <div className={`shell ${current.wide ? "wide" : ""}`}>
+      {page !== "home" && (
       <header className="masthead">
         <p className="eyebrow">{current.group}</p>
         <h1>{current.title}</h1>
         <p className="lede">{current.lede}</p>
       </header>
+      )}
 
-      {page in SIMPLE_PAGES ? (
+      {page === "home" ? (
+        <main>
+          <HomePage
+            tiles={PAGES.filter((p) => !p.hidden && p.id !== "home")}
+            level={character.level}
+            outcome={outcome}
+            plan={plan}
+            now={now}
+            server={
+              server && {
+                name: server.name,
+                season: server.season.number,
+                seasonEnds: server.seasonEnds,
+                dayOfSeason: server.dayOfSeason,
+                seasonDays: server.nextSeason ? server.nextSeason.start - server.season.start : null,
+              }
+            }
+          />
+        </main>
+      ) : 
+page in SIMPLE_PAGES ? (
         <main>
           <Suspense fallback={<p className="hint">Loading…</p>}>
             {(() => {
@@ -283,14 +294,26 @@ export default function App() {
 
       <footer className="footer">
         <p className="footer-links">
-          <InstallApp />
           <a href="#/changes">What's new</a>
+          <a href="#/guide">Planner guide</a>
         </p>
         <p>
-          Unofficial fan tool, not affiliated with Boltray. Your inputs are
-          saved only in this browser.
+          SxS Tools by LM Things (Lilly Mara's things). Unofficial fan tool, not affiliated with Boltray. Your inputs are saved only in this
+          browser.
         </p>
       </footer>
+      </div>
+      </div>
+      <TabBar
+        pages={PAGES}
+        current={page}
+        extra={
+          <>
+            <InstallApp />
+            <a href="#/changes">What's new</a>
+          </>
+        }
+      />
     </div>
   );
 }

@@ -196,7 +196,7 @@ const STEPS: Step[] = [
 
 /** Every button and link worth knowing, and where it sits. */
 const WHERE: { what: ReactNode; where: ReactNode; does: ReactNode }[] = [
-  { what: <a href="#/planner">Season Planner</a>, where: "Top menu, under Plan", does: "Opens the planner." },
+  { what: <a href="#/planner">Season Planner</a>, where: "The menu, under Plan (on phones, the Planner tab at the bottom)", does: "Opens the planner." },
   { what: "This guide", where: "The 📖 banner at the very top of the planner", does: "Comes back here." },
   {
     what: "Clear planner",
@@ -214,7 +214,7 @@ const WHERE: { what: ReactNode; where: ReactNode; does: ReactNode }[] = [
   },
   {
     what: <a href="#/calendar">Server Calendar</a>,
-    where: "Top menu, under Plan. Before you've picked one, there's also a Pick your server link under Season ends",
+    where: "The menu, under Plan (on phones, the Calendar tab). Before you've picked one, there's also a Pick your server link under Season ends",
     does: "Sets your server, which sets the season end and reset time.",
   },
   { what: "Plan my goal / Use this plan", where: "The box at the top of the System levels card", does: "The cheapest way to your goal; fills every Plan box." },
@@ -225,7 +225,7 @@ const WHERE: { what: ReactNode; where: ReactNode; does: ReactNode }[] = [
     where: "Each day card → Material Realms",
     does: "Suggested refreshes (Ore/Rola/Essence/Sand) to reach your goal, plus presets, with Dawnium costs. Tap one to use it.",
   },
-  { what: <a href="#/dawnium">Dawnium Guide</a>, where: "Top menu under Info, or the link under Material Realms", does: "Where Dawnium does the most good." },
+  { what: <a href="#/dawnium">Dawnium Guide</a>, where: "The menu, under Info (on phones, under More), or the link under Material Realms", does: "Where Dawnium does the most good." },
   {
     what: "See all bonuses (Astral Pact)",
     where: "The projection panel, under the Primostars total",
@@ -236,7 +236,7 @@ const WHERE: { what: ReactNode; where: ReactNode; does: ReactNode }[] = [
     where: "On a phone: the bar fixed at the bottom of the screen (+N Primostars)",
     does: "Scrolls down to the results.",
   },
-  { what: <a href="#/">Level Timer</a>, where: "Top menu, under Plan", does: "When you'll reach your next level, with bed boosts and Temporal Crystals. It has its own Fill from screenshots (Character and Bed only), and shares your character with the planner." },
+  { what: <a href="#/timer">Level Timer</a>, where: "The menu, under Plan (on phones, the Timer tab)", does: "When you'll reach your next level, with bed boosts and Temporal Crystals. It has its own Fill from screenshots (Character and Bed only), and shares your character with the planner." },
 ];
 
 const QUICK = [

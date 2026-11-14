@@ -26,7 +26,7 @@ const STEPS: { title: string; body: string; hoursBefore?: number; link?: { href:
   {
     title: "Spend banked EXP before the reset",
     body: "EXP held behind an area's level cap carries over within a season, but it's lost when the season resets. If you have banked EXP, open the next area before the season ends.",
-    link: { href: "#/", label: "Level Timer" },
+    link: { href: "#/timer", label: "Level Timer" },
   },
   {
     title: "Stop claiming the bed",

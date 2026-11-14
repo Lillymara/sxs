@@ -1,11 +1,11 @@
 // What's new: recent changes, newest first, written for players.
 
-const CHANGES: { date: string; items: { text: string; href?: string }[] }[] = [
+export const CHANGES: { date: string; items: { text: string; href?: string }[] }[] = [
   {
     date: "2026-11-13",
     items: [
-      { text: "Install the site as an app on your phone or computer (link at the bottom of every page). It opens offline too." },
-      { text: "Level Timer: fill it from your Character and Bed screenshots.", href: "#/" },
+      { text: "Install the site as an app on your phone or computer (in the menu). It opens offline too." },
+      { text: "Level Timer: fill it from your Character and Bed screenshots.", href: "#/timer" },
       { text: "Season Planner: copy your plan as a message for Discord.", href: "#/planner" },
       { text: "Season Planner: a season progress log that shows whether you're keeping pace with your goal.", href: "#/planner" },
       { text: "New Upgrade Costs page: what any gear, skill, Fantomon or relic level range costs.", href: "#/costs" },
@@ -26,7 +26,7 @@ const CHANGES: { date: string; items: { text: string; href?: string }[] }[] = [
   },
   {
     date: "2026-10-24",
-    items: [{ text: "Level Timer: the free daily bed boost and Temporal Crystals count toward your next level.", href: "#/" }],
+    items: [{ text: "Level Timer: the free daily bed boost and Temporal Crystals count toward your next level.", href: "#/timer" }],
   },
   {
     date: "2026-10-22",
@@ -37,7 +37,7 @@ const CHANGES: { date: string; items: { text: string; href?: string }[] }[] = [
   },
   {
     date: "2026-10-20",
-    items: [{ text: "Level Timer: see the level banked EXP takes you to when the next area opens.", href: "#/" }],
+    items: [{ text: "Level Timer: see the level banked EXP takes you to when the next area opens.", href: "#/timer" }],
   },
   {
     date: "2026-10-19",

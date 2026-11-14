@@ -4,7 +4,7 @@ import { REALM_MATERIALS } from "../../lib/planner/plan";
 import { formatXpShort } from "../../lib/xp";
 import type { PlannerForm, SlotForm } from "./form";
 
-const SITE = "https://lillymara.github.io/sxs-tools/";
+const SITE = "https://sxs.lmthings.com/";
 const fmt = (x: number) => Math.round(x).toLocaleString("en-US");
 
 /** "125–126" or "140" from a list of slot levels. */

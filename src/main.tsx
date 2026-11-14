@@ -3,7 +3,10 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./styles.css";
 import { initTheme } from "./lib/theme";
+import { importHandoff } from "./lib/importHandoff";
 
+// Saved data handed over from the old github.io address (before anything reads storage).
+importHandoff();
 // Apply the saved colors before first paint so the page doesn't flash the default.
 initTheme();
 
