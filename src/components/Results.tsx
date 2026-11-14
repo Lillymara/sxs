@@ -1,6 +1,8 @@
 import type { CalcOutcome } from "../lib/xp";
 import { formatDuration, formatEta, formatXpShort } from "../lib/xp";
 import type { Character } from "./CharacterForm";
+import { ProgressRing } from "./ProgressRing";
+import { CountUp } from "./CountUp";
 
 interface Props {
   character: Character;
@@ -17,7 +19,22 @@ export function Results({ character, outcome, now }: Props) {
   if (!outcome) {
     return (
       <section className="card results empty" aria-live="polite">
-        <p>Fill in your level and XP rate to see your next level-up time.</p>
+        <div className="example" aria-hidden>
+          <span className="example-chip">Example</span>
+          <div className="timer-head">
+            <ProgressRing value={0.65}>
+              <small>Level</small>
+              <b>117</b>
+              <small>65% there</small>
+            </ProgressRing>
+            <div className="timer-text">
+              <p className="eyebrow">Level 117</p>
+              <p className="big-time">6h 46m</p>
+              <p className="eta">Around tonight, 11:46 PM</p>
+            </div>
+          </div>
+        </div>
+        <p>Fill in your level and XP rate (or use Fill from screenshots) to see your own next level-up time.</p>
       </section>
     );
   }
@@ -64,21 +81,28 @@ export function Results({ character, outcome, now }: Props) {
           <p className="banked-warn">Banked XP carries over until the cap lifts, except at a season reset, where it's lost.</p>
         </div>
       )}
-      <p className="eyebrow">
-        {character.name ? `${character.name} → ` : ""}Level {r.nextLevel}
-        {b ? " after the jump" : ""}
-      </p>
-      <p className="big-time">{formatDuration(r.hoursToNext)}</p>
-      <p className="eta">
-        {b ? `Banked enough for level ${r.nextLevel} around ` : "Around "}
-        {formatEta(r.hoursToNext, now)}
-      </p>
-      {r.unboostedHoursToNext !== undefined && r.unboostedHoursToNext - r.hoursToNext >= 1 / 60 && (
-        <p className="boost-saved">⚡ Boosts save you {formatDuration(Math.round((r.unboostedHoursToNext - r.hoursToNext) * 60) / 60)}</p>
-      )}
-
-      <div className="bar" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
-        <div className="bar-fill" style={{ width: `${pct}%` }} />
+      <div className="timer-head">
+        <ProgressRing value={pct / 100}>
+          <small>Level</small>
+          <b>{r.nextLevel}</b>
+          <small>{pct.toFixed(0)}% there</small>
+        </ProgressRing>
+        <div className="timer-text">
+          <p className="eyebrow">
+            {character.name ? `${character.name} → ` : ""}Level {r.nextLevel}
+            {b ? " after the jump" : ""}
+          </p>
+          <p className="big-time">
+            <CountUp text={formatDuration(r.hoursToNext)} />
+          </p>
+          <p className="eta">
+            {b ? `Banked enough for level ${r.nextLevel} around ` : "Around "}
+            {formatEta(r.hoursToNext, now)}
+          </p>
+          {r.unboostedHoursToNext !== undefined && r.unboostedHoursToNext - r.hoursToNext >= 1 / 60 && (
+            <p className="boost-saved">⚡ Boosts save you {formatDuration(Math.round((r.unboostedHoursToNext - r.hoursToNext) * 60) / 60)}</p>
+          )}
+        </div>
       </div>
       <dl className="stats">
         <div>

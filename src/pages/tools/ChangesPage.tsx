@@ -2,6 +2,15 @@
 
 export const CHANGES: { date: string; items: { text: string; href?: string }[] }[] = [
   {
+    date: "2026-11-14",
+    items: [
+      { text: "Level Timer: a progress ring around your next level, and numbers that count up when they change.", href: "/timer" },
+      { text: "Season Planner: a Primostar track showing what you have, what this season adds, your goal and every Astral Pact tier along the way.", href: "/planner" },
+      { text: "Season Planner: bars under each material showing how much of your plan is covered, and on phones the planner goes step by step.", href: "/planner" },
+      { text: "The planner fits better when your browser window is half a screen wide." },
+    ],
+  },
+  {
     date: "2026-11-13",
     items: [
       { text: "New home, new name: the site is now SxS Tools by LM Things at sxs.lmthings.com. Old links forward here and bring your saved data with them." },

@@ -1228,3 +1228,79 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
 .check input[type="checkbox"] { width: 18px; height: 18px; min-width: 18px; padding: 0; margin-top: 2px; accent-color: var(--accent); cursor: pointer; flex: none; }
 /* Side-by-side fields start level, so their boxes line up (labels now fit on one line). */
 .fields { align-items: start; }
+
+/* Progress ring (Level Timer) and its header. */
+.ring { position: relative; flex: none; }
+.ring svg { display: block; }
+.ring-fill { transition: stroke-dasharray 0.6s cubic-bezier(.2,.8,.2,1); filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 45%, transparent)); }
+.ring-label { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; line-height: 1.1; }
+.ring-label b { font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; }
+.ring-label small { color: var(--muted); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.timer-head { display: flex; align-items: center; gap: 22px; margin-bottom: 14px; }
+.timer-text { min-width: 0; }
+.timer-text .big-time { margin: 2px 0; }
+@media (max-width: 420px) { .timer-head { gap: 14px; } .timer-head .ring { width: 108px !important; height: 108px !important; } .timer-head .ring svg { width: 108px; height: 108px; } }
+
+/* Empty cards show a faded example of what they'll look like. */
+.results.empty .example { position: relative; opacity: 0.38; filter: saturate(0.8); pointer-events: none; margin-bottom: 12px; }
+.example-chip { position: absolute; top: -4px; right: 0; z-index: 1; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: var(--accent); color: var(--on-accent); opacity: 1; }
+.results.empty p:last-child { margin: 0; color: var(--muted); }
+
+/* Primostar track in the projection panel. */
+.primo-bar { margin: 12px 0 6px; display: grid; gap: 8px; }
+.primo-track { position: relative; height: 12px; border-radius: 999px; background: var(--surface-2); }
+.primo-have { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px 0 0 999px; background: color-mix(in srgb, var(--muted) 45%, transparent); }
+.primo-season { position: absolute; top: 0; bottom: 0; border-radius: 0 999px 999px 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); box-shadow: 0 0 10px -2px color-mix(in srgb, var(--accent) 70%, transparent); transition: width 0.5s cubic-bezier(.2,.8,.2,1); }
+.primo-tick { position: absolute; top: -3px; width: 2px; height: 18px; margin-left: -1px; border-radius: 2px; background: var(--line); }
+.primo-tick.got { background: var(--on-accent); opacity: 0.7; height: 12px; top: 0; }
+.primo-goal { position: absolute; top: -6px; width: 14px; height: 14px; margin-left: -7px; transform: translateY(5px) rotate(45deg); border-radius: 3px; background: #f5b942; box-shadow: 0 0 0 2px var(--surface); }
+.primo-goal.reached { background: var(--accent-2); }
+.primo-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.74rem; color: var(--muted); }
+.primo-legend .dot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 3px; vertical-align: -1px; }
+.dot.have { background: color-mix(in srgb, var(--muted) 45%, transparent); }
+.dot.season { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.dot.goal { background: #f5b942; transform: rotate(45deg) scale(.85); }
+.dot.goal.reached { background: var(--accent-2); }
+.dot.tick { width: 2px; height: 11px; border-radius: 1px; background: var(--muted); }
+.covered { display: block; width: 100%; min-width: 48px; height: 4px; margin-top: 4px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.covered > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width 0.5s cubic-bezier(.2,.8,.2,1); }
+.covered.short > span { background: var(--error); }
+
+/* Planner steps: on narrow planners, one card at a time with a step bar and Back/Next. */
+.plan-steps, .step-nav { display: none; }
+@media (max-width: 999px) {
+@container pform (max-width: 619px) {
+  .plan-steps {
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px;
+    background: var(--surface); border: 1px solid var(--line); scroll-margin-top: 70px;
+  }
+  .plan-steps button {
+    display: grid; justify-items: center; gap: 3px; padding: 7px 2px; border: 0; border-radius: 10px; background: none; cursor: pointer;
+    font: inherit; font-size: 0.68rem; font-weight: 700; color: var(--muted);
+  }
+  .plan-step-num { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-size: 0.72rem; background: var(--surface-2); color: var(--muted); }
+  .plan-steps button[aria-current="step"] { color: var(--text); background: var(--accent-soft); }
+  .plan-steps button[aria-current="step"] .plan-step-num { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--on-accent); }
+  .planner-cards > .pcard:not(.step-active) { display: none; }
+  .step-nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-top: 12px; margin-top: 4px; border-top: 1px dashed var(--line); }
+  .step-nav .spin-button { text-decoration: none; display: inline-block; }
+}
+}
+
+/* Polish: cards get a soft accent sheen along the top and a faint edge glow; the projection panel glows a little more. */
+.card {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, transparent), transparent 140px),
+    var(--surface);
+  border-color: color-mix(in srgb, var(--accent) 12%, var(--line));
+  box-shadow: var(--shadow), inset 0 1px 0 color-mix(in srgb, #fff 6%, transparent);
+}
+.planner-summary .card.results, .card.results:not(.empty) {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+  box-shadow: var(--shadow), 0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent), 0 18px 40px -26px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+/* Buttons and tiles respond to presses. */
+.spin-button:active, .fill-btn:active, .tile:active { transform: translateY(1px) scale(0.99); }
+@media (prefers-reduced-motion: reduce) {
+  .ring-fill, .primo-season, .covered > span { transition: none; }
+}

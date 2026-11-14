@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { PlannerResult } from "../../lib/planner/plan";
 import { formatXpShort } from "../../lib/xp";
 import { AstralPactSummary } from "./AstralPact";
+import { PrimoBar } from "./PrimoBar";
+import { CountUp } from "../../components/CountUp";
 
 const fmt = (x: number) => Math.round(x).toLocaleString();
 const ICONS: Record<string, string> = { character: "🛏️", gear: "⚔️", skill: "✨", fantomon: "🐾", relic: "💎" };
@@ -28,7 +30,19 @@ export function Summary({
   if (!result) {
     return (
       <section className="card results empty">
-        <p>Enter your season and character level to see your plan.</p>
+        <div className="example" aria-hidden>
+          <span className="example-chip">Example</span>
+          <p className="eyebrow">Season 1 projection</p>
+          <div className="proj-big">
+            <span className="proj-num">+154</span>
+            <span className="proj-label">
+              Primostars
+              <small>a floor, not a forecast</small>
+            </span>
+          </div>
+          <PrimoBar have={150} projected={304} goal={320} />
+        </div>
+        <p>Enter your season and character level, or use Fill from screenshots, to see your own plan.</p>
       </section>
     );
   }
@@ -41,7 +55,9 @@ export function Summary({
     <section className="card results" aria-live="polite">
       <p className="eyebrow">Season {rule.season} projection</p>
       <div className="proj-big">
-        <span className="proj-num">+{fmt(score.earned)}</span>
+        <span className="proj-num">
+          <CountUp text={`+${fmt(score.earned)}`} />
+        </span>
         <span className="proj-label">
           Primostars
           <small>a floor, not a forecast</small>
@@ -51,6 +67,7 @@ export function Summary({
         {score.fixedStars} fixed + {fmt(score.starsFromScore)} earned · total {fmt(score.projectedTotal)}
         {score.rating && <> · rating {score.rating}</>}
       </p>
+      <PrimoBar have={score.projectedTotal - score.earned} projected={score.projectedTotal} goal={score.goal} />
       {share && <CopyButton text={share} />}
       <AstralPactSummary have={score.projectedTotal - score.earned} projected={score.projectedTotal} goal={score.goal} onPickGoal={onPickGoal} />
       {goalSet &&
@@ -119,7 +136,10 @@ export function Summary({
           <tbody>
             {materials.map((m) => (
               <tr key={m.key}>
-                <th scope="row">{m.label.replace(" (White eq.)", "")}</th>
+                <th scope="row">
+                  {m.label.replace(" (White eq.)", "")}
+                  <Covered have={m.passive + m.fromRealm + m.fromShop} need={m.need} />
+                </th>
                 <td>{m.unknownCost ? `${short(m.need)}+?` : short(m.need)}</td>
                 <td>{short(m.passive)}</td>
                 <td>{m.fromRealm > 0 ? short(m.fromRealm) : "—"}</td>
@@ -129,7 +149,10 @@ export function Summary({
             ))}
             {result.refinedOre.need > 0 && (
               <tr>
-                <th scope="row">Refined Ore</th>
+                <th scope="row">
+                  Refined Ore
+                  <Covered have={result.refinedOre.have + result.refinedOre.gathered} need={result.refinedOre.need} />
+                </th>
                 <td>{short(result.refinedOre.need)}</td>
                 <td>{short(result.refinedOre.have + result.refinedOre.gathered)}</td>
                 <td>—</td>
@@ -232,5 +255,16 @@ function CopyButton({ text }: { text: string }) {
       {done === "failed" && <span className="bad">Couldn't copy here. Select the text below instead.</span>}
       {done === "failed" && <textarea className="share-text" readOnly value={text} rows={7} />}
     </div>
+  );
+}
+
+/** A thin bar under a material: how much of what the plan needs is covered. */
+function Covered({ have, need }: { have: number; need: number }) {
+  if (!(need > 0)) return null;
+  const share = Math.min(1, have / need);
+  return (
+    <span className={`covered${share < 0.999 ? " short" : ""}`} title={`${Math.round(share * 100)}% covered`}>
+      <span style={{ width: `${Math.round(share * 100)}%` }} />
+    </span>
   );
 }

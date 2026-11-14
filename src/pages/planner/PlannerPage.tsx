@@ -62,9 +62,39 @@ const SYSTEMS: { field: SlotField; key: SlotCategory; label: string; icon: strin
 ];
 
 /** One labelled card in the planner grid. */
-function Card({ icon, title, aside, wide, children }: { icon: string; title: string; aside?: ReactNode; wide?: boolean; children: ReactNode }) {
+/** The planner's steps on phones, in order (each is one card). */
+const STEPS = [
+  { id: "goal", label: "Goal" },
+  { id: "character", label: "Character" },
+  { id: "levels", label: "Levels" },
+  { id: "materials", label: "Materials" },
+  { id: "daily", label: "Each day" },
+] as const;
+type StepId = (typeof STEPS)[number]["id"];
+
+function Card({
+  icon,
+  title,
+  aside,
+  wide,
+  step,
+  current,
+  onStep,
+  children,
+}: {
+  icon: string;
+  title: string;
+  aside?: ReactNode;
+  wide?: boolean;
+  step: StepId;
+  current: StepId;
+  onStep: (s: StepId) => void;
+  children: ReactNode;
+}) {
+  const i = STEPS.findIndex((x) => x.id === step);
+  const prev = STEPS[i - 1], next = STEPS[i + 1];
   return (
-    <section className={`card pcard${wide ? " wide" : ""}`}>
+    <section className={`card pcard${wide ? " wide" : ""}${step === current ? " step-active" : ""}`} id={`step-${step}`}>
       <div className="pcard-head">
         <h2>
           <span aria-hidden>{icon}</span>
@@ -73,6 +103,27 @@ function Card({ icon, title, aside, wide, children }: { icon: string; title: str
         {aside}
       </div>
       {children}
+      <div className="step-nav">
+        {prev ? (
+          <button type="button" className="link-button" onClick={() => onStep(prev.id)}>
+            ← {prev.label}
+          </button>
+        ) : (
+          <span />
+        )}
+        {next ? (
+          <button type="button" className="spin-button" onClick={() => onStep(next.id)}>
+            Next: {next.label} →
+          </button>
+        ) : (
+          <a className="spin-button" href="#summary" onClick={(e) => {
+            e.preventDefault();
+            document.getElementById("summary")?.scrollIntoView({ behavior: "smooth" });
+          }}>
+            See my projection ↓
+          </a>
+        )}
+      </div>
     </section>
   );
 }
@@ -97,6 +148,12 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
   const rule = getRule(season);
   const table = getSeason(season);
   const set = <K extends keyof PlannerForm>(key: K, value: PlannerForm[K]) => onChange({ ...form, [key]: value });
+  // Phones show one card at a time; the step bar and Back/Next move between them.
+  const [step, setStep] = useState<StepId>("goal");
+  const goStep = (s: StepId) => {
+    setStep(s);
+    requestAnimationFrame(() => document.getElementById("plan-steps")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
   // Season progress: logged after each fill from screenshots (once the new numbers are worked out), or by hand.
   const [progress, setProgress] = usePersistentState<{ entries: Snapshot[] }>("sxs.progress", { entries: [] });
   const [logPending, setLogPending] = useState(false);
@@ -172,8 +229,16 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
           }}
         />
 
+        <nav className="plan-steps" id="plan-steps" aria-label="Planner steps">
+          {STEPS.map((x, i) => (
+            <button key={x.id} type="button" aria-current={x.id === step ? "step" : undefined} onClick={() => goStep(x.id)}>
+              <span className="plan-step-num">{i + 1}</span>
+              {x.label}
+            </button>
+          ))}
+        </nav>
         <div className="planner-cards">
-          <Card icon="🎯" title="Season & goal">
+          <Card icon="🎯" title="Season & goal" step="goal" current={step} onStep={goStep}>
             <div className="fields">
               <Field label="Primostars you have" value={form.primostarsNow} onChange={(v) => set("primostarsNow", v)} placeholder="0" />
               <Field
@@ -254,7 +319,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
             )}
           </Card>
 
-          <Card icon="🛏️" title="Character EXP">
+          <Card icon="🛏️" title="Character EXP" step="character" current={step} onStep={goStep}>
             {server && server.season !== season && server.season <= 5 && (
               <p className="note warn">
                 {server.name || "Your server"} is in Season {server.season}.{" "}
@@ -286,7 +351,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
             )}
           </Card>
 
-          <Card icon="📈" title="System levels" wide>
+          <Card icon="📈" title="System levels" step="levels" current={step} onStep={goStep} wide>
             <p className="hint">
               {full ? "Each slot's current level and where you plan to take it." : "One level for the whole system: now, and where you plan to take it."} Scoring starts above Lv {floor}
               {rule && <> (relics above +{rule.relicFloor})</>}.
@@ -409,7 +474,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
             )}
           </Card>
 
-          <Card icon="🛒" title="Cart income">
+          <Card icon="🛒" title="Cart income" step="materials" current={step} onStep={goStep}>
             <p className="hint">What your Cart makes an hour, in the order the Cart screen lists it, and how much you already have.</p>
             {full ? (
               <div className="table-wrap flat">
@@ -483,7 +548,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
             )}
           </Card>
 
-          <Card icon="📅" title="Each day">
+          <Card icon="📅" title="Each day" step="daily" current={step} onStep={goStep}>
             <h3 className="subhead">Material Realms</h3>
             <RealmSuggest
               result={result}

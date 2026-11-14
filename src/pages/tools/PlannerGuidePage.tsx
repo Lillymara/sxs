@@ -22,6 +22,10 @@ const STEPS: Step[] = [
         <b>Full</b> adds every single slot, stamina and gathering, daily tasks, Rola bought with Dawnium, your rank, bed boosts and saving bed
         EXP. Use it for the closest answer.
       </>,
+      <>
+        On a <b>phone</b> the planner goes one step at a time: <b>Goal → Character → Levels → Materials → Each day</b>. Use the step bar at the
+        top or <b>Next</b> at the bottom of each card. The bar at the bottom of the screen jumps to your projection.
+      </>,
     ],
   },
   {
