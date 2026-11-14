@@ -152,7 +152,7 @@ tbody th { position: static; color: var(--text); }
 tr.rough td { opacity: 0.5; }
 
 /* ---- Top bar & navigation ---- */
-.shell.wide { max-width: 1240px; }
+.shell.wide { max-width: 1400px; }
 .topbar {
   position: sticky;
   top: 0;
@@ -194,9 +194,15 @@ tr.rough td { opacity: 0.5; }
 .planner { display: grid; gap: 16px; }
 .planner-form { display: grid; gap: 16px; min-width: 0; }
 .planner-summary { min-width: 0; }
-@media (min-width: 1000px) {
-  .planner { grid-template-columns: minmax(0, 1fr) 420px; align-items: start; }
-  .planner-summary { position: sticky; top: 84px; max-height: calc(100vh - 100px); overflow-y: auto; border-radius: var(--radius); }
+/* The planner lays itself out by the room it has (after the sidebar), not the window. */
+main:has(> .planner) { container: planner / inline-size; }
+.planner-form { container: pform / inline-size; }
+@container planner (min-width: 980px) {
+  .planner { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; }
+  .planner-summary { position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; border-radius: var(--radius); }
+}
+@container planner (min-width: 1240px) {
+  .planner { grid-template-columns: minmax(0, 1fr) 420px; }
 }
 .planner .card > .card-head h2 { display: flex; align-items: center; gap: 10px; }
 .step {
@@ -407,7 +413,7 @@ tr.dawn-cheap td { color: #4ade80; font-weight: 700; }
 .mode-switch .hint { margin: 0; }
 @media (max-width: 620px) { .mode-switch { grid-template-columns: 1fr 1fr; } .mode-switch .hint { grid-column: 1 / -1; } }
 .planner-cards { display: grid; gap: 16px; align-items: start; }
-@media (min-width: 760px) { .planner-cards { grid-template-columns: 1fr 1fr; } .pcard.wide { grid-column: 1 / -1; } }
+@container pform (min-width: 860px) { .planner-cards { grid-template-columns: 1fr 1fr; } .pcard.wide { grid-column: 1 / -1; } }
 .pcard { display: grid; gap: 10px; align-content: start; }
 .pcard-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .pcard-head h2 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
@@ -1217,3 +1223,8 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
 .community-text p { margin: 0; color: var(--muted); font-size: 0.92rem; }
 .community-text b { color: var(--text); }
 .community-actions .spin-button { text-decoration: none; display: inline-block; }
+
+/* Tick boxes: a proper size, in the theme's colour. */
+.check input[type="checkbox"] { width: 18px; height: 18px; min-width: 18px; padding: 0; margin-top: 2px; accent-color: var(--accent); cursor: pointer; flex: none; }
+/* Side-by-side fields start level, so their boxes line up (labels now fit on one line). */
+.fields { align-items: start; }
