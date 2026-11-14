@@ -12,3 +12,12 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </StrictMode>,
 );
+
+// Offline support and "install as an app", on the live site only.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register(`./sw.js?v=${__BUILD_ID__}`).catch(() => {
+      // Without it the site still works; it just won't open offline.
+    });
+  });
+}

@@ -12,6 +12,7 @@ import { PlannerPage } from "./pages/planner/PlannerPage";
 import { ScreenshotImport } from "./pages/planner/ScreenshotImport";
 import { applyFound } from "./pages/planner/fromScreens";
 import { ColorChooser } from "./components/ColorChooser";
+import { InstallApp } from "./components/InstallApp";
 import type { ToolProps } from "./pages/tools/props";
 
 // The calendar carries the 720-server roster, so it loads only when opened.
@@ -22,6 +23,9 @@ const CompanionsPage = lazy(() => import("./pages/tools/CompanionsPage").then((m
 const SpendingPage = lazy(() => import("./pages/tools/SpendingPage").then((m) => ({ default: m.SpendingPage })));
 const DawniumPage = lazy(() => import("./pages/tools/DawniumPage").then((m) => ({ default: m.DawniumPage })));
 const PlannerGuidePage = lazy(() => import("./pages/tools/PlannerGuidePage").then((m) => ({ default: m.PlannerGuidePage })));
+const CostsPage = lazy(() => import("./pages/tools/CostsPage").then((m) => ({ default: m.CostsPage })));
+const PrepPage = lazy(() => import("./pages/tools/PrepPage").then((m) => ({ default: m.PrepPage })));
+const ChangesPage = lazy(() => import("./pages/tools/ChangesPage").then((m) => ({ default: m.ChangesPage })));
 const WorldMapPage = lazy(() => import("./pages/tools/WorldMapPage").then((m) => ({ default: m.WorldMapPage })));
 
 /** Self-contained reference tools, each loaded only when opened. */
@@ -33,6 +37,9 @@ const SIMPLE_PAGES = {
   spending: SpendingPage,
   dawnium: DawniumPage,
   guide: PlannerGuidePage,
+  costs: CostsPage,
+  prep: PrepPage,
+  changes: ChangesPage,
 };
 
 const DEFAULT_CHARACTER: Character = {
@@ -53,12 +60,15 @@ const PAGES: { id: Page; group: Group; label: string; title: string; lede: strin
   { id: "timer", group: "Plan", label: "Level Timer", title: "Level Timer", lede: "Enter your character and XP rate to see when you'll reach your next level." },
   { id: "planner", group: "Plan", label: "Season Planner", title: "Season Planner", lede: "Plan your season's Primostars, upgrades and materials, from now until the season ends.", wide: true },
   { id: "calendar", group: "Plan", label: "Server Calendar", title: "Server Calendar", lede: "Your server's day, season dates, dungeon releases, weekly events and their rewards." },
+  { id: "costs", group: "Plan", label: "Upgrade Costs", title: "Upgrade Costs", lede: "What it takes to raise gear, skills, Fantomons or relics from one level to another.", wide: true },
   { id: "conversion", group: "Plan", label: "Class Change", title: "Skills Conversion", lede: "See what each of your skills can turn into when you change class.", wide: true },
   { id: "fantomons", group: "Info", label: "Fantomons", title: "Fantomons", lede: "Every Fantomon's stats, baby and adult forms, and abilities at any grade and level.", wide: true },
   { id: "companions", group: "Info", label: "Companions", title: "Companions", lede: "Companion stat bonuses by friendship level, favorite gifts, unlocks and the classes they suit.", wide: true },
   { id: "map", group: "Info", label: "World Map", title: "World Map", lede: "Lucky Wheels, unlockable areas and their loot, region by region.", wide: true },
   { id: "spending", group: "Info", label: "Spending Guide", title: "Spending Guide", lede: "If you do spend: which deals give you the most, and which to skip.", wide: true },
   { id: "guide", group: "Plan", label: "Planner Guide", title: "How to use the Season Planner", lede: "Step by step: what each part of the planner asks for, what it does, and how to read the results.", wide: true, hidden: true },
+  { id: "prep", group: "Info", label: "Season Prep", title: "Next-Season Prep", lede: "What to do as a season ends, timed for your server.", wide: true },
+  { id: "changes", group: "Info", label: "What's New", title: "What's New", lede: "Recent changes to the site, newest first.", wide: true, hidden: true },
   { id: "dawnium", group: "Info", label: "Dawnium Guide", title: "Dawnium Guide", lede: "Where your Dawnium (and Rola) does the most good, and what to skip.", wide: true },
 ];
 
@@ -272,6 +282,10 @@ export default function App() {
       )}
 
       <footer className="footer">
+        <p className="footer-links">
+          <InstallApp />
+          <a href="#/changes">What's new</a>
+        </p>
         <p>
           Unofficial fan tool, not affiliated with Boltray. Your inputs are
           saved only in this browser.

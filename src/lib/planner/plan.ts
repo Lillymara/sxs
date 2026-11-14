@@ -156,6 +156,10 @@ export interface PlannerResult {
   realmSuggestion: RealmSplit | null;
   /** Refreshes the goal would need (planned with up to 10 a day), and whether even that reaches it. */
   goalRealms: (RealmSplit & { reachable: boolean }) | null;
+  /** Season points as things stand today (current levels, character's level now). */
+  scoreNow: number;
+  /** Character level now, with progress into the level as a fraction. */
+  levelNow: number;
   /** The cheapest plan across every system that reaches the goal, or null with no goal to reach. */
   goalPlan: (GoalPlan & { reachableTotal: number }) | null;
   /** Per category: the lowest plan that reaches the goal with everything else as planned. */
@@ -454,6 +458,19 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
     primostarsNow: input.primostarsNow,
     primostarGoal: input.primostarGoal,
   });
+  // Points as things stand today: current levels and the character's level right now.
+  const table = getSeason(input.season);
+  const needNow = table ? expToNext(table, input.level) : undefined;
+  const levelNow = input.level + (needNow ? Math.min(1, Math.max(0, input.xpIntoLevel) / needNow) : 0);
+  const scoreNow = scoreSeason(rule, {
+    characterLevel: levelNow,
+    gear: atCurrent(input.gear),
+    skills: atCurrent(input.skills),
+    fantomons: atCurrent(input.fantomons),
+    relics: atCurrent(input.relics),
+    primostarsNow: input.primostarsNow,
+    primostarGoal: input.primostarGoal,
+  }).total;
   const supply = (k: Material) => {
     const m = materials.find((x) => x.key === k)!;
     return m.passive + (m.realmYield && m.entriesAvailable ? m.entriesAvailable * m.realmYield : 0);
@@ -555,6 +572,8 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
     rolaBoughtPerDay,
     realmTools,
     goalPlan,
+    scoreNow,
+    levelNow,
     realmSuggestion,
     goalRealms,
     refinedOre: {

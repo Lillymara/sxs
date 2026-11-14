@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { PlannerResult } from "../../lib/planner/plan";
 import { formatXpShort } from "../../lib/xp";
 import { AstralPactSummary } from "./AstralPact";
@@ -12,7 +13,18 @@ const when = (d: Date | null, now: Date) =>
       ? "now"
       : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
-export function Summary({ result, now, onPickGoal }: { result: PlannerResult | null; now: Date; onPickGoal?: (stars: number) => void }) {
+export function Summary({
+  result,
+  now,
+  onPickGoal,
+  share,
+}: {
+  result: PlannerResult | null;
+  now: Date;
+  onPickGoal?: (stars: number) => void;
+  /** The plan as a message for Discord. */
+  share?: string;
+}) {
   if (!result) {
     return (
       <section className="card results empty">
@@ -39,6 +51,7 @@ export function Summary({ result, now, onPickGoal }: { result: PlannerResult | n
         {score.fixedStars} fixed + {fmt(score.starsFromScore)} earned · total {fmt(score.projectedTotal)}
         {score.rating && <> · rating {score.rating}</>}
       </p>
+      {share && <CopyButton text={share} />}
       <AstralPactSummary have={score.projectedTotal - score.earned} projected={score.projectedTotal} goal={score.goal} onPickGoal={onPickGoal} />
       {goalSet &&
         (score.difference >= 0 ? (
@@ -194,5 +207,30 @@ export function Summary({ result, now, onPickGoal }: { result: PlannerResult | n
         {result.shopRefreshRolaPerDay > 0 && <div><dt>Shop refreshes / day</dt><dd>{short(result.shopRefreshRolaPerDay)} Rola</dd></div>}
       </dl>
     </section>
+  );
+}
+
+/** Copies the plan, then says so for a moment. */
+function CopyButton({ text }: { text: string }) {
+  const [done, setDone] = useState<"" | "copied" | "failed">("");
+  return (
+    <div className="share-row">
+      <button
+        type="button"
+        className="fill-btn"
+        onClick={() => {
+          navigator.clipboard
+            ?.writeText(text)
+            .then(() => setDone("copied"))
+            .catch(() => setDone("failed"))
+            .finally(() => setTimeout(() => setDone(""), 2500));
+        }}
+      >
+        📋 Copy my plan for Discord
+      </button>
+      {done === "copied" && <span className="ok-text">Copied. Paste it into Discord.</span>}
+      {done === "failed" && <span className="bad">Couldn't copy here. Select the text below instead.</span>}
+      {done === "failed" && <textarea className="share-text" readOnly value={text} rows={7} />}
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { CharacterForm, type Character } from "../../components/CharacterForm";
 import { Field } from "../../components/Field";
 import { DAWNIUM_REFRESH_COSTS, getRule } from "../../data/seasons";
@@ -22,6 +22,9 @@ import { findProblems } from "./validate";
 import { GoatCard } from "../../components/SillyGoat";
 import { ScreenshotImport } from "./ScreenshotImport";
 import { GoalPlanBox } from "./GoalPlanBox";
+import { shareText } from "./shareText";
+import { ProgressLog, addSnapshot, type Snapshot } from "./ProgressLog";
+import { usePersistentState } from "../../lib/storage";
 import { pactGoalHint } from "./AstralPact";
 import { applyFound } from "./fromScreens";
 
@@ -94,6 +97,22 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
   const rule = getRule(season);
   const table = getSeason(season);
   const set = <K extends keyof PlannerForm>(key: K, value: PlannerForm[K]) => onChange({ ...form, [key]: value });
+  // Season progress: logged after each fill from screenshots (once the new numbers are worked out), or by hand.
+  const [progress, setProgress] = usePersistentState<{ entries: Snapshot[] }>("sxs.progress", { entries: [] });
+  const [logPending, setLogPending] = useState(false);
+  const logNow = () => {
+    if (!result) return;
+    setProgress({
+      entries: addSnapshot(progress.entries, { at: new Date().toISOString(), season: result.rule.season, points: result.scoreNow, level: result.levelNow }),
+    });
+  };
+  useEffect(() => {
+    if (logPending && result) {
+      setLogPending(false);
+      logNow();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logPending, result]);
   const full = form.mode === "full";
   const floor = rule?.floor ?? 0;
   const caps = result?.caps;
@@ -149,6 +168,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
             const next = applyFound(found, character, form);
             onCharacterChange(next.character);
             onChange(next.form);
+            setLogPending(true);
           }}
         />
 
@@ -672,10 +692,16 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
             )}
           </Card>
         </div>
+        <ProgressLog result={result} log={progress.entries} onLog={logNow} onClear={() => setProgress({ entries: [] })} />
       </div>
 
       <aside className="planner-summary" id="summary">
-        {silly ? <GoatCard messages={problems.messages} outlined={Object.values(problems.slots).some((x) => x.size > 0)} /> : <Summary result={result} now={now} onPickGoal={(stars) => set("primostarGoal", String(stars))} />}
+        {silly ? <GoatCard messages={problems.messages} outlined={Object.values(problems.slots).some((x) => x.size > 0)} /> : <Summary
+            result={result}
+            now={now}
+            onPickGoal={(stars) => set("primostarGoal", String(stars))}
+            share={result ? shareText(result, form, character.level) : undefined}
+          />}
       </aside>
 
       {silly ? (

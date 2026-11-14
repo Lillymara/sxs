@@ -1013,3 +1013,38 @@ button.wheel-hub:disabled { cursor: progress; }
 /* Level Timer: the screenshot reader spans both columns. */
 .layout > .shot-card { grid-column: 1 / -1; }
 .layout > .shot-open { grid-column: 1 / -1; justify-self: start; }
+
+/* Footer links: install as an app, what's new. */
+.footer-links { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: baseline; }
+.footer-links a { color: var(--accent); }
+.install-app { display: inline-flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+.install-help { color: var(--text); }
+.share-row { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 10px 0 2px; font-size: 0.82rem; }
+.share-text { width: 100%; font: inherit; font-size: 0.78rem; background: var(--surface-2); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
+
+/* Season progress log. */
+.progress-log { margin-top: 16px; display: grid; gap: 8px; }
+.progress-log .hint, .progress-log .note { margin: 0; }
+.progress-chart { width: 100%; max-width: 560px; height: auto; }
+.progress-chart .axis { stroke: var(--line); stroke-width: 1; }
+.progress-chart .pace { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.progress-chart .actual { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; }
+.progress-chart .dot { fill: var(--accent); }
+.progress-chart .label { fill: var(--muted); font-size: 9px; }
+.progress-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 0.84rem; }
+.progress-list li { display: grid; grid-template-columns: 5em 5em 1fr; gap: 8px; }
+.progress-list b { text-align: right; }
+.progress-log .link-button { justify-self: start; }
+
+/* Upgrade costs page. */
+.cost-steps { margin-top: 12px; font-size: 0.84rem; }
+.cost-steps summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+.cost-steps ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; max-height: 320px; overflow: auto; }
+.cost-steps li { display: grid; grid-template-columns: 5em 1fr; gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.costs .fields { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+
+/* Season Prep and What's New. */
+.prep-end { font-size: 1.05rem; margin: 4px 0 10px; }
+.prep-timeline { margin: 0; padding-left: 1.2rem; display: grid; gap: 6px; font-size: 0.9rem; }
+.change-list { margin: 0; padding-left: 1.2rem; display: grid; gap: 6px; }
+.change-list a { color: var(--accent); white-space: nowrap; }
