@@ -1,15 +1,15 @@
 :root {
-  /* Midnight background with Indigo accent; src/lib/theme.ts overrides these with the saved choice. */
-  --bg: #0c0f1c;
-  --surface: #141829;
-  --surface-2: #1b2036;
-  --text: #e9ebf5;
-  --muted: #9399b5;
-  --line: #262c45;
-  --accent: #8b85ff;
-  --accent-2: #3dd4e4;
-  --accent-soft: #232650;
-  --on-accent: #0c0f1c;
+  /* Pure Black background with Copper accent (the defaults); src/lib/theme.ts overrides these with the saved choice. */
+  --bg: #000000;
+  --surface: #000000;
+  --surface-2: #0d0d0d;
+  --text: #ededed;
+  --muted: #8f8f8f;
+  --line: #2a2a2a;
+  --accent: #e6a072;
+  --accent-2: #f2c29b;
+  --accent-soft: #2e1e14;
+  --on-accent: #000000;
   --error: #ff7d93;
   --radius: 18px;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -16px rgb(0 0 0 / 0.6);

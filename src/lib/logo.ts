@@ -1,10 +1,10 @@
 // The site's logo: a plus sign splitting a tile into four, with a class in each quarter
 // (Knight shield, Sorcerer star, Sage book, Duelist daggers). Coloured by the theme's accents.
 
-/** The logo as SVG markup. `a`/`b` are the gradient's two colours (CSS colours or var(...)). */
-export function logoSvg(a: string, b: string, id = "lmlogo", size?: number): string {
+/** The logo as SVG markup. `a`/`b` are the gradient's two colours and `fg` the symbols' colour (CSS colours or var(...)). */
+export function logoSvg(a: string, b: string, id = "lmlogo", size?: number, fg = "#fff"): string {
   const dims = size ? ` width="${size}" height="${size}"` : "";
-  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"${dims} aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:${a}"/><stop offset="1" style="stop-color:${b}"/></linearGradient></defs>${BODY.replace(/ID/g, id)}</svg>`;
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"${dims} aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:${a}"/><stop offset="1" style="stop-color:${b}"/></linearGradient></defs>${BODY.replace(/ID/g, id).replace(/#fff/g, fg)}</svg>`;
 }
 
 const BODY = `<rect width="100" height="100" rx="24" fill="url(#ID)"/>

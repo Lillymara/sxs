@@ -9,7 +9,7 @@ export function Logo({ size = 34, className = "brand-mark" }: { size?: number; c
     <span
       className={`logo ${className}`}
       style={{ width: size, height: size }}
-      dangerouslySetInnerHTML={{ __html: logoSvg("var(--accent)", "var(--accent-2)", id) }}
+      dangerouslySetInnerHTML={{ __html: logoSvg("var(--accent)", "var(--accent-2)", id, undefined, "var(--on-accent)") }}
     />
   );
 }

@@ -61,8 +61,8 @@ export const BACKGROUNDS: BackgroundTheme[] = [
 
 /** "system" follows the device: Daylight when it's in light mode, Midnight in dark mode. */
 export const SYSTEM_BACKGROUND = "system";
-export const DEFAULT_ACCENT = "indigo";
-export const DEFAULT_BACKGROUND = "midnight";
+export const DEFAULT_ACCENT = "copper";
+export const DEFAULT_BACKGROUND = "black";
 
 const ACCENT_KEY = "sxs.accent";
 const BACKGROUND_KEY = "sxs.background";
@@ -144,7 +144,7 @@ function paint() {
   const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
   if (icon) {
     icon.type = "image/svg+xml";
-    icon.href = `data:image/svg+xml,${encodeURIComponent(logoSvg(a1, a2, "fav"))}`;
+    icon.href = `data:image/svg+xml,${encodeURIComponent(logoSvg(a1, a2, "fav", undefined, vars["--on-accent"]))}`;
   }
 }
 
