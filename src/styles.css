@@ -1009,3 +1009,7 @@ button.wheel-hub:disabled { cursor: progress; }
 }
 .save-next { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
 .save-next em.chip { font-style: normal; margin-left: 6px; font-size: 0.66rem; padding: 2px 7px; vertical-align: 1px; }
+
+/* Level Timer: the screenshot reader spans both columns. */
+.layout > .shot-card { grid-column: 1 / -1; }
+.layout > .shot-open { grid-column: 1 / -1; justify-self: start; }

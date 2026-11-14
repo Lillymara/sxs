@@ -236,7 +236,7 @@ const WHERE: { what: ReactNode; where: ReactNode; does: ReactNode }[] = [
     where: "On a phone: the bar fixed at the bottom of the screen (+N Primostars)",
     does: "Scrolls down to the results.",
   },
-  { what: <a href="#/">Level Timer</a>, where: "Top menu, under Plan", does: "When you'll reach your next level, with bed boosts and Temporal Crystals." },
+  { what: <a href="#/">Level Timer</a>, where: "Top menu, under Plan", does: "When you'll reach your next level, with bed boosts and Temporal Crystals. It has its own Fill from screenshots (Character and Bed only), and shares your character with the planner." },
 ];
 
 const QUICK = [

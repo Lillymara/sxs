@@ -9,6 +9,8 @@ import { RESET_UTC_HOUR } from "./data/calendar";
 import { DEFAULT_SERVER, effectiveDay1, localResetTime, type ServerChoice } from "./pages/calendar/server";
 import { DEFAULT_PLANNER, toPlannerInput, type PlannerForm, type TimeDefaults } from "./pages/planner/form";
 import { PlannerPage } from "./pages/planner/PlannerPage";
+import { ScreenshotImport } from "./pages/planner/ScreenshotImport";
+import { applyFound } from "./pages/planner/fromScreens";
 import { ColorChooser } from "./components/ColorChooser";
 import type { ToolProps } from "./pages/tools/props";
 
@@ -227,6 +229,11 @@ export default function App() {
         </main>
       ) : page === "timer" ? (
         <main className="layout">
+          <ScreenshotImport
+            scope="timer"
+            season={Number(character.season) || 1}
+            onApply={(found) => setCharacter(applyFound(found, character, planner).character)}
+          />
           <CharacterForm
             character={character}
             onChange={setCharacter}

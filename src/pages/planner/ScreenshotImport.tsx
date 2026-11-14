@@ -67,7 +67,20 @@ const GUIDE = [
 
 type Status = { file: string; state: "waiting" | "reading" | "done" | "failed"; read?: ScreenRead };
 
-export function ScreenshotImport({ season, onApply }: { season: number; onApply: (found: Found) => void }) {
+/**
+ * Where the reader is used. The Level Timer only needs the Character and Bed screens and the four
+ * character values; the planner uses all five screens.
+ */
+export type ImportScope = "planner" | "timer";
+const TIMER_SCREENS = ["character", "bed"];
+
+export function ScreenshotImport({ season, onApply, scope = "planner" }: { season: number; onApply: (found: Found) => void; scope?: ImportScope }) {
+  const timer = scope === "timer";
+  const guide = timer
+    ? GUIDE.filter((g) => TIMER_SCREENS.includes(g.key)).map((g) => (g.key === "character" ? { ...g, fills: "level and EXP into the level." } : g))
+    : GUIDE;
+  const target = timer ? "the Level Timer" : "the planner";
+  const fillLabel = timer ? "Fill the Level Timer" : "Fill the planner";
   const [open, setOpen] = useState(false);
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [found, setFound] = useState<Found | null>(null);
@@ -151,7 +164,9 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
     return pieces.reduce((a, v) => a + v - rule.floor, 0) !== total;
   })();
   const count = found
-    ? [found.season, found.level, found.xp, found.rate, found.gearPieces, ...Object.values(found.cart), ...Object.values(found.levels), ...Object.values(found.have ?? {}), found.refinedOre, ...Object.values(found.tools ?? {})].filter((v) => v !== undefined).length
+    ? timer
+      ? [found.season, found.level, found.xp, found.rate].filter((v) => v !== undefined).length
+      : [found.season, found.level, found.xp, found.rate, found.gearPieces, ...Object.values(found.cart), ...Object.values(found.levels), ...Object.values(found.have ?? {}), found.refinedOre, ...Object.values(found.tools ?? {})].filter((v) => v !== undefined).length
     : 0;
 
   return (
@@ -166,13 +181,14 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
       </div>
       <p className="hint">
         Take screenshots of the screens below in the game, then pick them here. They're read on your device and never uploaded, and you check
-        everything before it goes into the planner.
+        everything before it goes into {target}.
+        {timer && <> The Season Planner gets the same character numbers.</>}
       </p>
 
       <details className="shot-guide" open={statuses.length === 0}>
         <summary>How to take the screenshots</summary>
         <ol className="shot-steps">
-          {GUIDE.map((g, i) => (
+          {guide.map((g, i) => (
             <li key={g.key} className="shot-step">
               <a href={example(g.img)} target="_blank" rel="noreferrer" className="shot-thumb" title="Open the full example">
                 <img src={example(g.img)} alt={`Example ${g.title} screenshot, with the part that's read outlined`} loading="lazy" />
@@ -250,21 +266,28 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
         </ul>
       )}
 
+      {timer && statuses.some((st) => st.read && st.read.kind !== "unknown" && !TIMER_SCREENS.includes(st.read.kind)) && (
+        <p className="hint">
+          Cart, Season and Backpack screenshots aren't needed here. Use them in the <a href="#/planner">Season Planner</a>.
+        </p>
+      )}
       {found && !busy && (
         <div className="shot-review">
           <h3 className="subhead">Check what was found ({count})</h3>
           {count > 0 && (
             <div className="shot-apply-top">
-              <p className="hint">Nothing goes into the planner until you tap Fill the planner. Check the boxes below first, or fill now.</p>
+              <p className="hint">
+                Nothing goes into {target} until you tap {fillLabel}. Check the boxes below first, or fill now.
+              </p>
               <button type="button" className="spin-button" onClick={apply}>
-                Fill the planner
+                {fillLabel}
               </button>
             </div>
           )}
           {(() => {
             // A Backpack was read, but some materials weren't on it: usually they're further down the list.
             const bagRead = statuses.some((st) => st.read?.kind === "backpack");
-            if (!bagRead) return null;
+            if (!bagRead || timer) return null;
             const missing = [
               ...(["ore", "essence", "sand", "treats"] as const).filter((k) => found.have?.[k] === undefined).map((k) => CART_LABELS[k]),
               ...(["ore", "rola", "essence", "sand"] as const).filter((k) => found.tools?.[k] === undefined).map((k) => TOOL_LABELS[k]),
@@ -286,6 +309,8 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
                 {field("Level", found.level, (v) => setFound({ ...found, level: v }))}
                 {field("EXP into level", found.xp, (v) => setFound({ ...found, xp: v }))}
                 {field("EXP per hour", found.rate, (v) => setFound({ ...found, rate: v }))}
+                {!timer && (
+                  <>
                 {CART_KEYS.map((k) => field(`Cart ${CART_LABELS[k]} / hr`, found.cart[k], (v) => setFound({ ...found, cart: { ...found.cart, [k]: v } })))}
                 {field(
                   "Gear pieces",
@@ -316,10 +341,12 @@ export function ScreenshotImport({ season, onApply }: { season: number; onApply:
                     "Total above the floor, spread evenly over slots",
                   ),
                 )}
+                  </>
+                )}
               </div>
               <p className="hint">Blank fields are left as they are. Edit anything that was misread.</p>
               <button type="button" className="spin-button" onClick={apply}>
-                Fill the planner
+                {fillLabel}
               </button>
             </>
           )}
