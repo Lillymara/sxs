@@ -119,17 +119,17 @@ export function CalendarPage({ choice, onChange, now }: Props) {
       {status && day1 ? (
         <>
           <section className="status-grid" aria-label="Server status">
-            <div className="card tile">
+            <div className="card status-tile">
               <p className="eyebrow">{choice.name || "Your server"}</p>
               <p className="tile-big">{status.day > 0 ? `Day ${status.day}` : "Not open"}</p>
               <p className="eta">Day 1: {fmtDate(day1, { month: "short", day: "numeric", year: "numeric" })}</p>
             </div>
-            <div className="card tile">
+            <div className="card status-tile">
               <p className="eyebrow">Season</p>
               <p className="tile-big">S{status.season.number}</p>
               <p className="eta">{status.season.name} · day {status.dayOfSeason}</p>
             </div>
-            <div className="card tile">
+            <div className="card status-tile">
               <p className="eyebrow">Season ends</p>
               <p className="tile-big small">{status.seasonEnds ? fmtDate(status.seasonEnds, { month: "short", day: "numeric" }) : "Not confirmed"}</p>
               <p className="eta">
@@ -138,7 +138,7 @@ export function CalendarPage({ choice, onChange, now }: Props) {
                   : "No later season date yet"}
               </p>
             </div>
-            <div className="card tile">
+            <div className="card status-tile">
               <p className="eyebrow">Next up</p>
               <p className="tile-big small">{next ? relative(daysUntil(next.date)).replace(/^./, (c) => c.toUpperCase()) : "—"}</p>
               <p className="eta">{next ? `Day ${next.serverDay} · ${next.title}` : ""}</p>
