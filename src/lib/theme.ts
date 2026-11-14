@@ -1,3 +1,4 @@
+import { logoSvg } from "./logo";
 /** Accent colors and background schemes. Indigo on Midnight is the default. */
 export interface AccentTheme {
   id: string;
@@ -139,6 +140,12 @@ function paint() {
   root.dataset.accent = accent.id;
   root.dataset.background = bg.id;
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", bg.bg);
+  // The browser-tab icon is the logo in this theme's colours.
+  const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+  if (icon) {
+    icon.type = "image/svg+xml";
+    icon.href = `data:image/svg+xml,${encodeURIComponent(logoSvg(a1, a2, "fav"))}`;
+  }
 }
 
 export function applyAccent(id: string) {

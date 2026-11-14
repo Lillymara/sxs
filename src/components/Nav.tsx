@@ -2,6 +2,7 @@
 // "More" sheet listing everything.
 import { useEffect, useState, type ReactNode } from "react";
 import { Icon, type IconName } from "./Icon";
+import { Logo } from "./Logo";
 
 export interface NavPage {
   id: string;
@@ -19,7 +20,7 @@ const TAB_BAR = ["home", "timer", "planner", "calendar"];
 export function Brand() {
   return (
     <a className="brand" href="#/">
-      <img className="brand-mark" src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" width={34} height={34} />
+      <Logo size={34} />
       <span>
         SxS Tools
         <small>by LM Things</small>
