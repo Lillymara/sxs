@@ -26,7 +26,6 @@ const CompanionsPage = lazy(() => import("./pages/tools/CompanionsPage").then((m
 const SpendingPage = lazy(() => import("./pages/tools/SpendingPage").then((m) => ({ default: m.SpendingPage })));
 const DawniumPage = lazy(() => import("./pages/tools/DawniumPage").then((m) => ({ default: m.DawniumPage })));
 const PlannerGuidePage = lazy(() => import("./pages/tools/PlannerGuidePage").then((m) => ({ default: m.PlannerGuidePage })));
-const CostsPage = lazy(() => import("./pages/tools/CostsPage").then((m) => ({ default: m.CostsPage })));
 const PrepPage = lazy(() => import("./pages/tools/PrepPage").then((m) => ({ default: m.PrepPage })));
 const ChangesPage = lazy(() => import("./pages/tools/ChangesPage").then((m) => ({ default: m.ChangesPage })));
 const WorldMapPage = lazy(() => import("./pages/tools/WorldMapPage").then((m) => ({ default: m.WorldMapPage })));
@@ -40,7 +39,6 @@ const SIMPLE_PAGES = {
   spending: SpendingPage,
   dawnium: DawniumPage,
   guide: PlannerGuidePage,
-  costs: CostsPage,
   prep: PrepPage,
   changes: ChangesPage,
 };
@@ -64,7 +62,6 @@ const PAGES: { id: Page; group: Group; label: string; icon: IconName; blurb: str
   { id: "timer", group: "Plan", label: "Level Timer", icon: "timer", blurb: "When you'll reach your next level", title: "Level Timer", lede: "Enter your character and XP rate to see when you'll reach your next level." },
   { id: "planner", group: "Plan", label: "Season Planner", icon: "planner", blurb: "Primostars, upgrades and materials for the season", title: "Season Planner", lede: "Plan your season's Primostars, upgrades and materials, from now until the season ends.", wide: true },
   { id: "calendar", group: "Plan", label: "Server Calendar", icon: "calendar", blurb: "Your server's seasons, dungeons and events", title: "Server Calendar", lede: "Your server's day, season dates, dungeon releases, weekly events and their rewards." },
-  { id: "costs", group: "Plan", label: "Upgrade Costs", icon: "costs", blurb: "What any level range costs", title: "Upgrade Costs", lede: "What it takes to raise gear, skills, Fantomons or relics from one level to another.", wide: true },
   { id: "conversion", group: "Plan", label: "Class Change", icon: "conversion", blurb: "What your skills become in a new class", title: "Skills Conversion", lede: "See what each of your skills can turn into when you change class.", wide: true, hidden: true },
   { id: "fantomons", group: "Info", label: "Fantomons", icon: "fantomons", blurb: "Stats, forms and abilities", title: "Fantomons", lede: "Every Fantomon's stats, baby and adult forms, and abilities at any grade and level.", wide: true },
   { id: "companions", group: "Info", label: "Companions", icon: "companions", blurb: "Bonuses, gifts and best classes", title: "Companions", lede: "Companion stat bonuses by friendship level, favorite gifts, unlocks and the classes they suit.", wide: true },

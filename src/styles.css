@@ -1036,12 +1036,6 @@ button.wheel-hub:disabled { cursor: progress; }
 .progress-list b { text-align: right; }
 .progress-log .link-button { justify-self: start; }
 
-/* Upgrade costs page. */
-.cost-steps { margin-top: 12px; font-size: 0.84rem; }
-.cost-steps summary { cursor: pointer; color: var(--accent); font-weight: 600; }
-.cost-steps ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; max-height: 320px; overflow: auto; }
-.cost-steps li { display: grid; grid-template-columns: 5em 1fr; gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--line); }
-.costs .fields { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 
 /* Season Prep and What's New. */
 .prep-end { font-size: 1.05rem; margin: 4px 0 10px; }
