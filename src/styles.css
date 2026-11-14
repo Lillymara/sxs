@@ -48,10 +48,7 @@ h1 { margin: 6px 0 8px; font-size: clamp(1.9rem, 5vw, 2.6rem); line-height: 1.1;
 .lede { margin: 0; color: var(--muted); max-width: 60ch; font-size: 1.02rem; }
 
 .layout { display: grid; gap: 16px; }
-@media (min-width: 800px) {
-  .layout { grid-template-columns: 1fr 1fr; align-items: start; }
-  .results { position: sticky; top: 84px; }
-}
+
 
 .card {
   background: var(--surface);
@@ -1301,10 +1298,10 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
   .ring-fill, .primo-season, .covered > span { transition: none; }
 }
 
-/* Timer results go first on narrow screens, so they're seen without scrolling past the form. */
-@media (min-width: 800px) {
-  .layout > .results { grid-column: 2; grid-row: 2; }
-}
 @container planner (min-width: 980px) {
   .planner:not(:has(> .planner-summary)) { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Game item and system icons, sized to the text they sit in. */
+.game-icon { width: 1.35em; height: 1.35em; object-fit: contain; vertical-align: -0.32em; flex: none; filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.35)); }
+.proj-label .game-icon { width: 1.2em; height: 1.2em; vertical-align: -0.25em; }

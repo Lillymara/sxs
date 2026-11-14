@@ -1,5 +1,6 @@
 // Home: what the site is, the player's own numbers at a glance, the season clock, and every tool.
 import { Icon, type IconName } from "../components/Icon";
+import { GameIcon } from "../components/GameIcon";
 import { hrefOf } from "../components/Nav";
 import type { PlannerResult } from "../lib/planner/plan";
 import { formatDuration, type CalcOutcome } from "../lib/xp";
@@ -82,7 +83,7 @@ export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
               </li>
               {plan && (
                 <li>
-                  <span>Primostars by season end</span>
+                  <span><GameIcon name="primostar" /> Primostars by season end</span>
                   <b>
                     {fmt(plan.score.projectedTotal)}
                     {plan.score.goal > 0 && <small> / {fmt(plan.score.goal)} goal</small>}

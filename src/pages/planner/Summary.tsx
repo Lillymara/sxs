@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { GameIcon } from "../../components/GameIcon";
 import type { PlannerResult } from "../../lib/planner/plan";
 import { formatXpShort } from "../../lib/xp";
 import { AstralPactSummary } from "./AstralPact";
@@ -6,7 +7,6 @@ import { PrimoBar } from "./PrimoBar";
 import { CountUp } from "../../components/CountUp";
 
 const fmt = (x: number) => Math.round(x).toLocaleString();
-const ICONS: Record<string, string> = { character: "🛏️", gear: "⚔️", skill: "✨", fantomon: "🐾", relic: "💎" };
 const short = (x: number) => formatXpShort(Math.round(x));
 const when = (d: Date | null, now: Date) =>
   d === null
@@ -41,7 +41,7 @@ export function Summary({
           <CountUp text={`+${fmt(score.earned)}`} />
         </span>
         <span className="proj-label">
-          Primostars
+          <span><GameIcon name="primostar" /> Primostars</span>
           <small>a floor, not a forecast</small>
         </span>
       </div>
@@ -65,7 +65,7 @@ export function Summary({
         {score.categories.map((c) => (
           <li key={c.key}>
             <span>
-              <span aria-hidden>{ICONS[c.key]}</span> {c.label}
+              <GameIcon name={c.key} /> {c.label}
             </span>
             <span className="proj-lv">{c.key === "character" ? c.seasonLevels.toFixed(1) : fmt(c.seasonLevels)} lv</span>
             <span className="proj-pts">{fmt(c.points)} pts</span>
@@ -119,7 +119,7 @@ export function Summary({
             {materials.map((m) => (
               <tr key={m.key}>
                 <th scope="row">
-                  {m.label.replace(" (White eq.)", "")}
+                  <GameIcon name={m.key} /> {m.label.replace(" (White eq.)", "")}
                   <Covered have={m.passive + m.fromRealm + m.fromShop} need={m.need} />
                 </th>
                 <td>{m.unknownCost ? `${short(m.need)}+?` : short(m.need)}</td>
@@ -132,7 +132,7 @@ export function Summary({
             {result.refinedOre.need > 0 && (
               <tr>
                 <th scope="row">
-                  Refined Ore
+                  <GameIcon name="refinedOre" /> Refined Ore
                   <Covered have={result.refinedOre.have + result.refinedOre.gathered} need={result.refinedOre.need} />
                 </th>
                 <td>{short(result.refinedOre.need)}</td>

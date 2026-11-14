@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { GameIcon } from "../../components/GameIcon";
 import { CharacterForm, type Character } from "../../components/CharacterForm";
 import { Field } from "../../components/Field";
 import { DAWNIUM_REFRESH_COSTS, getRule } from "../../data/seasons";
@@ -82,7 +83,7 @@ function Card({
   onStep,
   children,
 }: {
-  icon: string;
+  icon: ReactNode;
   title: string;
   aside?: ReactNode;
   wide?: boolean;
@@ -238,7 +239,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
           ))}
         </nav>
         <div className="planner-cards">
-          <Card icon="🎯" title="Season & goal" step="goal" current={step} onStep={goStep}>
+          <Card icon={<GameIcon name="primostar" />} title="Season & goal" step="goal" current={step} onStep={goStep}>
             <div className="fields">
               <Field label="Primostars you have" value={form.primostarsNow} onChange={(v) => set("primostarsNow", v)} placeholder="0" />
               <Field
@@ -319,7 +320,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
             )}
           </Card>
 
-          <Card icon="🛏️" title="Character EXP" step="character" current={step} onStep={goStep}>
+          <Card icon={<GameIcon name="character" />} title="Character EXP" step="character" current={step} onStep={goStep}>
             {server && server.season !== season && server.season <= 5 && (
               <p className="note warn">
                 {server.name || "Your server"} is in Season {server.season}.{" "}
@@ -390,7 +391,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                   <div key={s.field} className="system-block">
                     <div className="system-head">
                       <h3>
-                        <span aria-hidden>{s.icon}</span> {s.label} <small>· {s.material}</small>
+                        <GameIcon name={s.key} /> {s.label} <small>· {s.material}</small>
                       </h3>
                       {rule && <span className="chip">+{rule.weights[s.key]} pts / lv</span>}
                     </div>
@@ -435,7 +436,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                     <div key={s.field} className="simple-row">
                       <span className="simple-name">
                         <b>
-                          <span aria-hidden>{s.icon}</span> {s.label}
+                          <GameIcon name={s.key} /> {s.label}
                         </b>
                         {rule && <small>+{rule.weights[s.key]} pts / lv</small>}
                         {capOf(s.key) != null && <small>Cap {prefix}{capOf(s.key)}</small>}
@@ -474,7 +475,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
             )}
           </Card>
 
-          <Card icon="🛒" title="Cart income" step="materials" current={step} onStep={goStep}>
+          <Card icon={<GameIcon name="rola" />} title="Cart income" step="materials" current={step} onStep={goStep}>
             <p className="hint">What your Cart makes an hour, in the order the Cart screen lists it, and how much you already have.</p>
             {full ? (
               <div className="table-wrap flat">
@@ -490,7 +491,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                   <tbody>
                     {CART_ORDER.map((k) => (
                       <tr key={k}>
-                        <th scope="row">{MATERIAL_LABELS[k]}</th>
+                        <th scope="row"><GameIcon name={k} /> {MATERIAL_LABELS[k]}</th>
                         {(["cartPerHour", "have", "perDay"] as const).map((col) => (
                           <td key={col}>
                             <input
@@ -517,7 +518,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                   const name = MATERIAL_LABELS[k].replace(" (White eq.)", "");
                   return (
                     <div key={k} className="cart-row">
-                      <span>{name}</span>
+                      <span><GameIcon name={k} /> {name}</span>
                       <input
                         aria-label={`${name} Cart per hour`}
                         value={form.income[k].cartPerHour}
@@ -558,7 +559,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
             <div className="realm-picks">
               {REALM_MATERIALS.map((k) => (
                 <label key={k} className="field">
-                  <span>{MATERIAL_LABELS[k].replace(" (White eq.)", "")}</span>
+                  <span><GameIcon name={k} /> {MATERIAL_LABELS[k].replace(" (White eq.)", "")}</span>
                   <select value={form.refreshes[k] || "0"} onChange={(e) => set("refreshes", { ...form.refreshes, [k]: e.target.value })}>
                     {Array.from({ length: 11 }, (_, n) => (
                       <option key={n} value={n}>
@@ -707,7 +708,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                     <tbody>
                       {(["rola", "ore", "sand", "essence"] as const).map((k) => (
                         <tr key={k}>
-                          <th scope="row">{MATERIAL_LABELS[k].replace(" (White eq.)", "")}</th>
+                          <th scope="row"><GameIcon name={k} /> {MATERIAL_LABELS[k].replace(" (White eq.)", "")}</th>
                           <td>
                             <input aria-label={`${k} stamina percent`} value={form.staminaSplit[k] ?? ""} onChange={(e) => set("staminaSplit", { ...form.staminaSplit, [k]: e.target.value })} placeholder="0" />
                           </td>

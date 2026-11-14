@@ -1,5 +1,6 @@
 // "Plan my goal": shows the cheapest route to the Primostar goal across every system and fills it in.
 import type { PlannerResult } from "../../lib/planner/plan";
+import { GameIcon } from "../../components/GameIcon";
 import type { Spend } from "../../lib/planner/optimize";
 import type { SlotCategory } from "../../lib/planner/score";
 import { formatXpShort } from "../../lib/xp";
@@ -74,7 +75,7 @@ export function GoalPlanBox({
         <ul className="goal-plan-list">
           {changed.map((k) => (
             <li key={k}>
-              <span>{SYSTEM_LABELS[k]}</span>
+              <span><GameIcon name={k} /> {SYSTEM_LABELS[k]}</span>
               <span>
                 {range(current[k], k === "relic")} → <b>{range(plan.planned[k], k === "relic")}</b>
               </span>
