@@ -11,7 +11,6 @@ export const CHANGES: { date: string; items: { text: string; href?: string }[] }
       { text: "Level Timer: fill it from your Character and Bed screenshots.", href: "/timer" },
       { text: "Season Planner: copy your plan as a message for Discord.", href: "/planner" },
       { text: "Season Planner: a season progress log that shows whether you're keeping pace with your goal.", href: "/planner" },
-      { text: "New Season Prep page: what to do as a season ends, timed for your server.", href: "/prep" },
     ],
   },
   {

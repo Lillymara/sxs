@@ -118,9 +118,6 @@ export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
                   <span style={{ width: `${Math.round(Math.min(1, server.dayOfSeason / server.seasonDays) * 100)}%` }} />
                 </span>
               )}
-              <a className="hero-link" href={hrefOf("prep")}>
-                Getting ready for next season →
-              </a>
             </>
           ) : (
             <div className="glance-empty">
