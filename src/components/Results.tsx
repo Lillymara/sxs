@@ -16,28 +16,8 @@ const fmt = (n: number) => Math.ceil(n).toLocaleString();
 const RELIABLE_LEVELS = 5;
 
 export function Results({ character, outcome, now }: Props) {
-  if (!outcome) {
-    return (
-      <section className="card results empty" aria-live="polite">
-        <div className="example" aria-hidden>
-          <span className="example-chip">Example</span>
-          <div className="timer-head">
-            <ProgressRing value={0.65}>
-              <small>Level</small>
-              <b>117</b>
-              <small>65% there</small>
-            </ProgressRing>
-            <div className="timer-text">
-              <p className="eyebrow">Level 117</p>
-              <p className="big-time">6h 46m</p>
-              <p className="eta">Around tonight, 11:46 PM</p>
-            </div>
-          </div>
-        </div>
-        <p>Fill in your level and XP rate (or use Fill from screenshots) to see your own next level-up time.</p>
-      </section>
-    );
-  }
+  // Nothing to show until the form is filled in: no placeholder box taking up the top of the page.
+  if (!outcome) return null;
 
   if (!outcome.ok) {
     return (

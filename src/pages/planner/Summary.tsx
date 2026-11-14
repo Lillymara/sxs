@@ -27,25 +27,7 @@ export function Summary({
   /** The plan as a message for Discord. */
   share?: string;
 }) {
-  if (!result) {
-    return (
-      <section className="card results empty">
-        <div className="example" aria-hidden>
-          <span className="example-chip">Example</span>
-          <p className="eyebrow">Season 1 projection</p>
-          <div className="proj-big">
-            <span className="proj-num">+154</span>
-            <span className="proj-label">
-              Primostars
-              <small>a floor, not a forecast</small>
-            </span>
-          </div>
-          <PrimoBar have={150} projected={304} goal={320} />
-        </div>
-        <p>Enter your season and character level, or use Fill from screenshots, to see your own plan.</p>
-      </section>
-    );
-  }
+  if (!result) return null;
 
   const { score, costs, materials, rule } = result;
   const goalSet = score.goal > 0;

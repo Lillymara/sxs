@@ -250,6 +250,7 @@ page in SIMPLE_PAGES ? (
             season={Number(character.season) || 1}
             onApply={(found) => setCharacter(applyFound(found, character, planner).character)}
           />
+          <Results character={character} outcome={outcome} now={now} />
           <CharacterForm
             character={character}
             onChange={setCharacter}
@@ -264,7 +265,6 @@ page in SIMPLE_PAGES ? (
               </>
             }
           />
-          <Results character={character} outcome={outcome} now={now} />
         </main>
       ) : (
         <main>

@@ -120,7 +120,7 @@ function Card({
             e.preventDefault();
             document.getElementById("summary")?.scrollIntoView({ behavior: "smooth" });
           }}>
-            See my projection ↓
+            See my projection
           </a>
         )}
       </div>
@@ -760,14 +760,14 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
         <ProgressLog result={result} log={progress.entries} onLog={logNow} onClear={() => setProgress({ entries: [] })} />
       </div>
 
-      <aside className="planner-summary" id="summary">
+      {(silly || result) && <aside className="planner-summary" id="summary">
         {silly ? <GoatCard messages={problems.messages} outlined={Object.values(problems.slots).some((x) => x.size > 0)} /> : <Summary
             result={result}
             now={now}
             onPickGoal={(stars) => set("primostarGoal", String(stars))}
             share={result ? shareText(result, form, character.level) : undefined}
           />}
-      </aside>
+      </aside>}
 
       {silly ? (
         <a className="mobile-bar goat-bar" href="#summary" onClick={(e) => {

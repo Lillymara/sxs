@@ -101,7 +101,6 @@ input::placeholder { color: var(--muted); opacity: 0.75; }
 
 .link-button { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; }
 
-.results.empty { color: var(--muted); }
 .big-time {
   margin: 4px 0 0;
   font-size: clamp(2.25rem, 8vw, 3rem);
@@ -488,7 +487,8 @@ tr.dawn-cheap td { color: #4ade80; font-weight: 700; }
 .planner-summary th, .planner-summary td { padding: 5px 4px; }
 
 .mobile-bar { display: none; }
-@media (max-width: 999px) {
+/* Whenever the projection sits below the form (one column), a bar keeps its headline in view. */
+@container planner (max-width: 979px) {
   .planner { padding-bottom: 56px; }
   .mobile-bar {
     position: fixed;
@@ -1241,10 +1241,6 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
 .timer-text .big-time { margin: 2px 0; }
 @media (max-width: 420px) { .timer-head { gap: 14px; } .timer-head .ring { width: 108px !important; height: 108px !important; } .timer-head .ring svg { width: 108px; height: 108px; } }
 
-/* Empty cards show a faded example of what they'll look like. */
-.results.empty .example { position: relative; opacity: 0.38; filter: saturate(0.8); pointer-events: none; margin-bottom: 12px; }
-.example-chip { position: absolute; top: -4px; right: 0; z-index: 1; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: var(--accent); color: var(--on-accent); opacity: 1; }
-.results.empty p:last-child { margin: 0; color: var(--muted); }
 
 /* Primostar track in the projection panel. */
 .primo-bar { margin: 12px 0 6px; display: grid; gap: 8px; }
@@ -1303,4 +1299,12 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
 .spin-button:active, .fill-btn:active, .tile:active { transform: translateY(1px) scale(0.99); }
 @media (prefers-reduced-motion: reduce) {
   .ring-fill, .primo-season, .covered > span { transition: none; }
+}
+
+/* Timer results go first on narrow screens, so they're seen without scrolling past the form. */
+@media (min-width: 800px) {
+  .layout > .results { grid-column: 2; grid-row: 2; }
+}
+@container planner (min-width: 980px) {
+  .planner:not(:has(> .planner-summary)) { grid-template-columns: minmax(0, 1fr); }
 }

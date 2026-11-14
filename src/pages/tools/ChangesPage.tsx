@@ -8,6 +8,7 @@ export const CHANGES: { date: string; items: { text: string; href?: string }[] }
       { text: "Season Planner: a Primostar track showing what you have, what this season adds, your goal and every Astral Pact tier along the way.", href: "/planner" },
       { text: "Season Planner: bars under each material showing how much of your plan is covered, and on phones the planner goes step by step.", href: "/planner" },
       { text: "The planner fits better when your browser window is half a screen wide." },
+      { text: "No more empty result boxes: your level-up time shows at the top of the Level Timer as soon as it's filled in, and the planner's Primostar bar stays in view whenever the projection is below the form.", href: "/timer" },
     ],
   },
   {
