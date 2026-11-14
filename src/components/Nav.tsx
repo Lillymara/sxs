@@ -12,14 +12,14 @@ export interface NavPage {
   hidden?: boolean;
 }
 
-export const hrefOf = (id: string) => (id === "home" ? "#/" : `#/${id}`);
+export const hrefOf = (id: string) => (id === "home" ? "/" : `/${id}`);
 
 /** The tools in the phone tab bar; everything else is under More. */
 const TAB_BAR = ["home", "timer", "planner", "calendar"];
 
 export function Brand() {
   return (
-    <a className="brand" href="#/">
+    <a className="brand" href="/">
       <Logo size={34} />
       <span>
         SxS Tools

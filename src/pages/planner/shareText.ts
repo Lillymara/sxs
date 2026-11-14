@@ -1,10 +1,11 @@
 // "Copy for Discord": the plan as a short message, in Discord's markdown.
 import type { PlannerResult } from "../../lib/planner/plan";
+import { SITE_URL } from "../../data/site";
 import { REALM_MATERIALS } from "../../lib/planner/plan";
 import { formatXpShort } from "../../lib/xp";
 import type { PlannerForm, SlotForm } from "./form";
 
-const SITE = "https://sxs.lmthings.com/";
+const SITE = SITE_URL;
 const fmt = (x: number) => Math.round(x).toLocaleString("en-US");
 
 /** "125–126" or "140" from a list of slot levels. */

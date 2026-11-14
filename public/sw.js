@@ -3,7 +3,7 @@
 // new ?v=, which clears the previous deploy's saved files.
 const VERSION = new URL(self.location.href).searchParams.get("v") || "dev";
 const CACHE = `sxs-${VERSION}`;
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];
+const SHELL = ["/", "/index.html", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -32,10 +32,10 @@ self.addEventListener("fetch", (event) => {
       fetch(req)
         .then((res) => {
           const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put("./index.html", copy));
+          caches.open(CACHE).then((c) => c.put("/index.html", copy));
           return res;
         })
-        .catch(() => caches.match("./index.html")),
+        .catch(() => caches.match("/index.html")),
     );
     return;
   }

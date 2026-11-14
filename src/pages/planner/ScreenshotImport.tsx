@@ -268,7 +268,7 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
 
       {timer && statuses.some((st) => st.read && st.read.kind !== "unknown" && !TIMER_SCREENS.includes(st.read.kind)) && (
         <p className="hint">
-          Cart, Season and Backpack screenshots aren't needed here. Use them in the <a href="#/planner">Season Planner</a>.
+          Cart, Season and Backpack screenshots aren't needed here. Use them in the <a href="/planner">Season Planner</a>.
         </p>
       )}
       {found && !busy && (

@@ -16,17 +16,17 @@ const STEPS: { title: string; body: string; hoursBefore?: number; link?: { href:
   {
     title: "Aim for an Astral Pact tier",
     body: "Your season levels turn into Primostars when the season ends, and the Astral Pact's permanent bonuses unlock at set Primostar totals. Check which tier you'll land on and whether a little more gets you to the next one.",
-    link: { href: "#/planner", label: "Season Planner → See all bonuses" },
+    link: { href: "/planner", label: "Season Planner → See all bonuses" },
   },
   {
     title: "Finish your upgrades",
     body: "Season levels are scored at the end of the season, so an upgrade only counts if it's done before then. Use the planner to see what your materials can still reach.",
-    link: { href: "#/planner", label: "Season Planner → Plan my goal" },
+    link: { href: "/planner", label: "Season Planner → Plan my goal" },
   },
   {
     title: "Spend banked EXP before the reset",
     body: "EXP held behind an area's level cap carries over within a season, but it's lost when the season resets. If you have banked EXP, open the next area before the season ends.",
-    link: { href: "#/timer", label: "Level Timer" },
+    link: { href: "/timer", label: "Level Timer" },
   },
   {
     title: "Stop claiming the bed",
@@ -72,7 +72,7 @@ export function PrepPage({ choice, now }: ToolProps) {
           </>
         ) : (
           <p className="hint">
-            <a href="#/calendar">Pick your server</a> to see your season's end date and when to stop claiming the bed and the Cart.
+            <a href="/calendar">Pick your server</a> to see your season's end date and when to stop claiming the bed and the Cart.
           </p>
         )}
       </section>

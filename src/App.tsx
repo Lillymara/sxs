@@ -16,6 +16,8 @@ import { InstallApp } from "./components/InstallApp";
 import { Brand, Sidebar, TabBar } from "./components/Nav";
 import type { IconName } from "./components/Icon";
 import { HomePage } from "./pages/HomePage";
+import { currentPath, listen } from "./lib/router";
+import { DISCORD_URL } from "./data/site";
 import type { ToolProps } from "./pages/tools/props";
 
 // The calendar carries the 720-server roster, so it loads only when opened.
@@ -73,8 +75,8 @@ const PAGES: { id: Page; group: Group; label: string; icon: IconName; blurb: str
   { id: "dawnium", group: "Info", label: "Dawnium Guide", icon: "dawnium", blurb: "Where Dawnium does the most good", title: "Dawnium Guide", lede: "Where your Dawnium (and Rola) does the most good, and what to skip.", wide: true },
 ];
 
-const pageFromHash = (): Page => {
-  const id = window.location.hash.replace(/^#\//, "").replace(/\?.*$/, "");
+const pageFromPath = (): Page => {
+  const id = currentPath();
   return PAGES.some((p) => p.id === id) ? (id as Page) : "home";
 };
 
@@ -95,7 +97,7 @@ export default function App() {
   useEffect(() => {
     if (plannerFromBeforeCartSave) setPlanner((p) => ({ ...p, saveBed: true, saveCart: true, saveCartHours: p.saveCartHours || "36" }));
   }, [plannerFromBeforeCartSave, setPlanner]);
-  const [page, setPage] = useState<Page>(pageFromHash);
+  const [page, setPage] = useState<Page>(pageFromPath);
   const [now, setNow] = useState(() => new Date());
 
   // Keep ETAs current while the page is left open.
@@ -104,11 +106,7 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    const onHash = () => setPage(pageFromHash());
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
-  }, []);
+  useEffect(() => listen(() => setPage(pageFromPath())), []);
 
   const table = getSeason(Number(character.season));
   const level = num(character.level);
@@ -261,7 +259,7 @@ page in SIMPLE_PAGES ? (
               <>
                 Bed boosts are counted as used just after each daily reset:{" "}
                 <b>{resetLabel}</b>
-                {serverChoice.name ? <> ({serverChoice.name}).</> : <>. <a href="#/calendar">Pick your server</a> to see it in its time zone.</>}
+                {serverChoice.name ? <> ({serverChoice.name}).</> : <>. <a href="/calendar">Pick your server</a> to see it in its time zone.</>}
                 {" "}Every server resets at 13:00 UTC.
               </>
             }
@@ -291,12 +289,15 @@ page in SIMPLE_PAGES ? (
 
       <footer className="footer">
         <p className="footer-links">
-          <a href="#/changes">What's new</a>
-          <a href="#/guide">Planner guide</a>
+          <a href="/changes">What's new</a>
+          <a href="/guide">Planner guide</a>
+          <a href={DISCORD_URL} target="_blank" rel="noreferrer">
+            Discord: news, bug reports and ideas
+          </a>
         </p>
         <p>
           SxS Tools by LM Things (Lilly Mara's things). Unofficial fan tool, not affiliated with Boltray. Your inputs are saved only in this
-          browser.
+          browser. Page visits are counted anonymously (no cookies, nothing personal).
         </p>
       </footer>
       </div>
@@ -307,7 +308,10 @@ page in SIMPLE_PAGES ? (
         extra={
           <>
             <InstallApp />
-            <a href="#/changes">What's new</a>
+            <a href="/changes">What's new</a>
+            <a href={DISCORD_URL} target="_blank" rel="noreferrer">
+              Discord
+            </a>
           </>
         }
       />

@@ -1211,3 +1211,9 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
 .logo { display: inline-block; flex: none; line-height: 0; }
 .logo svg { width: 100%; height: 100%; display: block; }
 .brand .logo.brand-mark { background: none; box-shadow: 0 6px 16px -6px var(--accent); border-radius: 24%; }
+.community { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px;
+  background: radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%), var(--surface); }
+.community-text { flex: 1 1 320px; }
+.community-text p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+.community-text b { color: var(--text); }
+.community-actions .spin-button { text-decoration: none; display: inline-block; }

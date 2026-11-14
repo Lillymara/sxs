@@ -4,6 +4,7 @@ import { hrefOf } from "../components/Nav";
 import type { PlannerResult } from "../lib/planner/plan";
 import { formatDuration, type CalcOutcome } from "../lib/xp";
 import { CHANGES } from "./tools/ChangesPage";
+import { DISCORD_URL } from "../data/site";
 
 const ART = `${import.meta.env.BASE_URL}art/companions/`;
 /** Companions lined up in the hero. */
@@ -137,7 +138,15 @@ export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
           </h2>
           <ul>
             {latest.items.slice(0, 3).map((it) => (
-              <li key={it.text}>{it.href ? <a href={it.href}>{it.text}</a> : it.text}</li>
+              <li key={it.text}>
+                {it.href ? (
+                  <a href={it.href} {...(it.href.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})}>
+                    {it.text}
+                  </a>
+                ) : (
+                  it.text
+                )}
+              </li>
             ))}
           </ul>
           <a className="hero-link" href={hrefOf("changes")}>
@@ -145,6 +154,23 @@ export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
           </a>
         </section>
       </div>
+
+      <section className="card community">
+        <div className="community-text">
+          <h2 className="card-title">
+            <Icon name="chat" /> Join the community
+          </h2>
+          <p>
+            Announcements and changelogs, plus a place to <b>report bugs</b> and <b>suggest ideas</b>. If a screenshot reads wrong, post it there
+            and it gets fixed.
+          </p>
+        </div>
+        <div className="community-actions">
+          <a className="spin-button" href={DISCORD_URL} target="_blank" rel="noreferrer">
+            Join the Discord
+          </a>
+        </div>
+      </section>
 
       <h2 className="home-heading">Tools</h2>
       <div className="tile-grid">

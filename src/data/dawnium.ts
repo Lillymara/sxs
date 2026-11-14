@@ -29,7 +29,7 @@ export const PRIORITIES: Use[] = [
       "Each refresh gives 5 more entries. The first two cost 60 Dawnium, just 12 per entry.",
       "Prices climb fast after that, up to 300 for the 10th (60 per entry). Use the calculator below to see your daily cost.",
     ],
-    link: { label: "See which materials you're short on in the Season Planner", href: "#/planner" },
+    link: { label: "See which materials you're short on in the Season Planner", href: "/planner" },
   },
   {
     title: "Guild donations & 24-hour tool upgrade",

@@ -60,7 +60,7 @@ export const DEALS: Deal[] = [
       "Every unlocked area keeps paying back, so a few cents goes a long way.",
     ],
     bestFor: "Anyone with blockades still in their way.",
-    link: { label: "See where each blockade is on the World Map", href: "#/map" },
+    link: { label: "See where each blockade is on the World Map", href: "/map" },
   },
   {
     name: "Weekly Card",

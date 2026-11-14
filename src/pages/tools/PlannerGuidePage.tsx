@@ -59,7 +59,7 @@ const STEPS: Step[] = [
         a bonus tier is usually the point. See step 8.
       </>,
       <>
-        <b>Season ends:</b> filled in from your server on the <a href="#/calendar">Server Calendar</a>. Without a server it guesses 14 days, so
+        <b>Season ends:</b> filled in from your server on the <a href="/calendar">Server Calendar</a>. Without a server it guesses 14 days, so
         pick yours. Everything depends on how much time is left.
       </>,
       <>
@@ -151,7 +151,7 @@ const STEPS: Step[] = [
         <b>Material Realms:</b> how many Dawnium refreshes you buy for each Realm a day, written Ore/Rola/Essence/Sand (like 2/2/2/2 or
         4/2/4/4). The planner suggests a split <b>to reach your goal</b> and one <b>for your planned levels</b>, next to the usual presets,
         each with its Dawnium cost a day and by season end. Tap one to use it (then tap <b>Use this plan</b> again so the levels match), or set
-        each Realm yourself. See the <a href="#/dawnium">Dawnium Guide</a> for advice.
+        each Realm yourself. See the <a href="/dawnium">Dawnium Guide</a> for advice.
       </>,
       <>
         <b>Home Shop:</b> refreshes a day. The shop only spends Rola you have spare, after upgrades.
@@ -196,7 +196,7 @@ const STEPS: Step[] = [
 
 /** Every button and link worth knowing, and where it sits. */
 const WHERE: { what: ReactNode; where: ReactNode; does: ReactNode }[] = [
-  { what: <a href="#/planner">Season Planner</a>, where: "The menu, under Plan (on phones, the Planner tab at the bottom)", does: "Opens the planner." },
+  { what: <a href="/planner">Season Planner</a>, where: "The menu, under Plan (on phones, the Planner tab at the bottom)", does: "Opens the planner." },
   { what: "This guide", where: "The 📖 banner at the very top of the planner", does: "Comes back here." },
   {
     what: "Clear planner",
@@ -213,7 +213,7 @@ const WHERE: { what: ReactNode; where: ReactNode; does: ReactNode }[] = [
     does: "Puts what was read into the planner. Nothing goes in until you tap it.",
   },
   {
-    what: <a href="#/calendar">Server Calendar</a>,
+    what: <a href="/calendar">Server Calendar</a>,
     where: "The menu, under Plan (on phones, the Calendar tab). Before you've picked one, there's also a Pick your server link under Season ends",
     does: "Sets your server, which sets the season end and reset time.",
   },
@@ -225,7 +225,7 @@ const WHERE: { what: ReactNode; where: ReactNode; does: ReactNode }[] = [
     where: "Each day card → Material Realms",
     does: "Suggested refreshes (Ore/Rola/Essence/Sand) to reach your goal, plus presets, with Dawnium costs. Tap one to use it.",
   },
-  { what: <a href="#/dawnium">Dawnium Guide</a>, where: "The menu, under Info (on phones, under More), or the link under Material Realms", does: "Where Dawnium does the most good." },
+  { what: <a href="/dawnium">Dawnium Guide</a>, where: "The menu, under Info (on phones, under More), or the link under Material Realms", does: "Where Dawnium does the most good." },
   {
     what: "See all bonuses (Astral Pact)",
     where: "The projection panel, under the Primostars total",
@@ -236,7 +236,7 @@ const WHERE: { what: ReactNode; where: ReactNode; does: ReactNode }[] = [
     where: "On a phone: the bar fixed at the bottom of the screen (+N Primostars)",
     does: "Scrolls down to the results.",
   },
-  { what: <a href="#/timer">Level Timer</a>, where: "The menu, under Plan (on phones, the Timer tab)", does: "When you'll reach your next level, with bed boosts and Temporal Crystals. It has its own Fill from screenshots (Character and Bed only), and shares your character with the planner." },
+  { what: <a href="/timer">Level Timer</a>, where: "The menu, under Plan (on phones, the Timer tab)", does: "When you'll reach your next level, with bed boosts and Temporal Crystals. It has its own Fill from screenshots (Character and Bed only), and shares your character with the planner." },
 ];
 
 const QUICK = [
@@ -258,16 +258,16 @@ export function PlannerGuidePage() {
           ))}
         </ol>
         <p className="guide-links">
-          <a className="spin-button" href="#/planner">
+          <a className="spin-button" href="/planner">
             Open the Season Planner →
           </a>
         </p>
         <nav className="guide-toc" aria-label="Guide sections">
-          <a href="#/guide?where" onClick={(e) => jump(e, "where")}>
+          <a href="/guide?where" onClick={(e) => jump(e, "where")}>
             Where to find everything
           </a>
           {STEPS.map((s, i) => (
-            <a key={s.id} href={`#/guide?${s.id}`} onClick={(e) => jump(e, s.id)}>
+            <a key={s.id} href={`/guide?${s.id}`} onClick={(e) => jump(e, s.id)}>
               {i + 1}. {s.title}
             </a>
           ))}
@@ -333,7 +333,7 @@ export function PlannerGuidePage() {
           <li>Material, Realm and shop amounts are estimates from the game's data, so leave yourself a little room.</li>
         </ul>
         <p className="guide-links">
-          <a className="spin-button" href="#/planner">
+          <a className="spin-button" href="/planner">
             Open the Season Planner →
           </a>
         </p>

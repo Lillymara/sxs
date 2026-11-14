@@ -138,7 +138,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
     <div className="planner">
       <div className="planner-form">
         <div className="planner-top">
-          <a className="guide-banner" href="#/guide">
+          <a className="guide-banner" href="/guide">
             <span aria-hidden>📖</span>
             <span>
               <b>New to the planner?</b> Read the step-by-step guide to what everything does →
@@ -200,7 +200,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                     <>From {server?.name || "your server"}'s calendar.</>
                   ) : (
                     <>
-                      Guessing 14 days. <a href="#/calendar">Pick your server</a> for the real date.
+                      Guessing 14 days. <a href="/calendar">Pick your server</a> for the real date.
                     </>
                   )
                 }
@@ -524,7 +524,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                 )}
                 <p className="hint">
                   Refreshes cost <b>{fmt(result.dawniumPerDay - rolaBuyCost(Number(form.rolaBuys) || 0))}</b> Dawnium a day. First two {realmCost(1)} each.{" "}
-                  <a href="#/dawnium">Dawnium Guide →</a>
+                  <a href="/dawnium">Dawnium Guide →</a>
                 </p>
               </div>
             )}

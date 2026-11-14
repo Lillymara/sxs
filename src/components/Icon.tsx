@@ -19,7 +19,8 @@ export type IconName =
   | "guide"
   | "changes"
   | "camera"
-  | "star";
+  | "star"
+  | "chat";
 
 const PATHS: Record<IconName, ReactNode> = {
   home: (
@@ -125,6 +126,14 @@ const PATHS: Record<IconName, ReactNode> = {
     <>
       <path d="M4 8h3.5L9 5.5h6L16.5 8H20v11H4z" />
       <circle cx="12" cy="13.5" r="3.5" />
+    </>
+  ),
+  chat: (
+    <>
+      <path d="M4 6.5C4 5.1 5.1 4 6.5 4h11C18.9 4 20 5.1 20 6.5v8c0 1.4-1.1 2.5-2.5 2.5H10l-4.5 3.5V17H6.5C5.1 17 4 15.9 4 14.5z" />
+      <circle cx="9" cy="10.5" r="0.9" fill="currentColor" />
+      <circle cx="12" cy="10.5" r="0.9" fill="currentColor" />
+      <circle cx="15" cy="10.5" r="0.9" fill="currentColor" />
     </>
   ),
   star: (

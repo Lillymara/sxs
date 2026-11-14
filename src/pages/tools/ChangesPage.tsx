@@ -4,45 +4,48 @@ export const CHANGES: { date: string; items: { text: string; href?: string }[] }
   {
     date: "2026-11-13",
     items: [
+      { text: "New home, new name: the site is now SxS Tools by LM Things at sxs.lmthings.com. Old links forward here and bring your saved data with them." },
+      { text: "A home page with your numbers at a glance and a season clock, a new menu (a sidebar, or tabs at the bottom on phones), and a new logo that follows your colour theme.", href: "/" },
+      { text: "Join the Discord for announcements, bug reports and ideas.", href: "https://discord.gg/3YBBXcEk5n" },
       { text: "Install the site as an app on your phone or computer (in the menu). It opens offline too." },
-      { text: "Level Timer: fill it from your Character and Bed screenshots.", href: "#/timer" },
-      { text: "Season Planner: copy your plan as a message for Discord.", href: "#/planner" },
-      { text: "Season Planner: a season progress log that shows whether you're keeping pace with your goal.", href: "#/planner" },
-      { text: "New Season Prep page: what to do as a season ends, timed for your server.", href: "#/prep" },
+      { text: "Level Timer: fill it from your Character and Bed screenshots.", href: "/timer" },
+      { text: "Season Planner: copy your plan as a message for Discord.", href: "/planner" },
+      { text: "Season Planner: a season progress log that shows whether you're keeping pace with your goal.", href: "/planner" },
+      { text: "New Season Prep page: what to do as a season ends, timed for your server.", href: "/prep" },
     ],
   },
   {
     date: "2026-11-11",
     items: [
-      { text: "Season Planner: fill it from game screenshots (Character, Bed, Cart, Season progression and Backpack).", href: "#/planner" },
+      { text: "Season Planner: fill it from game screenshots (Character, Bed, Cart, Season progression and Backpack).", href: "/planner" },
       { text: "Plan my goal: the cheapest way to your Primostar goal with the materials you'll have, and a one-tap lower goal if it's out of reach." },
       { text: "Caps follow your projected season-end level: Skills to your level, Fantomons to the next 10, Relics to a tenth plus one." },
       { text: "Astral Pact bonus table, with every tier marked as yours, this season, or your goal." },
       { text: "Material Realm suggestions (Ore/Rola/Essence/Sand) with their Dawnium cost." },
       { text: "Save bed EXP and Cart resources for next season, on by default." },
-      { text: "Refined Ore in the material balance, Simple/Full modes, and a step-by-step planner guide.", href: "#/guide" },
+      { text: "Refined Ore in the material balance, Simple/Full modes, and a step-by-step planner guide.", href: "/guide" },
     ],
   },
   {
     date: "2026-10-24",
-    items: [{ text: "Level Timer: the free daily bed boost and Temporal Crystals count toward your next level.", href: "#/timer" }],
+    items: [{ text: "Level Timer: the free daily bed boost and Temporal Crystals count toward your next level.", href: "/timer" }],
   },
   {
     date: "2026-10-22",
     items: [
-      { text: "New Dawnium Guide: the best uses, in order, with Realm refresh prices.", href: "#/dawnium" },
-      { text: "World Map: mark blockades as opened and track the unlock items you still need.", href: "#/map" },
+      { text: "New Dawnium Guide: the best uses, in order, with Realm refresh prices.", href: "/dawnium" },
+      { text: "World Map: mark blockades as opened and track the unlock items you still need.", href: "/map" },
     ],
   },
   {
     date: "2026-10-20",
-    items: [{ text: "Level Timer: see the level banked EXP takes you to when the next area opens.", href: "#/timer" }],
+    items: [{ text: "Level Timer: see the level banked EXP takes you to when the next area opens.", href: "/timer" }],
   },
   {
     date: "2026-10-19",
     items: [
-      { text: "New Spending Guide: which shop deals are worth it, if you spend.", href: "#/spending" },
-      { text: "World Map: corrected Lucky Wheel and blockade positions, and a Show-on-map filter.", href: "#/map" },
+      { text: "New Spending Guide: which shop deals are worth it, if you spend.", href: "/spending" },
+      { text: "World Map: corrected Lucky Wheel and blockade positions, and a Show-on-map filter.", href: "/map" },
     ],
   },
   {
@@ -66,7 +69,9 @@ export function ChangesPage() {
                 {it.href && (
                   <>
                     {" "}
-                    <a href={it.href}>Open →</a>
+                    <a href={it.href} {...(it.href.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})}>
+                      Open →
+                    </a>
                   </>
                 )}
               </li>
