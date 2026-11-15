@@ -296,7 +296,7 @@ page in SIMPLE_PAGES ? (
           </a>
         </p>
         <p>
-          SxS Tools by LM Things (Lilly Mara's things). Unofficial fan tool, not affiliated with Boltray. Your inputs are saved only in this
+          SxS Tools by LM Things (Lilly Mara's things). Unofficial fan tool, not affiliated with Boltray Games. Sword x Staff and all its art and icons belong to Boltray Games. Your inputs are saved only in this
           browser. Page visits are counted anonymously (no cookies, nothing personal).
         </p>
       </footer>

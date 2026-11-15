@@ -1,4 +1,5 @@
-// Small item and system icons cut from in-game screenshots (public/art/icons).
+// Small item and system icons (public/art/icons). Game art by Boltray Games: materials and
+// Primostar from the game files as posted on purrwikimania.com; system badges cut from screenshots.
 export type GameIconName =
   | "rola"
   | "ore"
