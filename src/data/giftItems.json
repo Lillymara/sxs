@@ -1,0 +1,106 @@
+{
+ "Jewelry": [
+  {
+   "name": "Glittering Diamond",
+   "icon": "gifts/glittering-diamond.webp"
+  },
+  {
+   "name": "Golden Crown",
+   "icon": "gifts/golden-crown.webp"
+  },
+  {
+   "name": "Golden Ingot",
+   "icon": "gifts/golden-ingot.webp"
+  },
+  {
+   "name": "Luminous Jade",
+   "icon": "gifts/luminous-jade.webp"
+  },
+  {
+   "name": "Silver Goblet",
+   "icon": "gifts/silver-goblet.webp"
+  },
+  {
+   "name": "Golden Leaf",
+   "icon": "gifts/golden-leaf.webp"
+  }
+ ],
+ "Furniture": [
+  {
+   "name": "Jade Mirage",
+   "icon": "gifts/jade-mirage.webp"
+  },
+  {
+   "name": "Fine Pocket Watch",
+   "icon": "gifts/fine-pocket-watch.webp"
+  },
+  {
+   "name": "Silken Dreams",
+   "icon": "gifts/silken-dreams.webp"
+  },
+  {
+   "name": "Feather Quill",
+   "icon": "gifts/feather-quill.webp"
+  },
+  {
+   "name": "Teacup",
+   "icon": "gifts/teacup.webp"
+  },
+  {
+   "name": "Towel",
+   "icon": "gifts/towel.webp"
+  }
+ ],
+ "Books": [
+  {
+   "name": "Goddess Chronicles",
+   "icon": "gifts/goddess-chronicles.webp"
+  },
+  {
+   "name": "Path to Immortality",
+   "icon": "gifts/path-to-immortality.webp"
+  },
+  {
+   "name": "Blazing Legends",
+   "icon": "gifts/blazing-legends.webp"
+  },
+  {
+   "name": "Flavors of Kanstein",
+   "icon": "gifts/flavors-of-kanstein.webp"
+  },
+  {
+   "name": "Jungle Fables",
+   "icon": "gifts/jungle-fables.webp"
+  },
+  {
+   "name": "Rolla Management Made Easy",
+   "icon": "gifts/rolla-management-made-easy.webp"
+  }
+ ],
+ "Flowers": [
+  {
+   "name": "Violet",
+   "icon": "gifts/violet.webp"
+  },
+  {
+   "name": "Crimson Rose",
+   "icon": "gifts/crimson-rose.webp"
+  },
+  {
+   "name": "Mandrake",
+   "icon": "gifts/mandrake.webp"
+  },
+  {
+   "name": "Sakura",
+   "icon": "gifts/sakura.webp"
+  },
+  {
+   "name": "Sunflower",
+   "icon": "gifts/sunflower.webp"
+  },
+  {
+   "name": "Iris",
+   "icon": "gifts/iris.webp"
+  }
+ ]
+}

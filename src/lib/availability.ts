@@ -22,9 +22,13 @@ export const FANTOMON_RULES: Record<number, Rule> = {
   1615: { kind: "limited", label: "Spring 2026 event" },
   1616: { kind: "unreleased", note: "Future collaboration" },
   1617: { kind: "unreleased", note: "Future event" },
+  // From Purrwikimania (not in the client extract yet): Halloween 2026 Fantomons.
+  1620: { kind: "limited", label: "Halloween 2026 event" },
+  1622: { kind: "limited", label: "Halloween 2026 event" },
 };
 
 const SLIME = { kind: "event", start: "2026-12-01", end: "2026-12-11", label: "That Time I Got Reincarnated collab" } as const;
+const AEPERIS = { kind: "unreleased", note: "Aeperis region, not open yet" } as const;
 const KONOSUBA = { kind: "limited", label: "KonoSuba collaboration" } as const;
 
 /** Companion id → rule, on top of the client's own "unreleased" / "TW / future" flags. */
@@ -38,6 +42,9 @@ export const COMPANION_RULES: Record<number, Rule> = {
   10111: { kind: "limited", label: "Starfrost (winter) event" },
   10206: { kind: "limited", label: "Crossover event" },
   10412: { kind: "limited", label: "Crossover event" },
+  // From Purrwikimania (not in the client extract yet).
+  10709: { kind: "serverDay", day: 316, label: "Ignis opens (Season 5)" },
+  10801: AEPERIS, 10802: AEPERIS, 10803: AEPERIS, 10804: AEPERIS, 10805: AEPERIS, 10806: AEPERIS,
 };
 
 /** A companion's rule, using the client's availability flag when there's no specific one. */

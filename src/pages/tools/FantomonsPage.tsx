@@ -1,9 +1,12 @@
-import { useState } from "react";
-import { rowText, type Explorer } from "../../lib/explorer";
-import { nearest } from "../../lib/gamedata";
+// Fantomons: a collection gallery, then a profile for the one picked: evolution, role and movement,
+// Fantasmia, stats at any level, and every skill at any quality.
+import { useMemo, useState } from "react";
+import type { Explorer } from "../../lib/explorer";
 import { AvailabilityBar } from "../../components/AvailabilityBar";
 import { GameArt } from "../../components/GameArt";
+import { GameIcon } from "../../components/GameIcon";
 import { FANTOMON_RULES, availabilityFor, isStillObtainable } from "../../lib/availability";
+import { buildFantomons, qualitiesFrom, qualityName, QUALITIES, type FantomonView, type QualityRaw, type ViewSkill } from "../../lib/fantomonView";
 import { usePersistentState } from "../../lib/storage";
 import { effectiveDay1 } from "../calendar/server";
 import type { ToolProps } from "./props";
@@ -15,45 +18,47 @@ export function FantomonsPage(props: ToolProps) {
   return <Fantomons explorer={explorer} {...props} />;
 }
 
-/** Fantomon skill grade → skill rank, as the client maps it. */
-const SKILL_RANKS: Record<string, number> = { Purple: 2, Orange: 3, Gold: 4, Red: 5, Rainbow: 6 };
-const STATS: [string, string][] = [["Attack", "ATK"], ["Defence", "DEF"], ["MaxHp", "HP"], ["Speed", "SPD"]];
+const STATS: { key: string; label: string; icon: string }[] = [
+  { key: "MaxHp", label: "HP", icon: "beryl" },
+  { key: "Attack", label: "ATK", icon: "ruby" },
+  { key: "Defence", label: "DEF", icon: "sapphire" },
+  { key: "Speed", label: "SPD", icon: "citrine" },
+];
+const MAX_LEVEL = 200;
 
 function Fantomons({ explorer, choice, onServerChange, now }: { explorer: Explorer } & ToolProps) {
-  const { C, grades, grade, fantomons: all } = explorer;
+  const all = useMemo(() => buildFantomons(explorer), [explorer]);
   const [filter, setFilter] = usePersistentState<{ only: boolean; limited: boolean }>("sxs.availability", { only: false, limited: false });
   const day1 = effectiveDay1(choice);
   const avail = (id: number) => availabilityFor(FANTOMON_RULES[id], day1, now);
-  const fantomons = all.filter((f) => {
+
+  const [search, setSearch] = useState("");
+  const [role, setRole] = useState("");
+  const [start, setStart] = useState("");
+  const roles = [...new Set(all.map((f) => f.role).filter(Boolean) as string[])].sort();
+  const starts = QUALITIES.filter((q) => all.some((f) => f.quality === q.raw));
+
+  const shown = all.filter((f) => {
     const a = avail(f.id);
-    return (!filter.only || isStillObtainable(a)) && (!filter.limited || a.state !== "limited");
+    const q = search.trim().toLowerCase();
+    return (
+      (!filter.only || isStillObtainable(a)) &&
+      (!filter.limited || a.state !== "limited") &&
+      (!role || f.role === role) &&
+      (!start || f.quality === start) &&
+      (!q || [f.name, f.role, f.type, f.moves, ...[...f.support, ...f.battle].map((s) => s.name)].join(" ").toLowerCase().includes(q))
+    );
   });
-  const qIndex = (raw: string) => grades.findIndex((g) => g.raw === raw);
 
-  const [selected, setSelected] = useState("1609");
-  const [level, setLevel] = useState(128);
-  const pet = C.pets[selected];
-  const allowedPet = grades.filter((g) => qIndex(g.raw) >= Math.max(0, qIndex(pet.minQuality || "Purple")));
-  const baseSkill = qIndex(pet.minQuality || "Purple") < qIndex("Orange") ? pet.minQuality || "Purple" : "Orange";
-  const allowedSkill = grades.filter((g) => qIndex(g.raw) >= qIndex(baseSkill) && SKILL_RANKS[g.raw]);
-  const [petRaw, setPetRaw] = useState(pet.minQuality || "Purple");
-  const [skillRaw, setSkillRaw] = useState(baseSkill);
-  const petGrade = allowedPet.some((g) => g.raw === petRaw) ? petRaw : allowedPet[0]?.raw || "Purple";
-  const skillGrade = allowedSkill.some((g) => g.raw === skillRaw) ? skillRaw : allowedSkill[0]?.raw || "Orange";
-
-  const info = fantomons.find((f) => String(f.id) === selected)!;
-  const row = nearest(pet.levels, level);
-  const adult = pet.forms?.Adulthood;
-
-  const choose = (id: string) => {
+  const [selected, setSelected] = useState(1609);
+  const pet = all.find((f) => f.id === selected) ?? all[0];
+  const pick = (id: number) => {
     setSelected(id);
-    const p = C.pets[id];
-    setPetRaw(p.minQuality || "Purple");
-    setSkillRaw(qIndex(p.minQuality || "Purple") < qIndex("Orange") ? p.minQuality || "Purple" : "Orange");
+    requestAnimationFrame(() => document.getElementById("fantomon-profile")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
 
   return (
-    <div className="tool">
+    <div className="tool fm">
       <section className="card">
         <AvailabilityBar
           choice={choice}
@@ -68,113 +73,235 @@ function Fantomons({ explorer, choice, onServerChange, now }: { explorer: Explor
           description="Hides unreleased Fantomons and event Fantomons your server missed. Ones still on the way stay listed"
         />
       </section>
-      <div className="tool-grid fantomons">
-      <section className="card">
-        <h2>Fantomons <span className="chip">{fantomons.length}</span></h2>
-        {!fantomons.length && <p className="hint">Nothing matches. Turn off the filter to see everything.</p>}
-        <div className="pet-list">
-          {fantomons.map((f) => (
-            <button key={f.id} type="button" className={`skill-card with-art ${String(f.id) === selected ? "on" : ""}`} onClick={() => choose(String(f.id))}>
-              <GameArt path={`fantomons/pet_${C.pets[String(f.id)].forms?.Childhood?.iconId || f.id}.webp`} name={f.name} alt="" className="thumb" />
-              <span>
-                <b>{f.name}</b>
-                <small>
-                  {f.type} · starts {grade(C.pets[String(f.id)].minQuality || "Purple").name}
-                </small>
-                {(() => {
-                  const a = avail(f.id);
-                  return a.tag ? <span className={`avail-tag ${a.state}`}>{a.tag}</span> : null;
-                })()}
-              </span>
+
+      <section className="card fm-roster">
+        <div className="roster-head">
+          <h2>
+            Collection <span className="chip">{shown.length}</span>
+          </h2>
+          <input className="roster-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name or skill" aria-label="Search Fantomons" />
+        </div>
+        <div className="filter-row" role="group" aria-label="Filter by role and starting quality">
+          <button type="button" aria-pressed={!role && !start} onClick={() => (setRole(""), setStart(""))}>
+            All
+          </button>
+          {roles.map((r) => (
+            <button key={r} type="button" aria-pressed={role === r} onClick={() => setRole(role === r ? "" : r)}>
+              {r}
+            </button>
+          ))}
+          <span className="filter-gap" aria-hidden />
+          {starts.map((q) => (
+            <button key={q.raw} type="button" className={`q-chip q-${q.raw}`} aria-pressed={start === q.raw} onClick={() => setStart(start === q.raw ? "" : q.raw)}>
+              {q.name}
             </button>
           ))}
         </div>
+        {!shown.length && <p className="hint">Nothing matches. Clear a filter to see more.</p>}
+        <div className="fm-grid">
+          {shown.map((f) => {
+            const a = avail(f.id);
+            return (
+              <button key={f.id} type="button" className={`fm-card q-${f.quality}`} aria-pressed={f.id === pet.id} onClick={() => pick(f.id)}>
+                {f.isNew && <span className="ribbon">New</span>}
+                <span className="fm-art">
+                  <GameArt path={f.adult ?? f.baby} name={f.name} alt="" />
+                </span>
+                <b>{f.name}</b>
+                <small>
+                  {qualityName(f.quality)} · {f.role ?? f.type}
+                  {f.moves ? ` · ${f.moves === "Fly" ? "Flies" : "Runs"}` : ""}
+                </small>
+                {a.tag && <span className={`avail-tag ${a.state}`}>{a.tag}</span>}
+              </button>
+            );
+          })}
+        </div>
       </section>
 
-      <section className="card">
-        <div className="pet-hero">
-          <div className="evolution">
-            <figure>
-              <GameArt path={`fantomons/pet_${pet.forms?.Childhood?.iconId || selected}.webp`} name={info.name} alt={`${info.name} baby form`} />
-              <figcaption>Baby</figcaption>
-            </figure>
-            {adult && (
-              <>
-                <span className="evo-arrow" aria-hidden>→<small>Lv{adult.level || 100}</small></span>
-                <figure>
-                  <GameArt path={`fantomons/pet_${adult.iconId}.webp`} name={info.name} alt={`${info.name} adult form`} />
-                  <figcaption>Adult</figcaption>
-                </figure>
-              </>
-            )}
-          </div>
-          <div>
-            <p className="eyebrow">{info.type}{info.status ? ` · ${info.status}` : ""}</p>
-            <h2 className="pet-name">{info.name}</h2>
-          </div>
-        </div>
-        <div className="fields three">
-          <label className="field">
-            <span>Fantomon grade</span>
-            <select value={petGrade} onChange={(e) => setPetRaw(e.target.value)}>
-              {allowedPet.map((g) => <option key={g.raw} value={g.raw}>{g.name}</option>)}
-            </select>
-          </label>
-          <label className="field">
-            <span>Skill grade</span>
-            <select value={skillGrade} onChange={(e) => setSkillRaw(e.target.value)}>
-              {allowedSkill.map((g) => <option key={g.raw} value={g.raw}>{g.name}</option>)}
-            </select>
-          </label>
-          <label className="field">
-            <span>Level</span>
-            <input inputMode="numeric" value={level} onChange={(e) => setLevel(Math.max(1, Math.min(620, Math.trunc(+e.target.value) || 1)))} />
-          </label>
-        </div>
-        <dl className="stats">
-          {STATS.map(([k, n]) => (
-            <div key={k}><dt>{n}</dt><dd>{(+row[k] || 0).toLocaleString()}</dd></div>
-          ))}
-        </dl>
-        <p className="hint">
-          {adult
-            ? `Evolves to adult form at Lv${adult.level || 100} with ${grade(adult.skillQuality || "Gold").name} skills.`
-            : "No adult form in the client data."}{" "}
-        </p>
-        {avail(+selected).detail && <p className={`note avail-note ${avail(+selected).state}`}>{avail(+selected).detail}</p>}
+      <Profile key={pet.id} pet={pet} detail={avail(pet.id).detail} availState={avail(pet.id).state} />
+    </div>
+  );
+}
 
-        {(["Childhood", "Adulthood"] as const).map((stage) => {
-          const abilities = pet.stages?.[stage] || [];
-          const available = stage === "Childhood" || adult;
+function Profile({ pet, detail, availState }: { pet: FantomonView; detail?: string; availState: string }) {
+  const [level, setLevel] = useState(100);
+  const levels = qualitiesFrom(pet.skillStart);
+  const [quality, setQuality] = useState<QualityRaw>(levels[Math.min(levels.length - 1, 1)].raw);
+  const stats = pet.stats(level);
+  const top = pet.stats(MAX_LEVEL);
+  const adultNow = pet.adultLevel !== undefined && level >= pet.adultLevel;
+
+  return (
+    <section className={`card fm-profile q-${pet.quality}`} id="fantomon-profile">
+      <div className="fm-hero">
+        <div className="fm-evo">
+          <figure className={adultNow ? "dim" : ""}>
+            <GameArt path={pet.baby} name={pet.name} alt={`${pet.name}, baby form`} />
+            <figcaption>Baby</figcaption>
+          </figure>
+          {pet.adult && (
+            <>
+              <span className="evo-step" aria-hidden>
+                <span>→</span>
+                <small>Lv {pet.adultLevel}</small>
+              </span>
+              <figure className={adultNow ? "" : "dim"}>
+                <GameArt path={pet.adult} name={pet.name} alt={`${pet.name}, adult form`} />
+                <figcaption>Adult</figcaption>
+              </figure>
+            </>
+          )}
+        </div>
+        <div className="fm-id">
+          <p className="eyebrow">
+            <span className={`q-text q-${pet.quality}`}>{qualityName(pet.quality)}</span> · {pet.role ?? pet.type}
+            {pet.isNew && <span className="ribbon inline">New</span>}
+          </p>
+          <h2 className="pet-name">{pet.name}</h2>
+          <div className="fm-facts">
+            {pet.moves && (
+              <div>
+                <span>Moves</span>
+                <b>{pet.moves === "Fly" ? "Flies" : "Runs"}</b>
+              </div>
+            )}
+            {pet.shardsToSummon !== undefined && (
+              <div>
+                <span>To summon</span>
+                <b>{pet.shardsToSummon} shards</b>
+              </div>
+            )}
+            <div>
+              <span>Evolves</span>
+              <b>{pet.adultLevel ? `Lv ${pet.adultLevel}` : "No adult form"}</b>
+            </div>
+            <div>
+              <span>Skills start</span>
+              <b className={`q-text q-${pet.skillStart}`}>{qualityName(pet.skillStart)}</b>
+            </div>
+          </div>
+          {pet.fantasmia && <FantasmiaMeter f={pet.fantasmia} />}
+          {detail && <p className={`note avail-note ${availState}`}>{detail}</p>}
+        </div>
+      </div>
+
+      <div className="fm-controls">
+        <div className="q-stepper" role="radiogroup" aria-label="Skill quality">
+          {levels.map((q) => (
+            <button key={q.raw} type="button" role="radio" aria-checked={quality === q.raw} className={`q-${q.raw}`} onClick={() => setQuality(q.raw)}>
+              {q.name}
+            </button>
+          ))}
+        </div>
+        <label className="lv-control">
+          <span>
+            Level <b>{level}</b>
+          </span>
+          <input type="range" min={1} max={MAX_LEVEL} value={level} onChange={(e) => setLevel(+e.target.value)} aria-label="Fantomon level" />
+        </label>
+      </div>
+
+      <div className="fm-stats">
+        {STATS.map((s) => {
+          const v = +stats[s.key] || 0;
+          // Growth is steep, so the bar uses a log scale to stay readable at every level.
+          const pct = v > 1 ? Math.min(100, (Math.log(v) / Math.log(+top[s.key] || 2)) * 100) : 0;
+          const base = pet.battleBase?.[s.label];
           return (
-            <div key={stage} className="form-block">
-              <h3 className="subhead">
-                {stage === "Childhood" ? "Baby form" : "Adult form"}{" "}
-                <span className="chip">{available ? `${abilities.length} ${abilities.length === 1 ? "ability" : "abilities"}` : "Not available"}</span>
-              </h3>
-              {available &&
-                abilities.map((s) => {
-                  const d = explorer.detail(s.id, skillGrade, 0, level, "Silver3", SKILL_RANKS[skillGrade]);
-                  const incomplete = /^(?:Skill \d+|DNTB)/i.test(s.name);
-                  return (
-                    <div key={s.id} className="tuning">
-                      <p className="event-title">{incomplete ? `Unlocalized ability (ID ${s.id})` : s.name}</p>
-                      <dl className="formulas">
-                        {d.rows.length ? (
-                          d.rows.map((r, i) => <div key={i}><dt>{r.label}</dt><dd>{rowText(r)}</dd></div>)
-                        ) : (
-                          <div><dt>Behavior</dt><dd>Status, buff or utility effect.</dd></div>
-                        )}
-                      </dl>
-                      <GlossaryText text={s.description || "No description in this client build."} />
-                    </div>
-                  );
-                })}
+            <div key={s.key} className="fm-stat">
+              <GameIcon name={s.icon} />
+              <span className="fm-stat-label">{s.label}</span>
+              <b>{v.toLocaleString()}</b>
+              <span className="meter" aria-hidden>
+                <span style={{ width: `${pct}%` }} />
+              </span>
+              {base !== undefined && base !== 100 && <small className={base > 100 ? "up" : "down"}>{base}% in battle</small>}
             </div>
           );
         })}
-      </section>
-    </div>
       </div>
+      <p className="hint">Stats at level {level}. Every Fantomon shares one growth curve.</p>
+
+      <SkillGroup title="Support skill" note={pet.adult ? "Baby and adult" : undefined} skills={pet.support} quality={quality} level={level} />
+      {pet.field && (
+        <div className="skill-group">
+          <h3 className="subhead">
+            Field skill <span className="hint">Adult</span>
+          </h3>
+          <article className="fm-skill field">
+            <span className="fm-skill-icon">{pet.adult && <GameArt path={pet.adult} name={pet.name} alt="" />}</span>
+            <div>
+              <b>{pet.field.name}</b>
+              <p className="fm-skill-desc">{pet.field.description}</p>
+            </div>
+          </article>
+        </div>
+      )}
+      {pet.battle.length > 0 && <SkillGroup title="Battle skills" note="Adult, once materialized" skills={pet.battle} quality={quality} level={level} />}
+      {pet.fromPwm && <p className="hint source-note">This Fantomon's numbers come from Purrwikimania until the client data catches up.</p>}
+    </section>
+  );
+}
+
+function SkillGroup({ title, note, skills, quality, level }: { title: string; note?: string; skills: ViewSkill[]; quality: QualityRaw; level: number }) {
+  if (!skills.length) return null;
+  return (
+    <div className="skill-group">
+      <h3 className="subhead">
+        {title} {note && <span className="hint">{note}</span>}
+      </h3>
+      {skills.map((s) => {
+        const lines = s.lines(quality, level);
+        const kind = s.tags.find((t) => /^(DMG|Buff|Debuff|Heal|Shield|Summon|Dispel)$/i.test(t));
+        return (
+          <article key={s.name} className={`fm-skill q-${quality}`}>
+            <span className="fm-skill-icon">{s.icon ? <img src={`${import.meta.env.BASE_URL}art/${s.icon}`} alt="" loading="lazy" /> : <span>{s.name[0]}</span>}</span>
+            <div>
+              <div className="fm-skill-head">
+                <b>{s.name}</b>
+                {kind && <span className={`kind kind-${kind.toLowerCase()}`}>{kind}</span>}
+                {s.tags.some((t) => /passive/i.test(t)) && <span className="kind">Passive</span>}
+              </div>
+              <div className="fm-skill-desc">
+                <GlossaryText text={s.description} />
+              </div>
+              {lines.length > 0 && (
+                <dl className="fm-lines">
+                  {lines.map((l, i) => (
+                    <div key={i}>
+                      <dt>{l.label}</dt>
+                      <dd>{l.text}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function FantasmiaMeter({ f }: { f: { cap: number; initial: number; perTurn: number; perDmg: number; note: string } }) {
+  const turns = Math.max(0, Math.ceil((f.cap - f.initial) / f.perTurn));
+  const said = f.note ? f.note.replace(/^./, (c) => c.toUpperCase()) : "";
+  return (
+    <div className="fantasmia">
+      <div className="fantasmia-head">
+        <span>Fantasmia</span>
+        <b>{said || `Materializes in about ${turns} turn${turns === 1 ? "" : "s"}`}</b>
+      </div>
+      <span className="fantasmia-bar" aria-hidden>
+        <span style={{ width: `${(f.initial / f.cap) * 100}%` }} />
+        {Array.from({ length: turns }, (_, i) => (
+          <i key={i} style={{ left: `${Math.min(100, ((f.initial + f.perTurn * (i + 1)) / f.cap) * 100)}%` }} />
+        ))}
+      </span>
+      <small>
+        Starts at {f.initial.toLocaleString()} of {f.cap.toLocaleString()} · +{f.perTurn} a turn · +{f.perDmg} for each hit taken
+      </small>
+    </div>
   );
 }
