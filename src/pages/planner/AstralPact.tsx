@@ -1,8 +1,12 @@
 // Astral Pact: why a Primostar total matters. A summary line with a button that opens the full
 // bonus table, marked with what's unlocked now, what this season adds and the goal.
 import { useEffect, useRef, useState } from "react";
+import { GameIcon } from "../../components/GameIcon";
 import { ASTRAL_PACT, PACT_BONUSES, pactProgress, pactTotals, type PactBonus } from "../../data/astralPact";
 
+/** Game icon beside each bonus: the gem for each stat, and the season badges for EXP and gear. */
+const PACT_ICON: Partial<Record<PactBonus, string>> = { ATK: "ruby", DEF: "sapphire", HP: "beryl", SPD: "citrine", GEM: "moonstone", EXP: "character", GEAR: "gear" };
+const BonusIcon = ({ b }: { b: PactBonus }) => (PACT_ICON[b] ? <GameIcon name={PACT_ICON[b]!} /> : null);
 const fmt = (x: number) => Math.round(x).toLocaleString();
 const ORDER: PactBonus[] = ["ATK", "DEF", "HP", "SPD", "EXP", "GEM", "GEAR", "X2"];
 const SHORT: Record<PactBonus, string> = {
@@ -98,7 +102,7 @@ function AstralPactDialog({ have, projected, goal, onPickGoal, onClose }: Props 
         <div className="pact-totals">
           {ORDER.map((b) => (
             <div key={b}>
-              <span>{SHORT[b]}</span>
+              <span><BonusIcon b={b} /> {SHORT[b]}</span>
               <b>
                 +{end[b]}%{end[b] > now[b] && <small> (+{end[b] - now[b]} this season)</small>}
               </b>
@@ -131,7 +135,7 @@ function AstralPactDialog({ have, projected, goal, onPickGoal, onClose }: Props 
                   <tr key={stars} className={`pact-row ${state}${i === firstMissing ? " next" : ""}`}>
                     <td>{fmt(stars)}</td>
                     <td>
-                      {PACT_BONUSES[b].label} <b>+{PACT_BONUSES[b].amount}%</b>
+                      <BonusIcon b={b} /> {PACT_BONUSES[b].label} <b>+{PACT_BONUSES[b].amount}%</b>
                     </td>
                     <td>
                       {state === "have" ? (
