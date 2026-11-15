@@ -663,10 +663,12 @@ button.secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 .stat-filter { margin-top: 12px; }
 
 .world-map { display: grid; gap: 16px; }
-@media (min-width: 1000px) { .world-map { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; } }
+/* The side panel sits beside the map only when there's room for both; otherwise it goes below. */
+main:has(> .world-map) { container: worldmap / inline-size; }
+@container worldmap (min-width: 1180px) { .world-map { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; } }
 .map-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .map-toolbar button.secondary { margin-top: 0; min-width: 40px; }
-.map-viewport { position: relative; height: min(70vh, 640px); border-radius: 12px; overflow: hidden; background: #10304a; touch-action: none; }
+.map-viewport { position: relative; height: clamp(360px, 74vh, 760px); border-radius: 12px; overflow: hidden; background: #10304a; touch-action: none; }
 .map-viewport canvas { display: block; cursor: grab; }
 .map-viewport canvas:active { cursor: grabbing; }
 .map-tooltip, .map-toast {
@@ -1507,3 +1509,21 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
 .tree-tier img { width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.4)); }
 .tree-tier small { font-size: 0.76rem; font-weight: 600; }
 .tree-tier i { font-style: normal; font-size: 0.72rem; color: var(--muted); margin: 0 2px; }
+
+/* ---- World map controls ---- */
+.map-zoom { position: absolute; top: 10px; right: 10px; z-index: 2; display: grid; gap: 4px; }
+.map-zoom button { width: 36px; height: 36px; border: 1px solid rgb(255 255 255 / 0.18); border-radius: 10px; background: rgb(8 18 26 / 0.78); color: #eef6f8; font-size: 1.15rem; font-weight: 700; cursor: pointer; backdrop-filter: blur(4px); }
+.map-zoom button.fit { font-size: 0.68rem; }
+.map-zoom button:hover { background: rgb(8 18 26 / 0.92); border-color: var(--accent); }
+.mark-mode { border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 999px; padding: 7px 14px; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+.mark-mode.on { background: #2f9e5b; border-color: #2f9e5b; color: #fff; box-shadow: 0 4px 14px -6px #2f9e5b; }
+.map-viewport.marking { box-shadow: inset 0 0 0 3px #2f9e5b; }
+.map-viewport.marking canvas { cursor: crosshair; }
+.map-viewport canvas { user-select: none; -webkit-user-select: none; }
+/* Layer chips: one compact line each. */
+.unlock-bar button[aria-pressed] { display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px; }
+.unlock-bar button[aria-pressed] small { display: none; }
+.unlock-bar .event-tag { margin-right: 2px; }
+.unlock-name img { width: 20px; height: 20px; }
+.still-needed .needed-items li { padding: 6px 10px; }
+.still-needed .needed-items img { width: 26px; height: 26px; }

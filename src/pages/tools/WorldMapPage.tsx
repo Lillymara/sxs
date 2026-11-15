@@ -145,6 +145,10 @@ function WorldMap({ data }: { data: WorldData }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const view = useRef({ scale: 1, fitScale: 1, ox: 0, oy: 0, dpr: 1 });
+  /** Which region the current view was fitted for (so a resize keeps the player's view). */
+  const fittedFor = useRef<number | string | null>(null);
+  /** "Mark opened" mode: a single click toggles a blockade. */
+  const [marking, setMarking] = useState(false);
   const pointer = useRef<{ id: number; x: number; y: number; ox: number; oy: number; moved: boolean } | null>(null);
   const images = useRef(new Map<string, HTMLImageElement>());
   const [imagesReady, setImagesReady] = useState(0);
@@ -283,35 +287,54 @@ function WorldMap({ data }: { data: WorldData }) {
     }
   }, [map, spots, unlocks, opened, filter.hideOpened, filter.wheels, filter.places, selection, data.items, imagesReady]);
 
+  /** Scale at which the whole region fits the canvas. */
+  const fitScaleFor = (w: number, h: number) => {
+    const b = map.bounds;
+    return Math.max(0.1, Math.min((w - 40) / (b.maxX - b.minX), (h - 40) / (b.maxY - b.minY)));
+  };
   const fit = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const v = view.current;
     const b = map.bounds;
     const w = canvas.width / v.dpr, h = canvas.height / v.dpr;
-    v.fitScale = Math.max(0.1, Math.min((w - 40) / (b.maxX - b.minX), (h - 40) / (b.maxY - b.minY)));
+    v.fitScale = fitScaleFor(w, h);
     v.scale = v.fitScale;
     v.ox = w / 2 - ((b.minX + b.maxX) / 2) * v.scale;
     v.oy = h / 2 + ((b.minY + b.maxY) / 2) * v.scale;
+    fittedFor.current = map.id;
     draw();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, draw]);
 
-  // Size the canvas to its container.
+  // Size the canvas to its container. A resize (the page reflowing, a scrollbar appearing) keeps the
+  // player's zoom and centre; only a new region is fitted from scratch.
   useEffect(() => {
     const vp = viewportRef.current, canvas = canvasRef.current;
     if (!vp || !canvas) return;
     const resize = () => {
+      const v = view.current;
+      const oldW = canvas.width / v.dpr, oldH = canvas.height / v.dpr;
+      const keep = fittedFor.current === map.id && oldW > 1 && oldH > 1;
+      const centre = keep ? { x: (oldW / 2 - v.ox) / v.scale, y: (v.oy - oldH / 2) / v.scale } : null;
+      const zoom = v.scale / v.fitScale;
       const r = vp.getBoundingClientRect();
-      view.current.dpr = Math.min(2, window.devicePixelRatio || 1);
-      canvas.width = Math.max(1, Math.round(r.width * view.current.dpr));
-      canvas.height = Math.max(1, Math.round(r.height * view.current.dpr));
+      v.dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.max(1, Math.round(r.width * v.dpr));
+      canvas.height = Math.max(1, Math.round(r.height * v.dpr));
       canvas.style.width = `${r.width}px`;
       canvas.style.height = `${r.height}px`;
-      fit();
+      if (!centre) return fit();
+      v.fitScale = fitScaleFor(r.width, r.height);
+      v.scale = v.fitScale * zoom;
+      v.ox = r.width / 2 - centre.x * v.scale;
+      v.oy = r.height / 2 + centre.y * v.scale;
+      draw();
     };
     const ro = new ResizeObserver(resize);
     ro.observe(vp);
     return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fit]);
 
   useEffect(draw, [draw]);
@@ -368,7 +391,8 @@ function WorldMap({ data }: { data: WorldData }) {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const p = point(e);
-      zoomAt(e.deltaY < 0 ? 1.12 : 0.89, p.x, p.y);
+      const dy = e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY;
+      zoomAt(Math.exp(-Math.max(-120, Math.min(120, dy)) * 0.0012), p.x, p.y);
     };
     canvas.addEventListener("wheel", onWheel, { passive: false });
     return () => canvas.removeEventListener("wheel", onWheel);
@@ -387,13 +411,22 @@ function WorldMap({ data }: { data: WorldData }) {
               {Object.values(data.maps).map((m) => <option key={m.id} value={m.id}>{m.title}</option>)}
             </select>
           </label>
-          <div className="button-row">
-            <button type="button" className="secondary" aria-label="Zoom in" onClick={() => zoomAt(1.22, canvasRef.current!.clientWidth / 2, canvasRef.current!.clientHeight / 2)}>+</button>
-            <button type="button" className="secondary" aria-label="Zoom out" onClick={() => zoomAt(0.82, canvasRef.current!.clientWidth / 2, canvasRef.current!.clientHeight / 2)}>−</button>
-            <button type="button" className="secondary" onClick={fit}>Fit</button>
-          </div>
+          <button
+            type="button"
+            className={`mark-mode ${marking ? "on" : ""}`}
+            aria-pressed={marking}
+            onClick={() => setMarking((m) => !m)}
+            title="While on, one click on a blockade marks it opened (or not)"
+          >
+            {marking ? "✓ Marking opened · click blockades" : "Mark opened"}
+          </button>
         </div>
-        <div className="map-viewport" ref={viewportRef}>
+        <div className={`map-viewport ${marking ? "marking" : ""}`} ref={viewportRef}>
+          <div className="map-zoom" role="group" aria-label="Zoom">
+            <button type="button" aria-label="Zoom in" onClick={() => zoomAt(1.25, canvasRef.current!.clientWidth / 2, canvasRef.current!.clientHeight / 2)}>+</button>
+            <button type="button" aria-label="Zoom out" onClick={() => zoomAt(0.8, canvasRef.current!.clientWidth / 2, canvasRef.current!.clientHeight / 2)}>−</button>
+            <button type="button" aria-label="Fit the whole region" onClick={fit} className="fit">Fit</button>
+          </div>
           <canvas
             ref={canvasRef}
             role="img"
@@ -420,6 +453,8 @@ function WorldMap({ data }: { data: WorldData }) {
             }}
             onPointerLeave={() => !pointer.current && setHover(null)}
             onDoubleClick={(e) => {
+              e.preventDefault();
+              if (marking) return; // single clicks already toggle in marking mode
               const near = spotAt(point(e));
               if (near) toggleOpened(near.spot);
             }}
@@ -428,6 +463,17 @@ function WorldMap({ data }: { data: WorldData }) {
               pointer.current = null;
               if (!ptr || ptr.moved) return;
               const p = point(e);
+              if (marking) {
+                const near = spotAt(p);
+                if (near) {
+                  const wasOpen = opened.has(spotKey(near.spot));
+                  toggleOpened(near.spot);
+                  const name = near.spot.area?.name ?? data.items[near.spot.itemId]?.name ?? "Blockade";
+                  setToast(`${name}: ${wasOpen ? "not opened" : "opened ✓"}`);
+                  if (near.spot.area) setSelection({ type: "area", id: near.spot.area.id });
+                }
+                return;
+              }
               let best = Infinity;
               let hit: Selection = null;
               for (const w of filter.wheels ? Object.values(map.wheels || {}) : []) {
@@ -470,6 +516,7 @@ function WorldMap({ data }: { data: WorldData }) {
             <button
               key={id}
               type="button"
+              title={u.use}
               aria-pressed={unlocks.has(+id)}
               onClick={() =>
                 setFilter((f) => ({ ...f, hidden: f.hidden.includes(+id) ? f.hidden.filter((x) => x !== +id) : [...f.hidden, +id] }))
@@ -537,7 +584,7 @@ function WorldMap({ data }: { data: WorldData }) {
                 </ul>
               )}
               <p className="hint">
-                Tap a blockade and press "Mark as opened", or double-click it on the map. Counts one item per blockade.
+                Turn on "Mark opened" and click blockades on the map, or pick one and press "Mark as opened". Counts one item per blockade.
                 {done > 0 && (
                   <>
                     {" "}
