@@ -5,6 +5,7 @@ export const CHANGES: { date: string; items: { text: string; href?: string }[] }
     date: "2026-11-15",
     items: [
       { text: "Spending Guide redesigned: a \"buy in this order\" path, every deal rated with a value meter (tap one for the details), and a Deal check: answer four yes/no questions about a pack and it tells you whether to buy, think twice or skip.", href: "/spending" },
+      { text: "Planner Guide redesigned: a quick-start path, a step menu that follows you as you read, a Simple/Full switch that hides the Full-only fields, the example screenshots, and a search for any button in the planner.", href: "/guide" },
       { text: "Dawnium Guide redesigned: the Realm refresh table and calculator are now one chart. Tap the boxes for each Realm to set your refreshes and see the daily and weekly Dawnium.", href: "/dawnium" },
     ],
   },

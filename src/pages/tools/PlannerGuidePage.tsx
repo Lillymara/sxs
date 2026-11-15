@@ -1,17 +1,26 @@
 // How to use the Season Planner: step by step, in the order of the planner's cards.
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { GameIcon } from "../../components/GameIcon";
 
 interface Step {
   id: string;
   title: string;
+  /** Short name for the step menu. */
+  short: string;
+  /** A game icon (public/art/icons) or an emoji. */
+  icon: string;
   intro: ReactNode;
   points: ReactNode[];
+  /** Extra fields that only Full mode asks for. */
+  full?: ReactNode[];
   tip?: ReactNode;
 }
 
 const STEPS: Step[] = [
   {
     id: "mode",
+    short: "Simple or Full",
+    icon: "⚙️",
     title: "Choose Simple or Full",
     intro: "The switch at the top sets how much the planner asks for. You can change it at any time without losing anything.",
     points: [
@@ -30,6 +39,8 @@ const STEPS: Step[] = [
   },
   {
     id: "screenshots",
+    short: "Screenshots",
+    icon: "📷",
     title: "Fill it in from screenshots (optional)",
     intro: "Instead of typing, let the planner read your numbers from game screenshots. They're read on your device and never uploaded.",
     points: [
@@ -52,6 +63,8 @@ const STEPS: Step[] = [
   },
   {
     id: "goal",
+    short: "Season & goal",
+    icon: "primostar",
     title: "Season & goal",
     intro: "Tell the planner where you are and where you want to be.",
     points: [
@@ -60,7 +73,7 @@ const STEPS: Step[] = [
       </>,
       <>
         <b>Total you want:</b> your goal. The hint under it names the Astral Pact bonus that total unlocks, or the next one above it. Aiming for
-        a bonus tier is usually the point. See step 8.
+        a bonus tier is usually the point. See the last step.
       </>,
       <>
         <b>Season ends:</b> filled in from your server on the <a href="/calendar">Server Calendar</a>. Without a server it guesses 14 days, so
@@ -71,13 +84,13 @@ const STEPS: Step[] = [
         should do this. The planner tells you when to stop claiming the bed and the Cart, and leaves those hours out of this season. Untick
         them if you won't save.
       </>,
-      <>
-        <b>Full mode</b> also has your daily reset time and boost hours per reset.
-      </>,
     ],
+    full: [<>Your daily reset time and boost hours per reset.</>],
   },
   {
     id: "character",
+    short: "Character EXP",
+    icon: "character",
     title: "Character EXP",
     intro: "Your level and how fast you're levelling. This decides your season-end level, and that sets every cap.",
     points: [
@@ -92,13 +105,13 @@ const STEPS: Step[] = [
         Underneath you'll see <b>Projected by season end: Lv …</b>. At around 1.8M EXP per level from 122 onward, a 76K/hr bed is about a level
         a day.
       </>,
-      <>
-        <b>Full mode</b> adds Goddess statues (+1% EXP each) and how many new ones you'll get a day.
-      </>,
     ],
+    full: [<>Goddess statues (+1% EXP each) and how many new ones you'll get a day.</>],
   },
   {
     id: "systems",
+    short: "System levels",
+    icon: "gear",
     title: "System levels and Plan my goal",
     intro: "Gear, Skills & Charms, Fantomons and Relics. Each level above the season's starting level scores points; 100 points make a Primostar in Season 1.",
     points: [
@@ -121,13 +134,17 @@ const STEPS: Step[] = [
       <>
         <b>Fill min</b> next to a system puts the rest of your goal on that one system alone, if you'd rather push one thing.
       </>,
+    ],
+    full: [
       <>
-        In <b>Full</b>, each system lists every slot, and the <b>Set every…</b> row sets them all to one level at once.
+        Each system lists every slot, and the <b>Set every…</b> row sets them all to one level at once.
       </>,
     ],
   },
   {
     id: "income",
+    short: "Cart & materials",
+    icon: "ore",
     title: "Cart income and what you have",
     intro: "Where your materials come from.",
     points: [
@@ -141,13 +158,13 @@ const STEPS: Step[] = [
         <b>Refined Ore on hand:</b> gear needs it every 5 levels. It's rarely short (4 map gathers a day plus Ore Realms), so it's shown but
         doesn't limit plans.
       </>,
-      <>
-        <b>Full mode</b> also has a "Shop + other / day" column for anything else you get daily, and Fantomon EXP per treat.
-      </>,
     ],
+    full: [<>A "Shop + other / day" column for anything else you get daily, and Fantomon EXP per treat.</>],
   },
   {
     id: "daily",
+    short: "Each day",
+    icon: "essence",
     title: "Each day",
     intro: "What you do every day to top up materials.",
     points: [
@@ -163,8 +180,10 @@ const STEPS: Step[] = [
       <>
         <b>Realm tools saved up:</b> Hammers, Pickaxes, Knuckles and Shovels already in your Backpack.
       </>,
+    ],
+    full: [
+      <>Daily tasks, Rola bought with Dawnium, and your rank (sets Realm, gathering and shop amounts).</>,
       <>
-        <b>Full mode</b> adds daily tasks, Rola bought with Dawnium, your rank (sets Realm, gathering and shop amounts), and{" "}
         <b>Stamina &amp; gathering</b>: what percent of your Stamina goes to Rola, Ore, Sand and Essence, plus shared Grand Mines. The{" "}
         <b>By season end</b> column shows what that gathers.
       </>,
@@ -172,6 +191,8 @@ const STEPS: Step[] = [
   },
   {
     id: "results",
+    short: "The projection",
+    icon: "relic",
     title: "Read the projection",
     intro: "The panel beside the cards (or at the bottom on a phone; tap the bar at the bottom of the screen to jump there).",
     points: [
@@ -199,8 +220,8 @@ const STEPS: Step[] = [
 ];
 
 /** Every button and link worth knowing, and where it sits. */
-const WHERE: { what: ReactNode; where: ReactNode; does: ReactNode }[] = [
-  { what: <a href="/planner">Season Planner</a>, where: "The menu, under Plan (on phones, the Planner tab at the bottom)", does: "Opens the planner." },
+const WHERE: { what: string; href?: string; where: string; does: string }[] = [
+  { what: "Season Planner", href: "/planner", where: "The menu, under Plan (on phones, the Planner tab at the bottom)", does: "Opens the planner." },
   { what: "This guide", where: "The 📖 banner at the very top of the planner", does: "Comes back here." },
   {
     what: "Clear planner",
@@ -217,7 +238,7 @@ const WHERE: { what: ReactNode; where: ReactNode; does: ReactNode }[] = [
     does: "Puts what was read into the planner. Nothing goes in until you tap it.",
   },
   {
-    what: <a href="/calendar">Server Calendar</a>,
+    what: "Server Calendar", href: "/calendar",
     where: "The menu, under Plan (on phones, the Calendar tab). Before you've picked one, there's also a Pick your server link under Season ends",
     does: "Sets your server, which sets the season end and reset time.",
   },
@@ -229,7 +250,7 @@ const WHERE: { what: ReactNode; where: ReactNode; does: ReactNode }[] = [
     where: "Each day card → Material Realms",
     does: "Suggested refreshes (Ore/Rola/Essence/Sand) to reach your goal, plus presets, with Dawnium costs. Tap one to use it.",
   },
-  { what: <a href="/dawnium">Dawnium Guide</a>, where: "The menu, under Info (on phones, under More), or the link under Material Realms", does: "Where Dawnium does the most good." },
+  { what: "Dawnium Guide", href: "/dawnium", where: "The menu, under Info (on phones, under More), or the link under Material Realms", does: "Where Dawnium does the most good." },
   {
     what: "See all bonuses (Astral Pact)",
     where: "The projection panel, under the Primostars total",
@@ -240,108 +261,213 @@ const WHERE: { what: ReactNode; where: ReactNode; does: ReactNode }[] = [
     where: "On a phone: the bar fixed at the bottom of the screen (+N Primostars)",
     does: "Scrolls down to the results.",
   },
-  { what: <a href="/timer">Level Timer</a>, where: "The menu, under Plan (on phones, the Timer tab)", does: "When you'll reach your next level, with bed boosts and Temporal Crystals. It has its own Fill from screenshots (Character and Bed only), and shares your character with the planner." },
+  { what: "Level Timer", href: "/timer", where: "The menu, under Plan (on phones, the Timer tab)", does: "When you'll reach your next level, with bed boosts and Temporal Crystals. It has its own Fill from screenshots (Character and Bed only), and shares your character with the planner." },
 ];
 
-const QUICK = [
-  "Pick your server on the Server Calendar so the season end is right.",
-  "Fill from screenshots (or type your numbers in), then tap Fill the planner.",
-  "Enter Primostars you have and the Total you want: pick an Astral Pact tier.",
-  "Check Plan my goal at the top of System levels and tap Use this plan.",
-  "Out of reach? Lower the goal with one tap, or add Realm refreshes and Cart income.",
+/** The quick start, as a path. Each stop links to the step that explains it. */
+const QUICK: { text: string; step: string; icon: string }[] = [
+  { text: "Pick your server on the Server Calendar so the season end is right.", step: "goal", icon: "🗓️" },
+  { text: "Fill from screenshots (or type your numbers in), then tap Fill the planner.", step: "screenshots", icon: "📷" },
+  { text: "Enter Primostars you have and the Total you want: pick an Astral Pact tier.", step: "goal", icon: "primostar" },
+  { text: "Check Plan my goal at the top of System levels and tap Use this plan.", step: "systems", icon: "gear" },
+  { text: "Out of reach? Lower the goal with one tap, or add Realm refreshes and Cart income.", step: "daily", icon: "essence" },
 ];
+
+const SHOTS = [
+  ["character", "Character"],
+  ["bed", "Bed"],
+  ["cart", "Cart"],
+  ["progression", "Season → Progression"],
+  ["backpack", "Backpack"],
+] as const;
+
+const NOTES = [
+  <>
+    Everything you enter is saved in this browser only. <b>Clear planner</b> (top right of the planner, or at the very bottom) starts over.
+  </>,
+  <>Numbers accept K, M and B (like 605K or 1.53M), the way the game shows them.</>,
+  <>Redo your screenshots every few days: your rates and stockpiles change, and so does the best plan.</>,
+  <>Material, Realm and shop amounts are estimates from the game's data, so leave yourself a little room.</>,
+];
+
+function StepIcon({ icon }: { icon: string }) {
+  return /^[a-z]/i.test(icon) ? <GameIcon name={icon} /> : <span className="guide-emoji" aria-hidden>{icon}</span>;
+}
+
+/** The planner's own Simple/Full choice, so the guide opens the way the planner is set. */
+function plannerMode(): "simple" | "full" {
+  try {
+    return JSON.parse(localStorage.getItem("sxs.planner") || "{}").mode === "full" ? "full" : "simple";
+  } catch {
+    return "simple";
+  }
+}
 
 export function PlannerGuidePage() {
+  const [mode, setMode] = useState<"simple" | "full">(plannerMode);
+  const [active, setActive] = useState(STEPS[0].id);
+  const [query, setQuery] = useState("");
+
+  // Highlight the step being read in the step menu.
+  useEffect(() => {
+    const els = STEPS.map((st) => document.getElementById(`guide-${st.id}`)).filter((e): e is HTMLElement => !!e);
+    const io = new IntersectionObserver(
+      (entries) => {
+        const seen = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (seen) setActive(seen.target.id.replace("guide-", ""));
+      },
+      { rootMargin: "-20% 0px -60% 0px" },
+    );
+    els.forEach((e) => io.observe(e));
+    return () => io.disconnect();
+  }, []);
+
+  // Keep the highlighted step visible when the step menu is a sideways strip.
+  const rail = useRef<HTMLOListElement>(null);
+  useEffect(() => {
+    const ol = rail.current;
+    const a = ol?.querySelector<HTMLElement>("[aria-current]");
+    if (!ol || !a || ol.scrollWidth <= ol.clientWidth) return;
+    ol.scrollTo({ left: a.offsetLeft - ol.clientWidth / 2 + a.offsetWidth / 2, behavior: "smooth" });
+  }, [active]);
+
+  const q = query.trim().toLowerCase();
+  const found = q ? WHERE.filter((w) => `${w.what} ${w.where} ${w.does}`.toLowerCase().includes(q)) : WHERE;
+
   return (
     <div className="tool guide">
-      <section className="card">
-        <h2 className="subhead">Quick start</h2>
-        <ol className="guide-quick">
-          {QUICK.map((q) => (
-            <li key={q}>{q}</li>
-          ))}
-        </ol>
-        <p className="guide-links">
+      <section className="card guide-hero">
+        <div className="guide-hero-head">
+          <div>
+            <p className="eyebrow">Five minutes to a plan</p>
+            <h2>Quick start</h2>
+          </div>
           <a className="spin-button" href="/planner">
             Open the Season Planner →
           </a>
-        </p>
-        <nav className="guide-toc" aria-label="Guide sections">
-          <a href="/guide?where" onClick={(e) => jump(e, "where")}>
-            Where to find everything
-          </a>
-          {STEPS.map((s, i) => (
-            <a key={s.id} href={`/guide?${s.id}`} onClick={(e) => jump(e, s.id)}>
-              {i + 1}. {s.title}
-            </a>
-          ))}
-        </nav>
-      </section>
-
-      <section className="card" id="guide-where">
-        <h2 className="subhead">Where to find everything</h2>
-        <div className="table-wrap flat">
-          <table className="guide-where">
-            <thead>
-              <tr>
-                <th scope="col">What</th>
-                <th scope="col">Where</th>
-                <th scope="col">What it does</th>
-              </tr>
-            </thead>
-            <tbody>
-              {WHERE.map((w, i) => (
-                <tr key={i}>
-                  <th scope="row">{w.what}</th>
-                  <td>{w.where}</td>
-                  <td>{w.does}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
-      </section>
-
-      <section className="card">
-        <ol className="dawn-uses guide-steps">
-          {STEPS.map((s, i) => (
-            <li key={s.id} id={`guide-${s.id}`}>
-              <span className="dawn-rank" aria-hidden>
-                {i + 1}
-              </span>
-              <div>
-                <div className="dawn-title">
-                  <h3>{s.title}</h3>
-                </div>
-                <p className="deal-verdict">{s.intro}</p>
-                <ul>
-                  {s.points.map((p, j) => (
-                    <li key={j}>{p}</li>
-                  ))}
-                </ul>
-                {s.tip && <p className="hint">💡 {s.tip}</p>}
-              </div>
+        <ol className="guide-path">
+          {QUICK.map((qk, i) => (
+            <li key={qk.text}>
+              <a href={`/guide?${qk.step}`} onClick={(e) => jump(e, qk.step)}>
+                <span className="guide-path-icon">
+                  <StepIcon icon={qk.icon} />
+                  <b aria-hidden>{i + 1}</b>
+                </span>
+                <span>{qk.text}</span>
+              </a>
             </li>
           ))}
         </ol>
       </section>
 
-      <section className="card">
-        <h2 className="subhead">Good to know</h2>
-        <ul className="guide-notes">
-          <li>
-            Everything you enter is saved in this browser only. <b>Clear planner</b> (top right of the planner, or at the very bottom) starts over.
-          </li>
-          <li>Numbers accept K, M and B (like 605K or 1.53M), the way the game shows them.</li>
-          <li>Redo your screenshots every few days: your rates and stockpiles change, and so does the best plan.</li>
-          <li>Material, Realm and shop amounts are estimates from the game's data, so leave yourself a little room.</li>
-        </ul>
-        <p className="guide-links">
-          <a className="spin-button" href="/planner">
-            Open the Season Planner →
-          </a>
-        </p>
-      </section>
+      <div className="guide-body">
+        <nav className="guide-rail" aria-label="Guide steps">
+          <div className="guide-view" role="group" aria-label="Show the guide for">
+            <span>Show me</span>
+            <span className="yn">
+              <button type="button" aria-pressed={mode === "simple"} onClick={() => setMode("simple")}>Simple</button>
+              <button type="button" aria-pressed={mode === "full"} onClick={() => setMode("full")}>Full</button>
+            </span>
+          </div>
+          <ol ref={rail}>
+            {STEPS.map((st, i) => (
+              <li key={st.id}>
+                <a href={`/guide?${st.id}`} aria-current={active === st.id ? "step" : undefined} onClick={(e) => jump(e, st.id)}>
+                  <b>{i + 1}</b>
+                  {st.short}
+                </a>
+              </li>
+            ))}
+            <li>
+              <a href="/guide?where" onClick={(e) => jump(e, "where")}>
+                <b>?</b>
+                Find a button
+              </a>
+            </li>
+          </ol>
+        </nav>
+
+        <div className="guide-main">
+          {STEPS.map((st, i) => (
+            <section key={st.id} id={`guide-${st.id}`} className="card guide-step">
+              <header>
+                <span className="guide-step-icon">
+                  <StepIcon icon={st.icon} />
+                </span>
+                <div>
+                  <p className="eyebrow">Step {i + 1} of {STEPS.length}</p>
+                  <h2>{st.title}</h2>
+                </div>
+              </header>
+              <p className="guide-intro">{st.intro}</p>
+              {st.id === "screenshots" && (
+                <ul className="guide-shots">
+                  {SHOTS.map(([file, label]) => (
+                    <li key={file}>
+                      <img src={`${import.meta.env.BASE_URL}art/screens/${file}.jpg`} alt={`Example ${label} screenshot`} loading="lazy" />
+                      <span>{label}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <ul className="guide-points">
+                {st.points.map((pt, j) => (
+                  <li key={j}>{pt}</li>
+                ))}
+              </ul>
+              {st.full &&
+                (mode === "full" ? (
+                  <div className="guide-full">
+                    <span className="guide-full-tag">Full mode adds</span>
+                    <ul className="guide-points">
+                      {st.full.map((pt, j) => (
+                        <li key={j}>{pt}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <button type="button" className="guide-full-more" onClick={() => setMode("full")}>
+                    + {st.full.length} more field{st.full.length > 1 ? "s" : ""} in Full mode
+                  </button>
+                ))}
+              {st.tip && <p className="guide-tip">💡 {st.tip}</p>}
+            </section>
+          ))}
+
+          <section className="card" id="guide-where">
+            <div className="guide-where-head">
+              <div>
+                <p className="eyebrow">Can't find it?</p>
+                <h2 className="subhead">Every button, and where it is</h2>
+              </div>
+              <input type="search" placeholder="Search, e.g. Fill min" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search buttons" />
+            </div>
+            <ul className="guide-finder">
+              {found.map((w) => (
+                <li key={w.what}>
+                  <b>{w.href ? <a href={w.href}>{w.what}</a> : w.what}</b>
+                  <span className="guide-finder-where">📍 {w.where}</span>
+                  <span>{w.does}</span>
+                </li>
+              ))}
+              {!found.length && <li className="hint">Nothing matches "{query}".</li>}
+            </ul>
+          </section>
+
+          <section className="card">
+            <h2 className="subhead">Good to know</h2>
+            <div className="tip-tiles">
+              {NOTES.map((n, i) => <p key={i}>{n}</p>)}
+            </div>
+            <p className="guide-links">
+              <a className="spin-button" href="/planner">
+                Open the Season Planner →
+              </a>
+            </p>
+          </section>
+        </div>
+      </div>
     </div>
   );
 }
