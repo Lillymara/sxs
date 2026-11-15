@@ -1498,3 +1498,12 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
 .cp-bonuses b { font-size: 1.05rem; }
 .cp-bonuses small { font-size: 0.7rem; color: var(--muted); }
 @media (max-width: 520px) { .cp-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); max-height: 440px; } .cp-portrait, .cp-portrait > .art:first-child { width: 60px; height: 60px; } .cp-friend { grid-template-columns: 1fr; } }
+.filter-row .role-chip { display: inline-flex; align-items: center; gap: 5px; }
+.role-chip img { width: 18px; height: 18px; object-fit: contain; }
+.tree-mats { margin-top: 12px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; display: grid; gap: 6px; }
+.tree-mats > span { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.tree-mats > div { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.tree-tier { display: inline-flex; align-items: center; gap: 6px; }
+.tree-tier img { width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.4)); }
+.tree-tier small { font-size: 0.76rem; font-weight: 600; }
+.tree-tier i { font-style: normal; font-size: 0.72rem; color: var(--muted); margin: 0 2px; }

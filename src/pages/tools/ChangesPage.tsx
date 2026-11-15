@@ -8,6 +8,7 @@ export const CHANGES: { date: string; items: { text: string; href?: string }[] }
       { text: "Fantomons page redesigned: a collection gallery, evolution art, role, movement, shards to summon, a Fantasmia meter, skill icons, and one quality switch and level slider for every skill.", href: "/fantomons" },
       { text: "Fixed: Fantomon skills at Mythic and above showed Epic-level numbers. Every quality now uses the right values.", href: "/fantomons" },
       { text: "Companions page redesigned: portrait gallery by class, favourite gift items, a friendship slider and a growth chart for each stat.", href: "/companions" },
+      { text: "Fantomons: each profile shows its ability-tree material (Eggs for Tanks, Wool for DPS, Essence for Supports), and the role filters carry the matching icon.", href: "/fantomons" },
       { text: "Gem icons beside the Astral Pact bonuses." },
       { text: "Level Timer: a progress ring around your next level, and numbers that count up when they change.", href: "/timer" },
       { text: "Season Planner: a Primostar track showing what you have, what this season adds, your goal and every Astral Pact tier along the way.", href: "/planner" },

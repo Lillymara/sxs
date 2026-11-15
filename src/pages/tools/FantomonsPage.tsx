@@ -26,6 +26,14 @@ const STATS: { key: string; label: string; icon: string }[] = [
 ];
 const MAX_LEVEL = 200;
 
+/** What each role spends on its ability tree: three tiers, four of one merge into one of the next. */
+const TREE_MATS: Record<string, { family: string; tiers: { name: string; art: string }[] }> = {
+  Tank: { family: "Eggs", tiers: [{ name: "Brown Egg", art: "icons/eggBrown.webp" }, { name: "Bronze Egg", art: "icons/eggBronze.webp" }, { name: "Silver Egg", art: "icons/eggSilver.webp" }] },
+  DPS: { family: "Wool", tiers: [{ name: "Magic Wool", art: "items/item_1540.webp" }, { name: "Bronze Wool", art: "items/item_1541.webp" }, { name: "Silver Wool", art: "items/item_1542.webp" }] },
+  Support: { family: "Essence", tiers: [{ name: "Fresh Essence", art: "items/item_1530.webp" }, { name: "Focus Essence", art: "items/item_1531.webp" }, { name: "Inspiration Essence", art: "items/item_1532.webp" }] },
+};
+const artUrl = (p: string) => `${import.meta.env.BASE_URL}art/${p}`;
+
 function Fantomons({ explorer, choice, onServerChange, now }: { explorer: Explorer } & ToolProps) {
   const all = useMemo(() => buildFantomons(explorer), [explorer]);
   const [filter, setFilter] = usePersistentState<{ only: boolean; limited: boolean }>("sxs.availability", { only: false, limited: false });
@@ -86,7 +94,8 @@ function Fantomons({ explorer, choice, onServerChange, now }: { explorer: Explor
             All
           </button>
           {roles.map((r) => (
-            <button key={r} type="button" aria-pressed={role === r} onClick={() => setRole(role === r ? "" : r)}>
+            <button key={r} type="button" className="role-chip" aria-pressed={role === r} onClick={() => setRole(role === r ? "" : r)}>
+              {TREE_MATS[r] && <img src={artUrl(TREE_MATS[r].tiers[0].art)} alt="" />}
               {r}
             </button>
           ))}
@@ -181,6 +190,20 @@ function Profile({ pet, detail, availState }: { pet: FantomonView; detail?: stri
               <b className={`q-text q-${pet.skillStart}`}>{qualityName(pet.skillStart)}</b>
             </div>
           </div>
+          {pet.role && TREE_MATS[pet.role] && (
+            <div className="tree-mats">
+              <span>Ability tree · {TREE_MATS[pet.role].family}</span>
+              <div>
+                {TREE_MATS[pet.role].tiers.map((t, i) => (
+                  <span key={t.name} className="tree-tier">
+                    {i > 0 && <i aria-hidden>×4 →</i>}
+                    <img src={artUrl(t.art)} alt="" title={t.name} />
+                    <small>{t.name}</small>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           {pet.fantasmia && <FantasmiaMeter f={pet.fantasmia} />}
           {detail && <p className={`note avail-note ${availState}`}>{detail}</p>}
         </div>
