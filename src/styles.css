@@ -352,17 +352,12 @@ input.silly { border-color: var(--error); color: var(--error); box-shadow: 0 0 0
 .dawn-uses ul { margin: 0 0 4px; padding-left: 18px; display: grid; gap: 4px; color: var(--muted); font-size: 0.9rem; }
 .dawn-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
 .dawn-rank.small { width: 26px; height: 26px; font-size: 0.85rem; }
-.pull-order { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 8px; }
-.pull-order li { display: flex; gap: 12px; align-items: flex-start; }
-.pull-order li > div { display: grid; gap: 2px; padding-top: 2px; }
-.pull-order small { color: var(--muted); font-size: 0.85rem; line-height: 1.45; }
 .pulls-reminder { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; padding: 16px 18px; border-radius: 16px;
   background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, var(--surface)), var(--surface-2)); border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); }
 .pulls-reminder > span { font-size: 1.8rem; line-height: 1; }
 .pulls-reminder h3 { margin: 0 0 6px; font-size: 1.05rem; }
 .pulls-reminder p { margin: 0 0 8px; line-height: 1.6; }
 .pulls-reminder p:last-child { margin: 0; font-style: italic; }
-tr.dawn-cheap td { color: #4ade80; font-weight: 700; }
 
 /* ---- Spending guide ---- */
 .honest-answer {
@@ -384,21 +379,9 @@ tr.dawn-cheap td { color: #4ade80; font-weight: 700; }
 .tier-badge.tier-good { background: color-mix(in srgb, #3b82f6 18%, transparent); color: #60a5fa; }
 .tier-badge.tier-situational { background: color-mix(in srgb, #f59e0b 18%, transparent); color: #f59e0b; }
 .tier-badge.tier-skip { background: color-mix(in srgb, #ef4444 16%, transparent); color: #f87171; }
-.tier-card.tier-best { border-top: 3px solid #22c55e; }
-.tier-card.tier-good { border-top: 3px solid #3b82f6; }
-.tier-card.tier-situational { border-top: 3px solid #f59e0b; }
-.tier-card.tier-skip { border-top: 3px solid #ef4444; }
-.deal-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
-.deal { padding: 14px 16px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); }
-.deal h3 { margin: 0 0 4px; font-size: 1.05rem; }
 .deal-verdict { margin: 0 0 8px; font-weight: 600; }
-.deal ul { margin: 0 0 8px; padding-left: 18px; display: grid; gap: 4px; color: var(--muted); font-size: 0.88rem; }
-.deal .hint { margin: 0; }
-.deal .deal-link { margin-top: 6px; }
 .deal-link a { color: var(--accent); font-weight: 600; text-decoration: none; }
 .deal-link a:hover { text-decoration: underline; }
-.spending-extras { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
-.buy-check { margin: 0; padding-left: 20px; display: grid; gap: 8px; line-height: 1.45; }
 
 /* ---- Season Planner layout ---- */
 .mode-switch { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 8px 12px; align-items: center; }
@@ -1527,3 +1510,122 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
 .unlock-name img { width: 20px; height: 20px; }
 .still-needed .needed-items li { padding: 6px 10px; }
 .still-needed .needed-items img { width: 26px; height: 26px; }
+
+/* ---- Spending Guide ---- */
+.spend-path ol { list-style: none; margin: 10px 0 12px; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); counter-reset: none; }
+.spend-path li { --t: #22c55e; position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; padding: 12px 14px; border-radius: 14px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--t) 12%, var(--surface-2)), var(--surface-2) 70%); border: 1px solid color-mix(in srgb, var(--t) 35%, var(--line)); }
+.spend-path li.tier-good { --t: #3b82f6; }
+.spend-path li > div { display: grid; gap: 3px; }
+.spend-path small { color: var(--muted); font-size: 0.84rem; line-height: 1.4; }
+.path-step { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 0.9rem; color: #0b0b0b; background: var(--t); }
+.spend-path .hint { margin: 0; }
+
+.deal-board-head, .deal-check-head, .realm-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-bottom: 8px; }
+.deal-board-head .subhead, .deal-check-head .subhead, .realm-head .subhead { margin: 0; }
+.filter-row .tier-chip[aria-pressed="true"].tier-best { background: #22c55e; border-color: #22c55e; color: #0b0b0b; }
+.filter-row .tier-chip[aria-pressed="true"].tier-good { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+.filter-row .tier-chip[aria-pressed="true"].tier-situational { background: #f59e0b; border-color: #f59e0b; color: #0b0b0b; }
+.filter-row .tier-chip[aria-pressed="true"].tier-skip { background: #ef4444; border-color: #ef4444; color: #fff; }
+.deal-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.deal-row { --t: #22c55e; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); border-left: 4px solid var(--t); overflow: hidden; }
+.deal-row.tier-good { --t: #3b82f6; }
+.deal-row.tier-situational { --t: #f59e0b; }
+.deal-row.tier-skip { --t: #ef4444; }
+.deal-row.open { border-color: color-mix(in srgb, var(--t) 45%, var(--line)); border-left-color: var(--t); }
+.deal-row-head { all: unset; box-sizing: border-box; width: 100%; cursor: pointer; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 12px 14px; }
+.deal-row-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 10px; }
+.deal-row-head:hover { background: color-mix(in srgb, var(--t) 6%, transparent); }
+.deal-name { display: grid; gap: 2px; }
+.deal-name small { color: var(--muted); font-size: 0.85rem; line-height: 1.4; }
+.deal-caret { color: var(--muted); transition: transform 0.2s; }
+.deal-row.open .deal-caret { transform: rotate(180deg); }
+.deal-body { padding: 0 16px 14px 62px; }
+.deal-body ul { margin: 0 0 8px; padding-left: 18px; display: grid; gap: 4px; color: var(--muted); font-size: 0.9rem; line-height: 1.45; }
+.deal-body .hint { margin: 4px 0 0; }
+.value-meter { display: inline-flex; align-items: flex-end; gap: 3px; height: 22px; }
+.value-meter i { width: 6px; border-radius: 2px; background: color-mix(in srgb, var(--muted) 25%, transparent); }
+.value-meter i:nth-child(1) { height: 7px; } .value-meter i:nth-child(2) { height: 12px; } .value-meter i:nth-child(3) { height: 17px; } .value-meter i:nth-child(4) { height: 22px; }
+.value-meter i.on { background: var(--t); }
+@media (max-width: 560px) {
+  .deal-row-head { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .deal-row-head .tier-badge { display: none; }
+  .deal-body { padding-left: 16px; }
+}
+
+.check-qs { list-style: none; margin: 6px 0 12px; padding: 0; display: grid; gap: 8px; counter-reset: q; }
+.check-qs li { counter-increment: q; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); transition: border-color 0.2s, background 0.2s; }
+.check-q::before { content: counter(q) ". "; color: var(--muted); font-weight: 700; }
+.check-q { flex: 1 1 240px; line-height: 1.45; }
+.check-qs li.fine { border-color: color-mix(in srgb, #22c55e 45%, var(--line)); }
+.check-qs li.flag { border-color: color-mix(in srgb, #ef4444 50%, var(--line)); background: color-mix(in srgb, #ef4444 7%, var(--surface-2)); }
+.yn { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.yn button { border: 0; background: transparent; color: var(--text); padding: 6px 16px; font: inherit; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+.yn button + button { border-left: 1px solid var(--line); }
+.yn button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.check-verdict { display: grid; gap: 2px; padding: 12px 16px; border-radius: 14px; border: 1px dashed var(--line); color: var(--muted); }
+.check-verdict b { color: var(--text); font-size: 1.05rem; }
+.check-verdict.ok { border: 1px solid #22c55e; background: color-mix(in srgb, #22c55e 12%, transparent); }
+.check-verdict.ok b { color: #22c55e; }
+.check-verdict.maybe { border: 1px solid #f59e0b; background: color-mix(in srgb, #f59e0b 12%, transparent); }
+.check-verdict.maybe b { color: #f59e0b; }
+.check-verdict.no { border: 1px solid #ef4444; background: color-mix(in srgb, #ef4444 12%, transparent); }
+.check-verdict.no b { color: #f87171; }
+.check-verdict:is(.ok, .maybe, .no) span { color: var(--text); }
+
+.tip-tiles { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.tip-tiles p { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); line-height: 1.5; font-size: 0.92rem; }
+
+/* ---- Dawnium Guide ---- */
+.dawn-uses > li { position: relative; }
+.dawn-uses > li:not(:last-child)::after { content: ""; position: absolute; left: 32px; top: 50px; bottom: -13px; width: 2px; background: color-mix(in srgb, var(--accent) 35%, transparent); }
+
+.realm-grid { --cols: 104px repeat(10, minmax(0, 1fr)) 60px; display: grid; grid-template-columns: var(--cols); gap: 6px 5px; align-items: center; margin: 12px 0 8px; }
+.realm-row { display: contents; }
+.realm-corner { font-size: 0.72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; align-self: end; }
+.realm-bar { --b: #22c55e; position: relative; height: 72px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+.realm-bar.mid { --b: #f59e0b; } .realm-bar.steep { --b: #ef4444; }
+.realm-bar i { width: 100%; border-radius: 5px 5px 2px 2px; background: color-mix(in srgb, var(--b) 55%, transparent); }
+.realm-bar b { position: absolute; bottom: 3px; font-size: 0.68rem; font-variant-numeric: tabular-nums; color: var(--text); text-shadow: 0 1px 2px #000; }
+.realm-name { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; min-width: 0; }
+.realm-name .game-icon { width: 26px; height: 26px; flex: none; }
+.realm-pip { --b: #22c55e; height: 30px; border-radius: 7px; border: 1px solid color-mix(in srgb, var(--b) 40%, var(--line)); background: var(--surface-2); cursor: pointer; padding: 0; transition: background 0.15s, transform 0.1s; }
+.realm-pip.mid { --b: #f59e0b; } .realm-pip.steep { --b: #ef4444; }
+.realm-pip:hover { border-color: var(--b); transform: translateY(-1px); }
+.realm-pip.on { background: var(--b); border-color: var(--b); box-shadow: 0 0 10px color-mix(in srgb, var(--b) 35%, transparent); }
+.realm-cost { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.realm-num { text-align: center; font-size: 0.68rem; color: var(--muted); }
+.realm-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 12px; }
+.realm-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.realm-legend i { width: 12px; height: 12px; border-radius: 3px; background: #22c55e; }
+.realm-legend i.mid { background: #f59e0b; } .realm-legend i.steep { background: #ef4444; }
+.realm-totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0 0 8px; }
+.realm-totals div { padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); }
+.realm-totals dt { font-size: 0.72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.realm-totals dd { margin: 2px 0 0; font-weight: 800; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.realm-totals div:first-child dd { color: var(--accent); }
+@media (max-width: 560px) {
+  .realm-grid { --cols: 30px repeat(10, minmax(0, 1fr)) 44px; gap: 5px 3px; }
+  .realm-name > span { display: none; }
+  .realm-bar b { font-size: 0.6rem; }
+  .realm-pip { height: 26px; border-radius: 5px; }
+  .realm-totals dd { font-size: 1.05rem; }
+  .realm-corner { font-size: 0; }
+}
+
+.pull-order { list-style: none; margin: 10px 0 16px; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); align-items: start; }
+.pull-order li { display: grid; justify-items: center; text-align: center; gap: 6px; padding: 14px 12px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); }
+.pull-icon { position: relative; }
+.pull-icon .game-icon { width: 48px; height: 48px; }
+.pull-icon .dawn-rank { position: absolute; right: -10px; top: -6px; width: 22px; height: 22px; font-size: 0.75rem; }
+.pull-order small { color: var(--muted); font-size: 0.84rem; line-height: 1.45; }
+.dawn-tips .subhead { display: flex; align-items: center; gap: 8px; }
+.dawn-tips .subhead .game-icon { width: 24px; height: 24px; }
+.dawn-tips ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.dawn-tips li { padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); line-height: 1.45; font-size: 0.92rem; }
+.avoid-mark { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem; color: #f87171; background: color-mix(in srgb, #ef4444 16%, transparent); }
+.dawn-tips.avoid li { border-left: 3px solid color-mix(in srgb, #ef4444 60%, var(--line)); }
+
+.spending .card > .subhead:first-child, .dawnium .card > .subhead:first-child { margin-top: 0; }
+.spending .card > .eyebrow + .subhead, .dawnium .card > .eyebrow + .subhead { margin-top: 2px; }
+.check-verdict ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 3px; color: var(--text); }

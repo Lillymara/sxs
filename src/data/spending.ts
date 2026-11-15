@@ -104,12 +104,16 @@ export const DEALS: Deal[] = [
   },
 ];
 
-/** Questions to ask about any deal before buying. */
-export const CHECKLIST = [
-  "What exactly is inside, and do I need it right now?",
-  "Does it get me past a real wall or milestone (a relic set, a Primostar goal, a class change)?",
-  "Would the same money buy more as a Monthly Card, Fund or Weekly Card?",
-  "Am I only buying it because of the timer or the 'value %' badge?",
+/** Questions to ask about any deal before buying. `good` is the answer that's no red flag; `flag` says why the other one is. */
+export const CHECKLIST: { q: string; good: boolean; flag: string }[] = [
+  { q: "Do I need what's inside right now?", good: true, flag: "You don't need it yet. It'll come round again." },
+  {
+    q: "Does it get me past a real wall or milestone (a relic set, a Primostar goal, a class change)?",
+    good: true,
+    flag: "It doesn't fix a real wall, so it won't change much.",
+  },
+  { q: "Would the same money buy more as a Monthly Card, Fund or Weekly Card?", good: false, flag: "A card or fund gives more for the same money. Buy that instead." },
+  { q: "Am I mostly buying it because of the timer or the 'value %' badge?", good: false, flag: "The timer and badge are there to rush you. Let it expire." },
 ];
 
 /** Free-to-play and spending tips that apply whatever you buy. */

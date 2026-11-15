@@ -62,11 +62,12 @@ export const PRIORITIES: Use[] = [
 ];
 
 /** Where any Dawnium left over after the best uses can go, best first. */
-export const LEFTOVER_PULLS: { title: string; note?: string }[] = [
-  { title: "Relic pulls" },
-  { title: "Skill pulls" },
+export const LEFTOVER_PULLS: { title: string; icon: string; note?: string }[] = [
+  { title: "Relic pulls", icon: "relic" },
+  { title: "Skill pulls", icon: "skill" },
   {
     title: "Fantomon pulls",
+    icon: "fantomon",
     note: "Worth it if you're very close to a Mythic pet purchase (60 exchange hearts), for instance with a server or Nexus tournament coming up soon.",
   },
 ];
