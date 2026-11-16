@@ -13,3 +13,5 @@ After game data or the link format changes, from the repo root:
     python share/scripts/build_data.py
 
 Game art by Boltray Games. Font: Plus Jakarta Sans (SIL Open Font License).
+
+Live at https://l.lmthings.com (Vercel project sxs-share, root directory share/). Redeploys on pushes that change share/.
