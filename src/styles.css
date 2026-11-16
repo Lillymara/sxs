@@ -1843,3 +1843,74 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
   .lo-card { position: sticky; top: 16px; }
   .lo-picker { max-height: calc(100vh - 32px); overflow-y: auto; position: sticky; top: 16px; }
 }
+.lo-name { display: grid; gap: 4px; }
+.lo-name > span:first-child { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.lo-name-box { position: relative; display: block; }
+.lo-name-box .lo-title { padding-right: 28px; }
+.lo-pencil { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.lo-name-box.needed .lo-title { border-bottom: 2px solid #f87171; }
+.lo-name-hint { color: #f87171; font-size: 0.8rem; font-weight: 600; }
+.lo-title::placeholder { font-weight: 600; color: color-mix(in srgb, var(--muted) 70%, transparent); }
+
+/* Loadout card in the shape of the game's Skill screen. */
+.lo-scene { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 18px 14px 16px; border-radius: 20px; overflow: hidden;
+  background:
+    radial-gradient(70% 45% at 50% 100%, rgb(126 186 92 / 0.55), transparent 70%),
+    linear-gradient(180deg, #8ec5ef 0%, #bfe0f5 42%, #d9eedc 64%, #9ccc7a 100%);
+  border: 1px solid color-mix(in srgb, #fff 30%, var(--line)); }
+.lo-scene::before { content: ""; position: absolute; inset: auto -10% 18% -10%; height: 30%; background: radial-gradient(50% 60% at 30% 100%, rgb(255 255 255 / 0.55), transparent 70%), radial-gradient(40% 50% at 75% 100%, rgb(255 255 255 / 0.45), transparent 70%); pointer-events: none; }
+.lo-col { position: relative; display: grid; gap: 10px; }
+.lo-scene .lo-slot { width: 92px; padding: 0; border: 0; background: none; border-radius: 0; gap: 4px; box-shadow: none; }
+.lo-scene .lo-slot:hover { transform: translateY(-1px); }
+.lo-scene .lo-slot.on { box-shadow: none; }
+.lo-scene .lo-slot-art { width: 74px; height: 74px; }
+.lo-ring { --q: #4ea8ff; width: 74px; height: 74px; border-radius: 50%; padding: 4px; background: conic-gradient(from 200deg, var(--q), color-mix(in srgb, var(--q) 55%, #fff), var(--q)); box-shadow: 0 4px 10px rgb(0 0 0 / 0.35); }
+.lo-ring.q-Purple { --q: #b06cff; } .lo-ring.q-Orange { --q: #ff9b3d; }
+.lo-ring img, .lo-scene .lo-slot-art .lo-ring img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: #2a2a2a; display: block; }
+.lo-scene .lo-plus { width: 66px; height: 66px; border: 3px dashed rgb(255 255 255 / 0.9); background: rgb(255 255 255 / 0.35); color: #fff; text-shadow: 0 1px 3px rgb(0 0 0 / 0.4); }
+.lo-scene .lo-slot.on .lo-slot-art::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 3px solid var(--accent); box-shadow: 0 0 14px var(--accent); }
+.lo-scene .lo-num { top: -2px; left: -2px; width: 24px; height: 24px; font-size: 0.78rem; color: #fff; background: #e0475a; border: 2px solid #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 0.35); }
+.lo-scene .lo-slot-name { min-height: 0; max-width: 92px; padding: 2px 7px; border-radius: 7px; font-size: 0.68rem; font-weight: 700; color: #fff; background: rgb(20 22 30 / 0.62); -webkit-line-clamp: 2; }
+.lo-scene .lo-slot:not(.filled) .lo-slot-name { color: rgb(255 255 255 / 0.85); }
+.lo-stage { position: relative; display: grid; justify-items: center; align-content: center; gap: 6px; min-height: 100%; }
+.lo-emblem { position: absolute; top: 4%; left: 50%; transform: translateX(-50%); width: 62%; max-width: 150px; aspect-ratio: 1; opacity: 0.32; pointer-events: none; }
+.lo-emblem img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 8px rgb(0 0 0 / 0.2)); }
+.lo-stage .lo-slot.pet { width: auto; margin-top: 40px; }
+.lo-stage .lo-slot.pet .lo-slot-art { width: 120px; height: 120px; }
+.lo-stage .lo-slot.pet .lo-slot-art img { width: 120px; height: 120px; border-radius: 0; object-fit: contain; filter: drop-shadow(0 8px 10px rgb(0 0 0 / 0.3)); }
+.lo-stage .lo-slot.pet .lo-plus { width: 96px; height: 96px; }
+.lo-stage .lo-slot.pet .lo-slot-name { max-width: 140px; }
+.lo-stage-class { padding: 3px 12px; border-radius: 999px; background: rgb(255 255 255 / 0.85); color: #2a2a2a; font-weight: 800; font-size: 0.8rem; box-shadow: 0 2px 6px rgb(0 0 0 / 0.15); }
+
+.lo-namebar { display: flex; align-items: center; gap: 6px; max-width: 380px; margin: 14px auto 0; padding: 6px 8px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); }
+.lo-namebar.needed { border-color: #f87171; }
+.lo-arrow { flex: none; width: 34px; height: 34px; border: 0; border-radius: 10px; background: none; color: var(--text); font-size: 1.7rem; line-height: 1; font-weight: 700; cursor: pointer; }
+.lo-arrow:hover:not(:disabled) { color: var(--accent); background: var(--surface); }
+.lo-arrow:disabled { opacity: 0.25; cursor: default; }
+.lo-namebar .lo-name-box { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.lo-namebar .lo-pencil { position: static; transform: none; color: var(--text); }
+.lo-namebar .lo-title { width: 100%; text-align: center; padding: 4px 0; font-size: 1.05rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; border: 0; border-bottom: 3px solid color-mix(in srgb, var(--accent) 60%, transparent); border-radius: 0; background: none; }
+.lo-namebar .lo-title:focus { border-bottom-color: var(--accent); }
+.lo-dots { display: flex; justify-content: center; gap: 5px; margin: 8px 0 0; }
+.lo-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
+.lo-dots i.on { background: var(--accent); width: 16px; border-radius: 3px; }
+.lo-card .lo-name-hint { text-align: center; margin: 6px 0 0; }
+.lo-class-row { margin-top: 14px; }
+.lo-class-row .class-select { max-width: 380px; margin: 0 auto; }
+
+@container lo (max-width: 520px) {
+  .lo-scene { padding: 14px 8px 12px; gap: 4px; }
+  .lo-scene .lo-slot { width: 74px; }
+  .lo-scene .lo-slot-art, .lo-ring { width: 60px; height: 60px; }
+  .lo-scene .lo-plus { width: 54px; height: 54px; }
+  .lo-scene .lo-slot-name { max-width: 74px; font-size: 0.62rem; padding: 2px 5px; }
+  .lo-stage .lo-slot.pet .lo-slot-art, .lo-stage .lo-slot.pet .lo-slot-art img { width: 84px; height: 84px; }
+  .lo-stage .lo-slot.pet .lo-plus { width: 70px; height: 70px; }
+  .lo-col { gap: 8px; }
+}
+.lo-scene .lo-slot-name { min-height: calc(2.5em + 4px); align-content: center; }
+.lo-tabs { display: flex; gap: 4px; margin: -4px -4px 14px; padding: 5px; border-radius: 14px; background: #2b2b2b; }
+.lo-tabs button { flex: 1; padding: 9px 8px; border: 0; border-radius: 10px; background: none; color: #cfcfcf; font: inherit; font-weight: 700; font-size: 0.95rem; cursor: pointer; }
+.lo-tabs button[aria-selected="true"] { background: #f1f1f1; color: #222; }
+.lo-tabs button:hover:not([aria-selected="true"]) { color: #fff; }
+.lo-grid button img { box-shadow: 0 2px 6px rgb(0 0 0 / 0.3); }

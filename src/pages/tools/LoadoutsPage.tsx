@@ -1,6 +1,6 @@
 // Loadouts: pick a class, 4 skills in cast order, 4 charms and a Fantomon, then share the build as a link.
 // Nothing is stored on a server; the link carries the whole build (src/lib/loadout.ts).
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ClassSelect } from "../../components/ClassSelect";
 import { GameArt } from "../../components/GameArt";
 import { Icon } from "../../components/Icon";
@@ -40,6 +40,8 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState("");
   const [opened, setOpened] = useState(false);
+  const [nameNeeded, setNameNeeded] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
 
   // A shared link (?b=…) opens straight into the builder.
   useEffect(() => {
@@ -133,7 +135,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
     const names = (xs: (number | null)[]) => xs.map((x, i) => `${i + 1}. ${skill(x)?.name ?? "—"}`).join("  ");
     const text = [
       `**${draft.title.trim() || `${cls.name} loadout`}** (${cls.name})`,
-      `Skills: ${names(draft.skills)}`,
+      `Techniques: ${names(draft.skills)}`,
       `Charms: ${draft.charms.map((x) => skill(x)?.name ?? "—").join(", ")}`,
       pet ? `Fantomon: ${pet.name}` : "",
       draft.notes.trim(),
@@ -149,6 +151,12 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
     }
   };
   const save = () => {
+    if (!draft.title.trim()) {
+      setNameNeeded(true);
+      nameRef.current?.focus();
+      nameRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     const id = editingId ?? Date.now().toString(36);
     const item: SavedLoadout = { ...draft, id, savedAt: Date.now() };
     setSaved((s) => ({ items: [item, ...s.items.filter((x) => x.id !== id)] }));
@@ -162,12 +170,25 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
     setOpened(false);
     setSlot({ kind: "skills", i: 0 });
   };
-  const openSaved = (s: SavedLoadout) => {
+  const openSaved = (s: SavedLoadout, scroll = true) => {
     const { id, savedAt: _savedAt, ...l } = s;
     setDraft(clean(l, classes, D.skills));
     setEditingId(id);
     setOpened(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (scroll) window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  /** Steps through My loadouts, like the arrows beside the loadout name in the game. */
+  const cycle = (by: number) => {
+    const items = saved.items;
+    if (!items.length) return;
+    const at = items.findIndex((x) => x.id === editingId);
+    openSaved(items[at < 0 ? (by > 0 ? 0 : items.length - 1) : (at + by + items.length) % items.length], false);
+  };
+  const rename = (s: SavedLoadout) => {
+    const name = window.prompt("Loadout name", s.title)?.trim().slice(0, TITLE_MAX);
+    if (!name) return;
+    setSaved((x) => ({ items: x.items.map((it) => (it.id === s.id ? { ...it, title: name } : it)) }));
+    if (editingId === s.id) edit({ title: name });
   };
   const remove = (id: string) => {
     if (!window.confirm("Delete this loadout from My loadouts?")) return;
@@ -197,7 +218,9 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
           {s.kind === "pet" ? (
             pet ? <GameArt path={pet.baby} name={pet.name} alt="" /> : <span className="lo-plus">+</span>
           ) : info ? (
-            <GameArt path={`skills/skill_${info.id}.webp`} name={info.name} alt="" className={`q-${info.quality ?? "Blue"}`} />
+            <span className={`lo-ring q-${info.quality ?? "Blue"}`}>
+              <GameArt path={`skills/skill_${info.id}.webp`} name={info.name} alt="" />
+            </span>
           ) : (
             <span className="lo-plus">+</span>
           )}
@@ -221,36 +244,51 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
 
       <div className="lo-split">
       <section className="card lo-card">
-        <div className="lo-card-head">
-          <span className="lo-class">
-            <GameArt path={`classes/${cls.badge}.webp`} name={cls.name} alt="" className="lo-badge" />
-          </span>
-          <div className="lo-titles">
+        {/* Laid out like the game's Skill screen: techniques left, charms right, Fantomon in the middle. */}
+        <div className="lo-scene">
+          <div className="lo-col left">{draft.skills.map((_, i) => <span key={i}>{slotButton({ kind: "skills", i }, `Technique ${i + 1}`, i + 1)}</span>)}</div>
+          <div className="lo-stage">
+            <span className="lo-emblem" aria-hidden>
+              <GameArt path={`classes/${cls.badge}.webp`} name={cls.name} alt="" />
+            </span>
+            {slotButton({ kind: "pet" }, "Fantomon")}
+            <span className="lo-stage-class">{cls.name}</span>
+          </div>
+          <div className="lo-col right">{draft.charms.map((_, i) => <span key={i}>{slotButton({ kind: "charms", i }, `Charm ${i + 1}`)}</span>)}</div>
+        </div>
+
+        <div className={`lo-namebar${nameNeeded ? " needed" : ""}`}>
+          <button type="button" className="lo-arrow" onClick={() => cycle(-1)} disabled={!saved.items.length} aria-label="Previous saved loadout">
+            ‹
+          </button>
+          <label className="lo-name-box">
+            <span className="lo-pencil" aria-hidden>✎</span>
             <input
+              ref={nameRef}
               className="lo-title"
               value={draft.title}
               maxLength={TITLE_MAX}
-              placeholder={`${cls.name} loadout`}
+              placeholder="NAME YOUR LOADOUT"
               aria-label="Loadout name"
-              onChange={(e) => edit({ title: e.target.value })}
+              onChange={(e) => {
+                edit({ title: e.target.value });
+                setNameNeeded(false);
+              }}
             />
-            <ClassSelect label="Class" value={draft.cls} classes={classes} onChange={changeClass} />
-          </div>
+          </label>
+          <button type="button" className="lo-arrow" onClick={() => cycle(1)} disabled={!saved.items.length} aria-label="Next saved loadout">
+            ›
+          </button>
         </div>
+        {saved.items.length > 0 && (
+          <p className="lo-dots" aria-hidden>
+            {saved.items.map((it) => <i key={it.id} className={it.id === editingId ? "on" : undefined} />)}
+          </p>
+        )}
+        {nameNeeded && <p className="lo-name-hint">Give it a name so you can find it in My loadouts.</p>}
 
-        <div className="lo-board">
-          <div className="lo-row">
-            <p className="lo-row-label">Skills <small>in cast order</small></p>
-            <div className="lo-slots">{draft.skills.map((_, i) => <span key={i}>{slotButton({ kind: "skills", i }, `Skill ${i + 1}`, i + 1)}</span>)}</div>
-          </div>
-          <div className="lo-row">
-            <p className="lo-row-label">Charms</p>
-            <div className="lo-slots">{draft.charms.map((_, i) => <span key={i}>{slotButton({ kind: "charms", i }, `Charm ${i + 1}`)}</span>)}</div>
-          </div>
-          <div className="lo-row lo-pet-row">
-            <p className="lo-row-label">Fantomon</p>
-            <div className="lo-slots one">{slotButton({ kind: "pet" }, "Fantomon")}</div>
-          </div>
+        <div className="lo-class-row">
+          <ClassSelect label="Class" value={draft.cls} classes={classes} onChange={changeClass} />
         </div>
 
         <textarea
@@ -284,10 +322,26 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
       </section>
 
       <section className="card lo-picker">
+        <div className="lo-tabs" role="tablist" aria-label="What to pick">
+          {(["skills", "charms", "pet"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              role="tab"
+              aria-selected={slot.kind === k}
+              onClick={() => {
+                if (k === "pet") setSlot({ kind: "pet" });
+                else if (slot.kind !== k) setSlot({ kind: k, i: Math.max(0, draft[k].findIndex((x) => !x)) });
+              }}
+            >
+              {k === "skills" ? "Technique" : k === "charms" ? "Charm" : "Fantomon"}
+            </button>
+          ))}
+        </div>
         <div className="lo-picker-head">
           <div>
-            <p className="eyebrow">{slot.kind === "pet" ? "Fantomon" : slot.kind === "skills" ? `Skill ${slot.i + 1}` : `Charm ${slot.i + 1}`}</p>
-            <h2 className="subhead">{slot.kind === "pet" ? "Pick a Fantomon" : slot.kind === "skills" ? "Pick a skill" : "Pick a charm"}</h2>
+            <p className="eyebrow">{slot.kind === "pet" ? "Fantomon" : slot.kind === "skills" ? `Technique ${slot.i + 1}` : `Charm ${slot.i + 1}`}</p>
+            <h2 className="subhead">{slot.kind === "pet" ? "Pick a Fantomon" : slot.kind === "skills" ? "Pick a technique" : "Pick a charm"}</h2>
           </div>
           {slot.kind !== "pet" && (
             <input type="search" placeholder="Search name or effect" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search skills" />
@@ -401,6 +455,9 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
                     }}
                   >
                     Copy link
+                  </button>
+                  <button type="button" className="lo-btn small" onClick={() => rename(s)}>
+                    Rename
                   </button>
                   <button type="button" className="link-button" onClick={() => remove(s.id)}>
                     Delete
