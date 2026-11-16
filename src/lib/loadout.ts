@@ -15,6 +15,8 @@ export interface Loadout {
   pet: number | null;
   title: string;
   notes: string;
+  /** Skill rank (1–34, grade and stars together) by skill id, for skills raised above their base. */
+  ranks: Record<string, number>;
 }
 
 export interface SavedLoadout extends Loadout {
@@ -29,7 +31,10 @@ export const emptyLoadout = (cls = "Zhanshi"): Loadout => ({
   pet: null,
   title: "",
   notes: "",
+  ranks: {},
 });
+
+export const MAX_RANK = 34;
 
 const VERSION = 1;
 
@@ -69,6 +74,7 @@ export function decodeLoadout(code: string): Loadout | null {
       pet: Number.isInteger(a[4]) && a[4] > 0 ? a[4] : null,
       title: typeof a[5] === "string" ? a[5].slice(0, TITLE_MAX) : "",
       notes: typeof a[6] === "string" ? a[6].slice(0, NOTES_MAX) : "",
+      ranks: {},
     };
   } catch {
     return null;
@@ -78,7 +84,8 @@ export function decodeLoadout(code: string): Loadout | null {
 // ---- Short links: /l/<code> ----
 // The build packed into bits: version (3), class (5), 8 slots × 10 (skill id − 9999, 0 = empty),
 // Fantomon (6, id − 1599), then the name (length byte + UTF-8) and any notes (UTF-8, to the end).
-// About 16 characters before the name.
+// About 16 characters before the name. Version 2 adds each slot's rank (6 bits, 0 = base) after the
+// Fantomon; it's only used when a slotted skill has a rank set, so plain builds keep the shorter code.
 
 /** Class codes in a fixed order. Only ever append: a link stores the position. */
 const CLASS_CODES = [
@@ -88,7 +95,9 @@ const CLASS_CODES = [
   "Huimiezhe7", "Zhangkongzhe7",
 ];
 const SHORT_VERSION = 1;
+const RANKED_VERSION = 2;
 const HEAD_BYTES = 12; // 94 bits, rounded up
+const RANKED_HEAD_BYTES = 18; // 142 bits, rounded up
 
 const bytesToB64 = (bytes: Uint8Array) => {
   let bin = "";
@@ -101,13 +110,20 @@ const b64ToBytes = (code: string) => {
 };
 
 export function encodeShort(l: Loadout): string {
+  const ids = [...l.skills, ...l.charms].map((x) => (x && x > 9999 && x < 11023 ? x : 0));
+  const rankOf = (id: number) => {
+    const r = id ? l.ranks?.[String(id)] : 0;
+    return r && Number.isInteger(r) && r > 0 && r <= MAX_RANK ? r : 0;
+  };
+  const ranked = ids.some(rankOf);
   const fields: [number, number][] = [
-    [SHORT_VERSION, 3],
+    [ranked ? RANKED_VERSION : SHORT_VERSION, 3],
     [Math.max(0, CLASS_CODES.indexOf(l.cls)), 5],
-    ...[...l.skills, ...l.charms].map((x): [number, number] => [x && x > 9999 && x < 11023 ? x - 9999 : 0, 10]),
+    ...ids.map((x): [number, number] => [x ? x - 9999 : 0, 10]),
     [l.pet && l.pet > 1599 && l.pet < 1663 ? l.pet - 1599 : 0, 6],
+    ...(ranked ? ids.map((x): [number, number] => [rankOf(x), 6]) : []),
   ];
-  const head = new Uint8Array(HEAD_BYTES);
+  const head = new Uint8Array(ranked ? RANKED_HEAD_BYTES : HEAD_BYTES);
   let bit = 0;
   for (const [value, width] of fields)
     for (let i = width - 1; i >= 0; i--, bit++) if ((value >> i) & 1) head[bit >> 3] |= 0x80 >> (bit & 7);
@@ -121,14 +137,16 @@ export function encodeShort(l: Loadout): string {
 export function decodeShort(code: string): Loadout | null {
   try {
     const bytes = b64ToBytes(code);
-    if (bytes.length < HEAD_BYTES) return null;
     let bit = 0;
     const read = (width: number) => {
       let v = 0;
       for (let i = 0; i < width; i++, bit++) v = (v << 1) | ((bytes[bit >> 3] >> (7 - (bit & 7))) & 1);
       return v;
     };
-    if (read(3) !== SHORT_VERSION) return null;
+    const version = read(3);
+    if (version !== SHORT_VERSION && version !== RANKED_VERSION) return null;
+    const headBytes = version === RANKED_VERSION ? RANKED_HEAD_BYTES : HEAD_BYTES;
+    if (bytes.length < headBytes) return null;
     const cls = CLASS_CODES[read(5)];
     if (!cls) return null;
     const slotIds = Array.from({ length: SKILL_SLOTS + CHARM_SLOTS }, () => {
@@ -136,10 +154,16 @@ export function decodeShort(code: string): Loadout | null {
       return v ? v + 9999 : null;
     });
     const pet = read(6);
+    const ranks: Record<string, number> = {};
+    if (version === RANKED_VERSION)
+      slotIds.forEach((id) => {
+        const r = read(6);
+        if (id && r > 0 && r <= MAX_RANK) ranks[String(id)] = r;
+      });
     const dec = new TextDecoder();
-    const titleLen = bytes[HEAD_BYTES] ?? 0;
-    const title = dec.decode(bytes.slice(HEAD_BYTES + 1, HEAD_BYTES + 1 + titleLen));
-    const notes = dec.decode(bytes.slice(HEAD_BYTES + 1 + titleLen));
+    const titleLen = bytes[headBytes] ?? 0;
+    const title = dec.decode(bytes.slice(headBytes + 1, headBytes + 1 + titleLen));
+    const notes = dec.decode(bytes.slice(headBytes + 1 + titleLen));
     return {
       cls,
       skills: slotIds.slice(0, SKILL_SLOTS),
@@ -147,6 +171,7 @@ export function decodeShort(code: string): Loadout | null {
       pet: pet ? pet + 1599 : null,
       title: title.slice(0, TITLE_MAX),
       notes: notes.slice(0, NOTES_MAX),
+      ranks,
     };
   } catch {
     return null;

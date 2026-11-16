@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 (globalThis as { require?: unknown }).require = createRequire(import.meta.url);
 const { default: og } = await import("../api/og.ts");
 const { default: l } = await import("../api/l.ts");
-const code = "OSnKkqyOpqnKeoJcDERVTkdFT04tVEFOSw";
+const code = process.argv[3] ?? "OSnKkqyOpqnKeoJcDERVTkdFT04tVEFOSw";
 const page = l(new Request(`http://localhost:5199/api/l?code=${code}`));
 console.log(page.status);
 const img = await og(new Request(`http://localhost:5199/api/og?code=${code}`));

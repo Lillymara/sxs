@@ -4,6 +4,7 @@ export const CHANGES: { date: string; items: { text: string; href?: string }[] }
   {
     date: "2026-11-16",
     items: [
+      { text: "Loadouts: the skill list now shows each skill's description, and the slot you're filling shows its full text plus its numbers (DMG, healing, cooldown and more). Pick a grade from Rare to Immortal and its stars to see the numbers at that rank, set to your level and combat rank. Ranks are saved with the loadout, shown on its picture and carried in share links. You can also drag skills, charms and Fantomons onto a slot, or drag one slot onto another to swap them (on a phone, press and hold first).", href: "/loadouts" },
       { text: "Loadout links now show the build in Discord: paste a link (l.lmthings.com/…) and Discord shows the loadout's name, skills, charms, Fantomon and a picture of it, no need to open the site. The Share button copies the link (and your notes) ready to paste.", href: "/loadouts" },
       { text: "Loadouts: much shorter share links (sxs.lmthings.com/l/…), a Copy picture button that draws the loadout as an image to paste in Discord (on phones it shares straight to the app), and a tidier Copy text post. Older loadout links still open.", href: "/loadouts" },
       { text: "Loadouts now look like the game's Skill screen: techniques down the left, charms down the right, your Fantomon in the middle, and the loadout's name underneath with arrows to flip through your saved loadouts. Every loadout needs a name before it's saved, and you can rename saved ones.", href: "/loadouts" },

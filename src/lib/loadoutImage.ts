@@ -7,6 +7,8 @@ export interface ImageSlot {
   /** Path under public/art. */
   art: string;
   quality?: string;
+  /** Stars within the grade; shown as a badge when above 0. */
+  stars?: number;
 }
 
 export interface LoadoutPicture {
@@ -21,7 +23,7 @@ export interface LoadoutPicture {
 
 const W = 1200;
 const H = 675;
-const RING: Record<string, string> = { Blue: "#4ea8ff", Purple: "#b06cff", Orange: "#ff9b3d" };
+const RING: Record<string, string> = { Blue: "#4ea8ff", Purple: "#b06cff", Orange: "#ff9b3d", Gold: "#ffcf3f", Red: "#ff5d5d" };
 const BASE = import.meta.env.BASE_URL;
 
 function load(path: string): Promise<HTMLImageElement | null> {
@@ -121,7 +123,11 @@ export async function drawLoadout(p: LoadoutPicture): Promise<Blob> {
     ctx.shadowOffsetY = 4;
     ctx.beginPath();
     ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.fillStyle = s ? RING[s.quality ?? "Blue"] ?? RING.Blue : "rgba(255,255,255,0.35)";
+    if (s?.quality === "Rainbow") {
+      const g = ctx.createConicGradient(0, cx, cy);
+      ["#ff5d5d", "#ffcf3f", "#5ee08a", "#4ea8ff", "#b37bff", "#ff5d5d"].forEach((c, i) => g.addColorStop(i / 5, c));
+      ctx.fillStyle = g;
+    } else ctx.fillStyle = s ? RING[s.quality ?? "Blue"] ?? RING.Blue : "rgba(255,255,255,0.35)";
     ctx.fill();
     ctx.restore();
     if (s) {
@@ -141,6 +147,20 @@ export async function drawLoadout(p: LoadoutPicture): Promise<Blob> {
       ctx.arc(cx, cy, R - 4, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
+    }
+    if (s?.stars) {
+      const t = `${s.stars}★`;
+      ctx.font = `800 18px ${font}`;
+      const w = ctx.measureText(t).width + 14;
+      ctx.fillStyle = s.quality === "Rainbow" ? "#ffcf3f" : RING[s.quality ?? "Blue"] ?? RING.Blue;
+      pill(ctx, cx + R - w + 8, cy + R - 20, w, 26, 13);
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#fff";
+      ctx.stroke();
+      ctx.fillStyle = "#111";
+      ctx.textAlign = "center";
+      ctx.fillText(t, cx + R - w / 2 + 8, cy + R - 6);
     }
     if (n !== undefined) {
       ctx.beginPath();

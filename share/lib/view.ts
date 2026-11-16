@@ -10,8 +10,15 @@ const PETS = data.pets as Record<string, Pair>;
 export interface Slot {
   name: string;
   art: string;
+  /** Grade the skill is at in this build (Blue … Rainbow). */
   quality: string;
+  stars: number;
 }
+
+/** Skill rank range of each grade, as on the site (src/lib/explorer.ts). */
+const GRADE_RANKS: [string, number, number][] = [
+  ["Blue", 1, 2], ["Purple", 3, 5], ["Orange", 6, 9], ["Gold", 10, 15], ["Red", 16, 23], ["Rainbow", 24, 34],
+];
 
 export interface View {
   code: string;
@@ -24,9 +31,11 @@ export interface View {
   notes: string;
 }
 
-const slot = (id: number | null): Slot | null => {
+const slot = (id: number | null, ranks: Record<string, number>): Slot | null => {
   const s = id ? SKILLS[String(id)] : undefined;
-  return s ? { name: s[0], art: `skills/${id}.png`, quality: s[1] } : null;
+  if (!s) return null;
+  const g = ranks[String(id)] ? GRADE_RANKS.find(([, a, b]) => ranks[String(id)] >= a && ranks[String(id)] <= b) : undefined;
+  return { name: s[0], art: `skills/${id}.png`, quality: g ? g[0] : s[1], stars: g ? ranks[String(id)] - g[1] : 0 };
 };
 
 export function viewOf(code: string): View | null {
@@ -39,8 +48,8 @@ export function viewOf(code: string): View | null {
     title: l.title.trim() || `${className} loadout`,
     className,
     badge: `classes/${badge}.png`,
-    skills: l.skills.map(slot),
-    charms: l.charms.map(slot),
+    skills: l.skills.map((id) => slot(id, l.ranks)),
+    charms: l.charms.map((id) => slot(id, l.ranks)),
     pet: pet ? { name: pet[0], art: pet[1] } : null,
     notes: l.notes.trim(),
   };

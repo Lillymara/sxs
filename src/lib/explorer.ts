@@ -10,6 +10,12 @@ export const rankFrom = (raw: string, stars: number) => {
   return Math.min(b, a + (+stars || 0));
 };
 
+/** The grade and stars a rank sits at, e.g. rank 19 is Red (Divine) with 3 stars. */
+export const gradeOfRank = (rank: number): { raw: string; stars: number } => {
+  for (const [raw, [a, b]] of Object.entries(GRADE_RANKS)) if (rank >= a && rank <= b) return { raw, stars: rank - a };
+  return { raw: "Blue", stars: 0 };
+};
+
 export interface DetailRow {
   label: string;
   /** Percent coefficient (already ÷100) with its source stat, for scaling lines. */

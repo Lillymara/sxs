@@ -31,4 +31,13 @@ describe("short loadout links", () => {
     expect(encodeShort(emptyLoadout("Fashi"))).toHaveLength(16);
     expect(decodeShort("abc")).toBeNull();
   });
+
+  it("carries skill ranks only when some are set", () => {
+    const base = { ...emptyLoadout("Zhangkongzhe7"), skills: [10000, 10012, null, null], charms: [10500, null, null, null] };
+    const ranked = { ...base, ranks: { "10000": 19, "10500": 28 } };
+    expect(decodeShort(encodeShort(ranked))).toEqual(ranked);
+    expect(encodeShort(ranked).length).toBeGreaterThan(encodeShort(base).length);
+    // A rank for a skill that isn't slotted is dropped.
+    expect(decodeShort(encodeShort({ ...base, ranks: { "10681": 30 } }))?.ranks).toEqual({});
+  });
 });

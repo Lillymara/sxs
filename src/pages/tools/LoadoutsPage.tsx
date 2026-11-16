@@ -1,14 +1,15 @@
 // Loadouts: pick a class, 4 skills in cast order, 4 charms and a Fantomon, then share the build as a link.
 // Nothing is stored on a server; the link carries the whole build (src/lib/loadout.ts).
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { ClassSelect } from "../../components/ClassSelect";
 import { GameArt } from "../../components/GameArt";
 import { Icon } from "../../components/Icon";
-import type { Explorer } from "../../lib/explorer";
+import { GRADE_RANKS, gradeOfRank, rowText, type Explorer } from "../../lib/explorer";
 import { buildFantomons } from "../../lib/fantomonView";
 import { drawLoadout } from "../../lib/loadoutImage";
 import type { Profession, SkillInfo } from "../../lib/gamedata";
 import {
+  MAX_RANK,
   NOTES_MAX,
   SKILL_SLOTS,
   TITLE_MAX,
@@ -21,7 +22,7 @@ import {
   type SavedLoadout,
 } from "../../lib/loadout";
 import { usePersistentState } from "../../lib/storage";
-import { Loading, useExplorer } from "./shared";
+import { GlossaryText, Loading, useExplorer } from "./shared";
 
 type Slot = { kind: "skills" | "charms"; i: number } | { kind: "pet" };
 const UNNAMED = /^(?:Skill \d+|DNTB)/i;
@@ -44,6 +45,8 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
   const [opened, setOpened] = useState(false);
   const [nameNeeded, setNameNeeded] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
+  /** Your level and combat rank: the fixed part of skill numbers grows with both. Kept per browser. */
+  const [calc, setCalc] = usePersistentState<{ level: number; combatRank: string }>("sxs.loadoutCalc", { level: 120, combatRank: "Silver3" });
 
   // A shared link (?b=…) opens straight into the builder.
   useEffect(() => {
@@ -87,6 +90,18 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
 
   const edit = (patch: Partial<Loadout>) => setDraft((d) => ({ ...d, ...patch }));
 
+  /** A skill's rank in this build: what's been set, or the rank it starts at. */
+  const baseRank = (s: SkillInfo) => Math.max(1, +s.rank || 1);
+  const rankOf = (s: SkillInfo) => draft.ranks?.[String(s.id)] ?? baseRank(s);
+  const setRank = (s: SkillInfo, rank: number) =>
+    setDraft((d) => {
+      const ranks = { ...(d.ranks ?? {}) };
+      if (rank <= baseRank(s)) delete ranks[String(s.id)];
+      else ranks[String(s.id)] = rank;
+      return { ...d, ranks };
+    });
+  const gradeName = (raw: string) => explorer.grade(raw).name;
+
   /** Puts a skill in the open slot (moving it if it's already elsewhere), then opens the next empty slot. */
   const place = (id: number) => {
     if (slot.kind === "pet") return;
@@ -110,6 +125,123 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
     [list[i], list[j]] = [list[j], list[i]];
     edit({ skills: list });
     setSlot({ kind: "skills", i: j });
+  };
+
+  // ---- Drag and drop: drag a skill or Fantomon from the list (or a slot) onto a slot. Mouse drags start
+  // on movement; touch drags start after a short press so the list still scrolls. ----
+  type Payload = { type: "active" | "charm" | "pet"; id: number; from?: Slot };
+  const drag = useRef<{ p: Payload; x: number; y: number; on: boolean; timer?: number; ghost?: HTMLElement; art?: string } | null>(null);
+  const suppressClick = useRef(false);
+  const [dragType, setDragType] = useState<Payload["type"] | null>(null);
+  const [over, setOver] = useState<string | null>(null);
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+
+  // Window listeners must stay the same functions between renders, so they call through a ref.
+  const H = useRef({ move: (_: PointerEvent) => {}, up: (_: PointerEvent) => {}, cancel: () => {}, touch: (_: TouchEvent) => {} });
+  const L = useMemo(
+    () => ({ move: (e: PointerEvent) => H.current.move(e), up: (e: PointerEvent) => H.current.up(e), cancel: () => H.current.cancel(), touch: (e: TouchEvent) => H.current.touch(e) }),
+    [],
+  );
+  const slotKey = (s: Slot) => (s.kind === "pet" ? "pet" : `${s.kind}-${s.i}`);
+  const accepts = (s: Slot, t: Payload["type"]) => (s.kind === "pet" ? t === "pet" : (s.kind === "skills" ? "active" : "charm") === t);
+  const targetAt = (x: number, y: number): Slot | null => {
+    const k = (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLElement>("[data-slot]")?.dataset.slot;
+    if (!k) return null;
+    if (k === "pet") return { kind: "pet" };
+    const [kind, i] = k.split("-");
+    return { kind: kind as "skills" | "charms", i: +i };
+  };
+  const drop = (p: Payload, to: Slot) => {
+    if (!accepts(to, p.type)) return;
+    if (to.kind === "pet") {
+      edit({ pet: p.id });
+      setSlot(to);
+      return;
+    }
+    const d = draftRef.current;
+    const list = [...d[to.kind]];
+    const from = p.from && p.from.kind === to.kind ? p.from.i : list.indexOf(p.id);
+    const prev = list[to.i];
+    if (from >= 0) list[from] = from === to.i ? p.id : prev; // swap with what was there
+    list[to.i] = p.id;
+    edit({ [to.kind]: list });
+    setSlot(to);
+  };
+  const endDrag = () => {
+    const d = drag.current;
+    if (d?.timer) clearTimeout(d.timer);
+    d?.ghost?.remove();
+    drag.current = null;
+    setDragType(null);
+    setOver(null);
+    window.removeEventListener("pointermove", L.move);
+    window.removeEventListener("pointerup", L.up);
+    window.removeEventListener("pointercancel", L.cancel);
+    window.removeEventListener("touchmove", L.touch);
+  };
+  const blockScroll = (e: TouchEvent) => drag.current?.on && e.preventDefault();
+  const begin = () => {
+    const d = drag.current;
+    if (!d || d.on) return;
+    d.on = true;
+    suppressClick.current = true;
+    navigator.vibrate?.(15);
+    const g = document.createElement("div");
+    g.className = "lo-ghost";
+    if (d.art) g.innerHTML = `<img src="${d.art}" alt="">`;
+    g.style.left = `${d.x}px`;
+    g.style.top = `${d.y}px`;
+    document.body.appendChild(g);
+    d.ghost = g;
+    setDragType(d.p.type);
+  };
+  function onMove(e: PointerEvent) {
+    const d = drag.current;
+    if (!d) return;
+    const far = Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8;
+    if (!d.on) {
+      if (!far) return;
+      if (e.pointerType === "mouse") begin();
+      else return endDrag(); // a touch that moved before the press finished is a scroll
+    }
+    d.ghost!.style.left = `${e.clientX}px`;
+    d.ghost!.style.top = `${e.clientY}px`;
+    const t = targetAt(e.clientX, e.clientY);
+    setOver(t && accepts(t, d.p.type) ? slotKey(t) : null);
+  }
+  function onUp(e: PointerEvent) {
+    const d = drag.current;
+    if (d?.on) {
+      const t = targetAt(e.clientX, e.clientY);
+      if (t) drop(d.p, t);
+      setTimeout(() => (suppressClick.current = false), 0);
+    }
+    endDrag();
+  }
+  H.current = { move: onMove, up: onUp, cancel: endDrag, touch: blockScroll };
+  const dragProps = (p: Payload, art?: string) => ({
+    onPointerDown: (e: ReactPointerEvent) => {
+      if (e.button !== 0) return;
+      endDrag();
+      drag.current = { p, x: e.clientX, y: e.clientY, on: false, art: art ? `${import.meta.env.BASE_URL}art/${art}` : undefined };
+      if (e.pointerType !== "mouse") drag.current.timer = window.setTimeout(begin, 260);
+      window.addEventListener("pointermove", L.move);
+      window.addEventListener("pointerup", L.up);
+      window.addEventListener("pointercancel", L.cancel);
+      window.addEventListener("touchmove", L.touch, { passive: false });
+    },
+    onContextMenu: (e: ReactMouseEvent) => e.preventDefault(),
+    onDragStart: (e: DragEvent) => e.preventDefault(),
+  });
+  useEffect(() => endDrag, []); // eslint-disable-line react-hooks/exhaustive-deps
+  /** Click handler that ignores the click a finished drag leaves behind. */
+  const tap = (fn: () => void) => () => {
+    if (suppressClick.current) {
+      suppressClick.current = false;
+      return;
+    }
+    fn();
   };
 
   const changeClass = (code: string) => {
@@ -140,7 +272,9 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
   const picture = () => {
     const slotOf = (id: number | null) => {
       const s = skill(id);
-      return s ? { name: s.name, art: `skills/skill_${s.id}.webp`, quality: s.quality } : null;
+      if (!s) return null;
+      const g = gradeOfRank(rankOf(s));
+      return { name: s.name, art: `skills/skill_${s.id}.webp`, quality: g.raw, stars: g.stars };
     };
     return drawLoadout({
       title: draft.title.trim(),
@@ -227,30 +361,126 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
     if (editingId === id) setEditingId(null);
   };
 
+  /** Grade, stars and the numbers they give, for the skill in the open slot. */
+  const rankPanel = (s: SkillInfo) => {
+    const rank = rankOf(s);
+    const { raw, stars } = gradeOfRank(rank);
+    const [lo, hi] = GRADE_RANKS[raw];
+    const grades = Object.entries(GRADE_RANKS).filter(([, [, top]]) => top >= baseRank(s));
+    const d = explorer.detail(s.id, raw, stars, calc.level, calc.combatRank, rank);
+    return (
+      <div className={`lo-rank q-${raw}`}>
+        <div className="q-stepper" role="radiogroup" aria-label="Grade">
+          {grades.map(([g, [a]]) => (
+            <button
+              key={g}
+              type="button"
+              role="radio"
+              aria-checked={g === raw}
+              className={`q-${g}`}
+              onClick={() => setRank(s, Math.max(baseRank(s), Math.min(GRADE_RANKS[g][1], a + stars)))}
+            >
+              {gradeName(g)}
+            </button>
+          ))}
+        </div>
+        {hi > lo && (
+          <div className="lo-stars" role="radiogroup" aria-label="Stars">
+            {Array.from({ length: hi - lo }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                type="button"
+                role="radio"
+                aria-checked={n === stars}
+                aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                className={n <= stars ? "lit" : undefined}
+                onClick={() => setRank(s, Math.max(baseRank(s), lo + (n === stars ? n - 1 : n)))}
+              >
+                ★
+              </button>
+            ))}
+            <span className="lo-stars-label">
+              {gradeName(raw)} {stars}★
+            </span>
+          </div>
+        )}
+        {d.rows.length > 0 ? (
+          <dl className="fm-lines">
+            {d.rows.map((r, i) => (
+              <div key={i}>
+                <dt>{r.label}</dt>
+                <dd>{rowText(r)}</dd>
+              </div>
+            ))}
+            {d.cd ? (
+              <div>
+                <dt>Cooldown</dt>
+                <dd>{d.cd} turns</dd>
+              </div>
+            ) : null}
+          </dl>
+        ) : (
+          <p className="hint">The game data has no numbers for this one.</p>
+        )}
+        <div className="lo-calc">
+          <label>
+            Your level
+            <input
+              type="number"
+              min={1}
+              max={430}
+              value={calc.level}
+              onChange={(e) => setCalc((c) => ({ ...c, level: Math.max(1, Math.min(430, Math.round(+e.target.value) || 1)) }))}
+            />
+          </label>
+          <label>
+            Combat rank
+            <select value={calc.combatRank} onChange={(e) => setCalc((c) => ({ ...c, combatRank: e.target.value }))}>
+              {explorer.C.combatRanks.map((r) => (
+                <option key={r.raw} value={r.raw}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <small>The fixed part of each number grows with your level and combat rank.</small>
+        </div>
+      </div>
+    );
+  };
+
   const slotButton = (s: Slot, label: string, n?: number) => {
     const id = s.kind === "pet" ? null : draft[s.kind][s.i];
     const info = skill(id);
     const on = slot.kind === s.kind && (s.kind === "pet" || (slot.kind !== "pet" && slot.i === s.i));
     const filled = s.kind === "pet" ? !!pet : !!info;
+    const can = dragType !== null && accepts(s, dragType);
+    const drags =
+      s.kind === "pet"
+        ? pet && dragProps({ type: "pet", id: pet.id, from: s }, pet.baby)
+        : info && dragProps({ type: info.type, id: info.id, from: s }, `skills/skill_${info.id}.webp`);
     return (
       <button
         type="button"
-        className={`lo-slot ${s.kind}${on ? " on" : ""}${filled ? " filled" : ""}`}
+        data-slot={slotKey(s)}
+        className={`lo-slot ${s.kind}${on ? " on" : ""}${filled ? " filled" : ""}${can ? " can-drop" : ""}${over === slotKey(s) ? " over" : ""}`}
         aria-pressed={on}
         aria-label={`${label}: ${s.kind === "pet" ? pet?.name ?? "empty" : info?.name ?? "empty"}`}
-        onClick={() => {
+        {...(drags || {})}
+        onClick={tap(() => {
           setSlot(s);
           // On one-column screens the picker sits below the card: bring it into view.
           const picker = document.querySelector<HTMLElement>(".lo-picker");
           if (picker && picker.getBoundingClientRect().top > window.innerHeight * 0.6) picker.scrollIntoView({ behavior: "smooth", block: "start" });
-        }}
+        })}
       >
         <span className="lo-slot-art">
           {s.kind === "pet" ? (
             pet ? <GameArt path={pet.baby} name={pet.name} alt="" /> : <span className="lo-plus">+</span>
           ) : info ? (
-            <span className={`lo-ring q-${info.quality ?? "Blue"}`}>
+            <span className={`lo-ring q-${gradeOfRank(rankOf(info)).raw}`}>
               <GameArt path={`skills/skill_${info.id}.webp`} name={info.name} alt="" />
+              {gradeOfRank(rankOf(info)).stars > 0 && <b className="lo-stars-tag">{gradeOfRank(rankOf(info)).stars}★</b>}
             </span>
           ) : (
             <span className="lo-plus">+</span>
@@ -390,7 +620,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
                 <GameArt path={`skills/skill_${focused.id}.webp`} name={focused.name} alt="" />
                 <div>
                   <b>{focused.name}</b>
-                  <p>{focused.description}</p>
+                  <GlossaryText text={focused.description} />
                 </div>
               </>
             ) : (
@@ -417,6 +647,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
                 Remove
               </button>
             </div>
+            {focused && rankPanel(focused)}
           </div>
         )}
 
@@ -424,7 +655,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
           <ul className="lo-grid pets">
             {pets.map((p) => (
               <li key={p.id}>
-                <button type="button" className={draft.pet === p.id ? "on" : undefined} onClick={() => edit({ pet: p.id })} title={p.name}>
+                <button type="button" className={draft.pet === p.id ? "on" : undefined} onClick={tap(() => edit({ pet: p.id }))} title={p.name} {...dragProps({ type: "pet", id: p.id }, p.baby)}>
                   <GameArt path={p.baby} name={p.name} alt="" />
                   <span>{p.name}</span>
                 </button>
@@ -435,12 +666,16 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
           groups.map((g) => (
             <div key={g.code} className="lo-group">
               <p className="lo-group-label">From {className(g.code)}</p>
-              <ul className="lo-grid">
+              <ul className="lo-list">
                 {g.items.map((s) => (
                   <li key={s.id}>
-                    <button type="button" className={used.has(s.id) ? "used" : undefined} onClick={() => place(s.id)} title={`${s.name}: ${s.description}`}>
+                    <button type="button" className={used.has(s.id) ? "used" : undefined} onClick={tap(() => place(s.id))} {...dragProps({ type: s.type, id: s.id }, `skills/skill_${s.id}.webp`)}>
                       <GameArt path={`skills/skill_${s.id}.webp`} name={s.name} alt="" className={`q-${s.quality ?? "Blue"}`} />
-                      <span>{s.name}</span>
+                      <span>
+                        <b>{s.name}</b>
+                        <small>{s.description}</small>
+                      </span>
+                      {used.has(s.id) && <em>In use</em>}
                     </button>
                   </li>
                 ))}
@@ -450,7 +685,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
         ) : (
           <p className="hint">Nothing matches "{query}".</p>
         )}
-        <p className="hint">Every {pickKind === "charm" ? "charm" : "skill"} {cls.name} can equip, including the ones from earlier classes in its line.</p>
+        <p className="hint">Tap to fill the open slot, or drag onto any slot (press and hold first on a phone). Every {pickKind === "charm" ? "charm" : "skill"} {cls.name} can equip, including the ones from earlier classes in its line.</p>
       </section>
 
       </div>
@@ -514,5 +749,6 @@ function clean(l: Loadout, classes: Profession[], skills: Record<string, SkillIn
   const cls = classes.find((c) => c.code === l.cls) ?? classes[0];
   const ok = new Set(cls.skills);
   const keep = (xs: (number | null)[], type: string) => xs.map((x) => (x && ok.has(x) && skills[String(x)]?.type === type ? x : null));
-  return { ...l, cls: cls.code, skills: keep(l.skills, "active"), charms: keep(l.charms, "charm") };
+  const ranks = Object.fromEntries(Object.entries(l.ranks ?? {}).filter(([id, r]) => skills[id] && Number.isInteger(r) && r > 0 && r <= MAX_RANK));
+  return { ...l, cls: cls.code, skills: keep(l.skills, "active"), charms: keep(l.charms, "charm"), ranks };
 }

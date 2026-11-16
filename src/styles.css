@@ -1915,3 +1915,45 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
 .lo-tabs button:hover:not([aria-selected="true"]) { color: #fff; }
 .lo-grid button img { box-shadow: 0 2px 6px rgb(0 0 0 / 0.3); }
 .lo-actions-break { flex-basis: 100%; height: 0; }
+
+/* Loadouts: skill list with descriptions, ranks and numbers, drag and drop */
+.lo-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+@container lo (min-width: 560px) { .lo-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.lo-list button { width: 100%; display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; border: 1px solid transparent; background: transparent; color: var(--text); font: inherit; text-align: left; cursor: grab; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+.lo-list button:hover { background: var(--surface-2); border-color: var(--line); }
+.lo-list img { width: 44px; height: 44px; border-radius: 50%; object-fit: contain; box-shadow: 0 0 0 2px var(--q, #4ea8ff), 0 2px 6px rgb(0 0 0 / 0.3); -webkit-user-drag: none; }
+.lo-list b { display: block; font-size: 0.88rem; }
+.lo-list small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--muted); font-size: 0.76rem; line-height: 1.35; }
+.lo-list em { font-style: normal; font-size: 0.65rem; font-weight: 700; color: var(--accent); }
+.lo-list button.used { opacity: 0.5; }
+.lo-grid.pets button { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; cursor: grab; }
+.lo-grid.pets img { -webkit-user-drag: none; }
+
+.lo-ring { position: relative; }
+.lo-ring.q-Gold { --q: #ffcf3f; } .lo-ring.q-Red { --q: #ff5d5d; }
+.lo-ring.q-Rainbow { background: conic-gradient(from 200deg, #ff5d5d, #ffcf3f, #5ee08a, #4ea8ff, #b37bff, #ff5d5d); }
+.lo-stars-tag { position: absolute; right: -4px; bottom: -4px; padding: 1px 6px; border-radius: 999px; background: var(--q); color: #111; font-size: 0.68rem; font-weight: 800; line-height: 1.5; box-shadow: 0 1px 3px rgb(0 0 0 / 0.4); }
+.lo-ring.q-Rainbow .lo-stars-tag { background: linear-gradient(90deg, #ff5d5d, #ffcf3f, #5ee08a, #4ea8ff, #b37bff); }
+
+.lo-focus .skill-text { margin: 2px 0 0; font-size: 0.88rem; }
+.lo-focus > div.lo-rank { flex: 1 1 100%; }
+.lo-rank { display: grid; gap: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.lo-stars { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.lo-stars button { border: 0; background: none; padding: 2px 3px; font-size: 1.35rem; line-height: 1; color: color-mix(in srgb, var(--muted) 45%, transparent); cursor: pointer; }
+.lo-stars button.lit { color: var(--q); text-shadow: 0 0 6px color-mix(in srgb, var(--q) 60%, transparent); }
+.lo-rank.q-Rainbow .lo-stars button.lit { color: #ffcf3f; }
+.lo-stars-label { margin-left: 8px; font-weight: 800; font-size: 0.85rem; }
+.lo-rank .fm-lines { margin: 0; }
+.lo-rank .fm-lines dt { font-size: 0.72rem; color: var(--muted); }
+.lo-rank .fm-lines dd { margin: 0; font-weight: 800; }
+.lo-calc { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 14px; font-size: 0.78rem; color: var(--muted); }
+.lo-calc label { display: grid; gap: 3px; }
+.lo-calc input { width: 80px; }
+.lo-calc small { flex: 1 1 100%; }
+
+.lo-ghost { position: fixed; z-index: 1000; width: 64px; height: 64px; margin: -32px 0 0 -32px; pointer-events: none; border-radius: 50%; overflow: hidden; box-shadow: 0 10px 24px rgb(0 0 0 / 0.45); transform: scale(1.1); background: #2a2a2a; }
+.lo-ghost img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.lo-slot.can-drop .lo-slot-art { outline: 3px dashed color-mix(in srgb, var(--accent) 80%, #fff); outline-offset: 3px; border-radius: 50%; }
+.lo-slot.over .lo-slot-art { outline-style: solid; transform: scale(1.12); transition: transform 0.12s; }
+.lo-slot.filled { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+.lo-slot img { -webkit-user-drag: none; }
