@@ -6,12 +6,14 @@ import { GameArt } from "../../components/GameArt";
 import { Icon } from "../../components/Icon";
 import type { Explorer } from "../../lib/explorer";
 import { buildFantomons } from "../../lib/fantomonView";
+import { drawLoadout } from "../../lib/loadoutImage";
 import type { Profession, SkillInfo } from "../../lib/gamedata";
 import {
   NOTES_MAX,
   SKILL_SLOTS,
   TITLE_MAX,
   decodeLoadout,
+  decodeShort,
   emptyLoadout,
   isEmpty,
   shareUrl,
@@ -45,9 +47,10 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
 
   // A shared link (?b=…) opens straight into the builder.
   useEffect(() => {
+    const short = /^\/l\/([A-Za-z0-9_-]+)/.exec(window.location.pathname)?.[1];
     const code = new URLSearchParams(window.location.search).get("b");
-    if (!code) return;
-    const l = decodeLoadout(code);
+    if (!short && !code) return;
+    const l = short ? decodeShort(short) : decodeLoadout(code!);
     if (l) {
       setDraft(clean(l, classes, D.skills));
       setEditingId(null);
@@ -131,24 +134,71 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
       /* cancelled */
     }
   };
-  const copyText = async () => {
-    const names = (xs: (number | null)[]) => xs.map((x, i) => `${i + 1}. ${skill(x)?.name ?? "—"}`).join("  ");
-    const text = [
-      `**${draft.title.trim() || `${cls.name} loadout`}** (${cls.name})`,
-      `Techniques: ${names(draft.skills)}`,
-      `Charms: ${draft.charms.map((x) => skill(x)?.name ?? "—").join(", ")}`,
+  /** The Discord post: name and class, the build in three short lines, and the link with its preview turned off. */
+  const discordText = () => {
+    const names = (xs: (number | null)[], sep: string) => xs.map((x) => skill(x)?.name ?? "—").join(sep);
+    return [
+      `**${draft.title.trim() || `${cls.name} loadout`}** · ${cls.name}`,
+      `Techniques: ${names(draft.skills, " › ")}`,
+      `Charms: ${names(draft.charms, " · ")}`,
       pet ? `Fantomon: ${pet.name}` : "",
-      draft.notes.trim(),
-      link,
+      draft.notes.trim() ? `> ${draft.notes.trim().replace(/\n+/g, "\n> ")}` : "",
+      `<${link}>`,
     ]
       .filter(Boolean)
       .join("\n");
+  };
+  const copyText = async () => {
     try {
-      await navigator.clipboard.writeText(text);
-      setToast("Copied for Discord");
+      await navigator.clipboard.writeText(discordText());
+      setToast("Text copied. Paste it in Discord.");
     } catch {
-      /* clipboard blocked */
+      setToast("Your browser blocked copying.");
     }
+  };
+  const picture = () => {
+    const slotOf = (id: number | null) => {
+      const s = skill(id);
+      return s ? { name: s.name, art: `skills/skill_${s.id}.webp`, quality: s.quality } : null;
+    };
+    return drawLoadout({
+      title: draft.title.trim(),
+      className: cls.name,
+      badge: `classes/${cls.badge}.webp`,
+      skills: draft.skills.map(slotOf),
+      charms: draft.charms.map(slotOf),
+      pet: pet ? { name: pet.name, art: pet.baby } : null,
+      url: link,
+    });
+  };
+  const fileName = () => `${(draft.title.trim() || `${cls.name} loadout`).replace(/[^\w-]+/g, "-").toLowerCase()}.png`;
+  /** Phones: share the picture and text straight to Discord. Computers: copy the picture to paste. */
+  const copyPicture = async () => {
+    setToast("Drawing…");
+    try {
+      if (matchMedia("(pointer: coarse)").matches && navigator.canShare) {
+        const file = new File([await picture()], fileName(), { type: "image/png" });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], text: discordText() });
+          setToast("");
+          return;
+        }
+      }
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": picture() })]);
+      setToast("Picture copied. Paste it in Discord, then Copy text.");
+    } catch (e) {
+      if ((e as Error)?.name === "AbortError") return setToast("");
+      downloadPicture();
+    }
+  };
+  const downloadPicture = async () => {
+    const url = URL.createObjectURL(await picture());
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName();
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    setToast("Picture saved");
   };
   const save = () => {
     if (!draft.title.trim()) {
@@ -304,9 +354,16 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
           <button type="button" className="spin-button" onClick={share} disabled={isEmpty(draft)}>
             <Icon name="share" size={18} /> Share link
           </button>
-          <button type="button" className="lo-btn" onClick={copyText} disabled={isEmpty(draft)}>
-            Copy for Discord
+          <button type="button" className="lo-btn" onClick={copyPicture} disabled={isEmpty(draft)}>
+            Copy picture
           </button>
+          <button type="button" className="lo-btn" onClick={copyText} disabled={isEmpty(draft)}>
+            Copy text
+          </button>
+          <button type="button" className="lo-btn" onClick={downloadPicture} disabled={isEmpty(draft)}>
+            Save picture
+          </button>
+          <span className="lo-actions-break" />
           <button type="button" className="lo-btn" onClick={save} disabled={isEmpty(draft)}>
             {editingId ? "Save changes" : "Save to My loadouts"}
           </button>

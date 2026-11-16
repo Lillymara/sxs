@@ -80,6 +80,8 @@ const PAGES: { id: Page; group: Group; label: string; icon: IconName; blurb: str
 
 const pageFromPath = (): Page => {
   const id = currentPath();
+  // Short loadout links: /l/<code>.
+  if (id === "l") return "loadouts";
   return PAGES.some((p) => p.id === id) ? (id as Page) : "home";
 };
 

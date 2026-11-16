@@ -75,6 +75,84 @@ export function decodeLoadout(code: string): Loadout | null {
   }
 }
 
-export const shareUrl = (l: Loadout, origin = window.location.origin) => `${origin}/loadouts?b=${encodeLoadout(l)}`;
+// ---- Short links: /l/<code> ----
+// The build packed into bits: version (3), class (5), 8 slots × 10 (skill id − 9999, 0 = empty),
+// Fantomon (6, id − 1599), then the name (length byte + UTF-8) and any notes (UTF-8, to the end).
+// About 16 characters before the name.
+
+/** Class codes in a fixed order. Only ever append: a link stores the position. */
+const CLASS_CODES = [
+  "Zhanshi", "Fashi", "Huwei", "Doushi", "Shushi", "Xianzhe", "Dunjiashi", "Kuangzhanshi", "Modaoshi", "Mishushi",
+  "Shouhuzhe", "Zhengfuzhe", "Huimiezhe", "Zhangkongzhe", "LegendShouhuzhe", "LegendZhengfuzhe", "LegendHuimiezhe",
+  "LegendZhangkongzhe", "Shouhuzhe6", "Zhengfuzhe6", "Huimiezhe6", "Zhangkongzhe6", "Shouhuzhe7", "Zhengfuzhe7",
+  "Huimiezhe7", "Zhangkongzhe7",
+];
+const SHORT_VERSION = 1;
+const HEAD_BYTES = 12; // 94 bits, rounded up
+
+const bytesToB64 = (bytes: Uint8Array) => {
+  let bin = "";
+  bytes.forEach((b) => (bin += String.fromCharCode(b)));
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+};
+const b64ToBytes = (code: string) => {
+  const b64 = code.replace(/-/g, "+").replace(/_/g, "/");
+  return Uint8Array.from(atob(b64 + "=".repeat((4 - (b64.length % 4)) % 4)), (c) => c.charCodeAt(0));
+};
+
+export function encodeShort(l: Loadout): string {
+  const fields: [number, number][] = [
+    [SHORT_VERSION, 3],
+    [Math.max(0, CLASS_CODES.indexOf(l.cls)), 5],
+    ...[...l.skills, ...l.charms].map((x): [number, number] => [x && x > 9999 && x < 11023 ? x - 9999 : 0, 10]),
+    [l.pet && l.pet > 1599 && l.pet < 1663 ? l.pet - 1599 : 0, 6],
+  ];
+  const head = new Uint8Array(HEAD_BYTES);
+  let bit = 0;
+  for (const [value, width] of fields)
+    for (let i = width - 1; i >= 0; i--, bit++) if ((value >> i) & 1) head[bit >> 3] |= 0x80 >> (bit & 7);
+  const enc = new TextEncoder();
+  const title = enc.encode(l.title.trim().slice(0, TITLE_MAX)).slice(0, 255);
+  const notes = enc.encode(l.notes.trim().slice(0, NOTES_MAX));
+  const tail = title.length || notes.length ? [title.length, ...title, ...notes] : [];
+  return bytesToB64(Uint8Array.from([...head, ...tail]));
+}
+
+export function decodeShort(code: string): Loadout | null {
+  try {
+    const bytes = b64ToBytes(code);
+    if (bytes.length < HEAD_BYTES) return null;
+    let bit = 0;
+    const read = (width: number) => {
+      let v = 0;
+      for (let i = 0; i < width; i++, bit++) v = (v << 1) | ((bytes[bit >> 3] >> (7 - (bit & 7))) & 1);
+      return v;
+    };
+    if (read(3) !== SHORT_VERSION) return null;
+    const cls = CLASS_CODES[read(5)];
+    if (!cls) return null;
+    const slotIds = Array.from({ length: SKILL_SLOTS + CHARM_SLOTS }, () => {
+      const v = read(10);
+      return v ? v + 9999 : null;
+    });
+    const pet = read(6);
+    const dec = new TextDecoder();
+    const titleLen = bytes[HEAD_BYTES] ?? 0;
+    const title = dec.decode(bytes.slice(HEAD_BYTES + 1, HEAD_BYTES + 1 + titleLen));
+    const notes = dec.decode(bytes.slice(HEAD_BYTES + 1 + titleLen));
+    return {
+      cls,
+      skills: slotIds.slice(0, SKILL_SLOTS),
+      charms: slotIds.slice(SKILL_SLOTS),
+      pet: pet ? pet + 1599 : null,
+      title: title.slice(0, TITLE_MAX),
+      notes: notes.slice(0, NOTES_MAX),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export const shareUrl = (l: Loadout, origin = window.location.origin) => `${origin}/l/${encodeShort(l)}`;
 
 export const isEmpty = (l: Loadout) => !l.skills.some(Boolean) && !l.charms.some(Boolean) && !l.pet && !l.title.trim() && !l.notes.trim();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodeLoadout, emptyLoadout, encodeLoadout } from "./loadout";
+import { decodeLoadout, decodeShort, emptyLoadout, encodeLoadout, encodeShort } from "./loadout";
 
 describe("loadout links", () => {
   it("round-trips a build, keeping slot order, gaps and unicode notes", () => {
@@ -14,5 +14,21 @@ describe("loadout links", () => {
     expect(decodeLoadout("")).toBeNull();
     const long = encodeLoadout({ ...emptyLoadout(), title: "x".repeat(200) });
     expect(decodeLoadout(long)?.title.length).toBe(60);
+  });
+});
+
+describe("short loadout links", () => {
+  it("packs a full build into a short code and back", () => {
+    const l = { ...emptyLoadout("Zhangkongzhe7"), skills: [10500, 10012, null, 10681], charms: [10000, null, 10601, 10602], pet: 1622, title: "DUNGEON-TANK", notes: "" };
+    const code = encodeShort(l);
+    expect(code.length).toBeLessThanOrEqual(36);
+    expect(decodeShort(code)).toEqual(l);
+  });
+
+  it("keeps unicode names and notes, and an empty build is 16 characters", () => {
+    const l = { ...emptyLoadout("Fashi"), title: "Heal ✨", notes: "1→3" };
+    expect(decodeShort(encodeShort(l))).toEqual(l);
+    expect(encodeShort(emptyLoadout("Fashi"))).toHaveLength(16);
+    expect(decodeShort("abc")).toBeNull();
   });
 });

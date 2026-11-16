@@ -1914,3 +1914,4 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
 .lo-tabs button[aria-selected="true"] { background: #f1f1f1; color: #222; }
 .lo-tabs button:hover:not([aria-selected="true"]) { color: #fff; }
 .lo-grid button img { box-shadow: 0 2px 6px rgb(0 0 0 / 0.3); }
+.lo-actions-break { flex-basis: 100%; height: 0; }
