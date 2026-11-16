@@ -121,30 +121,20 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
   };
 
   const link = shareUrl(draft);
+  /** What Share copies: any notes as a quote, then the link. Discord turns the link into a card with
+   *  the build's name, skills and picture, so nothing else is needed. */
+  const shareText = () => [draft.notes.trim() ? `> ${draft.notes.trim().replace(/\n+/g, "\n> ")}` : "", link].filter(Boolean).join("\n");
   const share = async () => {
     const title = draft.title.trim() || `${cls.name} loadout`;
     try {
       if (navigator.share && matchMedia("(pointer: coarse)").matches) {
-        await navigator.share({ title, url: link });
+        await navigator.share({ title, text: draft.notes.trim() || undefined, url: link });
         return;
       }
-      await navigator.clipboard.writeText(link);
-      setToast("Link copied");
-    } catch {
-      /* cancelled */
-    }
-  };
-  /** The Discord post: the name and the link. Discord turns the link into a card with the build's picture. */
-  const discordText = () =>
-    [`**${draft.title.trim() || `${cls.name} loadout`}** · ${cls.name}`, draft.notes.trim() ? `> ${draft.notes.trim().replace(/\n+/g, "\n> ")}` : "", link]
-      .filter(Boolean)
-      .join("\n");
-  const copyText = async () => {
-    try {
-      await navigator.clipboard.writeText(discordText());
-      setToast("Copied. Paste it in Discord: the link shows the build.");
-    } catch {
-      setToast("Your browser blocked copying.");
+      await navigator.clipboard.writeText(shareText());
+      setToast("Copied. Paste it in Discord and the link shows the build.");
+    } catch (e) {
+      if ((e as Error)?.name !== "AbortError") setToast("Your browser blocked copying.");
     }
   };
   const picture = () => {
@@ -170,7 +160,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
       if (matchMedia("(pointer: coarse)").matches && navigator.canShare) {
         const file = new File([await picture()], fileName(), { type: "image/png" });
         if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], text: discordText() });
+          await navigator.share({ files: [file], text: shareText() });
           setToast("");
           return;
         }
@@ -343,10 +333,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
 
         <div className="lo-actions">
           <button type="button" className="spin-button" onClick={share} disabled={isEmpty(draft)}>
-            <Icon name="share" size={18} /> Share link
-          </button>
-          <button type="button" className="lo-btn" onClick={copyText} disabled={isEmpty(draft)}>
-            Copy for Discord
+            <Icon name="share" size={18} /> Share
           </button>
           <button type="button" className="lo-btn" onClick={copyPicture} disabled={isEmpty(draft)}>
             Copy picture

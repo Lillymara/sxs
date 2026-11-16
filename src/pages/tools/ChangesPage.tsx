@@ -4,7 +4,7 @@ export const CHANGES: { date: string; items: { text: string; href?: string }[] }
   {
     date: "2026-11-16",
     items: [
-      { text: "Loadout links now show the build in Discord: paste a link (l.lmthings.com/…) and Discord shows the loadout's name, skills, charms, Fantomon and a picture of it, no need to open the site. Copy for Discord copies the name and link ready to paste.", href: "/loadouts" },
+      { text: "Loadout links now show the build in Discord: paste a link (l.lmthings.com/…) and Discord shows the loadout's name, skills, charms, Fantomon and a picture of it, no need to open the site. The Share button copies the link (and your notes) ready to paste.", href: "/loadouts" },
       { text: "Loadouts: much shorter share links (sxs.lmthings.com/l/…), a Copy picture button that draws the loadout as an image to paste in Discord (on phones it shares straight to the app), and a tidier Copy text post. Older loadout links still open.", href: "/loadouts" },
       { text: "Loadouts now look like the game's Skill screen: techniques down the left, charms down the right, your Fantomon in the middle, and the loadout's name underneath with arrows to flip through your saved loadouts. Every loadout needs a name before it's saved, and you can rename saved ones.", href: "/loadouts" },
       { text: "New: Loadouts. Pick a class, 4 skills in cast order, 4 charms and a Fantomon, add notes, and share it with a link (no sign-up; the link holds the whole build). Save your own in My loadouts, or copy a ready-made post for Discord.", href: "/loadouts" },
