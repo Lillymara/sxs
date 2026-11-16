@@ -26,6 +26,7 @@ const ConversionPage = lazy(() => import("./pages/tools/ConversionPage").then((m
 const FantomonsPage = lazy(() => import("./pages/tools/FantomonsPage").then((m) => ({ default: m.FantomonsPage })));
 const CompanionsPage = lazy(() => import("./pages/tools/CompanionsPage").then((m) => ({ default: m.CompanionsPage })));
 const SpendingPage = lazy(() => import("./pages/tools/SpendingPage").then((m) => ({ default: m.SpendingPage })));
+const LoadoutsPage = lazy(() => import("./pages/tools/LoadoutsPage").then((m) => ({ default: m.LoadoutsPage })));
 const DawniumPage = lazy(() => import("./pages/tools/DawniumPage").then((m) => ({ default: m.DawniumPage })));
 const PlannerGuidePage = lazy(() => import("./pages/tools/PlannerGuidePage").then((m) => ({ default: m.PlannerGuidePage })));
 const PrepPage = lazy(() => import("./pages/tools/PrepPage").then((m) => ({ default: m.PrepPage })));
@@ -40,6 +41,7 @@ const SIMPLE_PAGES = {
   map: WorldMapPage,
   spending: SpendingPage,
   dawnium: DawniumPage,
+  loadouts: LoadoutsPage,
   guide: PlannerGuidePage,
   prep: PrepPage,
   changes: ChangesPage,
@@ -64,6 +66,7 @@ const PAGES: { id: Page; group: Group; label: string; icon: IconName; blurb: str
   { id: "timer", group: "Plan", label: "Level Timer", icon: "timer", blurb: "When you'll reach your next level", title: "Level Timer", lede: "Enter your character and XP rate to see when you'll reach your next level." },
   { id: "planner", group: "Plan", label: "Season Planner", icon: "planner", blurb: "Primostars, upgrades and materials for the season", title: "Season Planner", lede: "Plan your season's Primostars, upgrades and materials, from now until the season ends.", wide: true },
   { id: "calendar", group: "Plan", label: "Server Calendar", icon: "calendar", blurb: "Your server's seasons, dungeons and events", title: "Server Calendar", lede: "Your server's day, season dates, dungeon releases, weekly events and their rewards." },
+  { id: "loadouts", group: "Plan", label: "Loadouts", icon: "loadouts", blurb: "Build, save and share skill loadouts", title: "Loadouts", lede: "Pick your skills, charms and Fantomon, then share the build with a link. No sign-up: the link is the loadout.", wide: true },
   { id: "conversion", group: "Plan", label: "Class Change", icon: "conversion", blurb: "What your skills become in a new class", title: "Skills Conversion", lede: "See what each of your skills can turn into when you change class.", wide: true, hidden: true },
   { id: "fantomons", group: "Info", label: "Fantomons", icon: "fantomons", blurb: "Stats, forms and abilities", title: "Fantomons", lede: "Every Fantomon's stats, baby and adult forms, and abilities at any grade and level.", wide: true },
   { id: "companions", group: "Info", label: "Companions", icon: "companions", blurb: "Bonuses, gifts and best classes", title: "Companions", lede: "Companion stat bonuses by friendship level, favorite gifts, unlocks and the classes they suit.", wide: true },

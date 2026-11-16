@@ -21,6 +21,7 @@ const DAY = 86_400_000;
 const TILE_ART: Record<string, string> = {
   timer: "character",
   planner: "primostar",
+  loadouts: "skill",
   fantomons: "fantomons/pet_1622.webp",
   companions: "companions/icon_10503.webp",
   map: "items/item_742.png",

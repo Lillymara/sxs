@@ -4,6 +4,7 @@ export const CHANGES: { date: string; items: { text: string; href?: string }[] }
   {
     date: "2026-11-16",
     items: [
+      { text: "New: Loadouts. Pick a class, 4 skills in cast order, 4 charms and a Fantomon, add notes, and share it with a link (no sign-up; the link holds the whole build). Save your own in My loadouts, or copy a ready-made post for Discord.", href: "/loadouts" },
       { text: "Home page redesigned: a Your season panel with rings for your level, season time left, Primostars against your goal and the daily reset, what's coming up on your server, and the tools grouped with game art." },
     ],
   },
