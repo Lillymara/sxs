@@ -2,6 +2,12 @@
 
 export const CHANGES: { date: string; items: { text: string; href?: string }[] }[] = [
   {
+    date: "2026-11-16",
+    items: [
+      { text: "Home page redesigned: a Your season panel with rings for your level, season time left, Primostars against your goal and the daily reset, what's coming up on your server, and the tools grouped with game art." },
+    ],
+  },
+  {
     date: "2026-11-15",
     items: [
       { text: "Spending Guide redesigned: a \"buy in this order\" path, every deal rated with a value meter (tap one for the details), and a Deal check: answer four yes/no questions about a pack and it tells you whether to buy, think twice or skip.", href: "/spending" },

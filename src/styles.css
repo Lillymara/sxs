@@ -1106,7 +1106,7 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
 .hero-art img:nth-child(2) { height: 112%; z-index: 1; }
 .hero-art img:nth-child(odd) { height: 92%; }
 
-.home-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.home-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
 .card-title { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .card-title .icon { color: var(--accent); }
 .glance-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
@@ -1150,8 +1150,6 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
   .hero { grid-template-columns: 1fr; padding: 24px 20px 0; }
   .hero-text { padding-bottom: 0; }
   .hero-art { height: 150px; }
-  .tile-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .tile { flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px; }
 }
 .more-extra { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 14px; padding: 12px 10px 0; border-top: 1px solid var(--line); font-size: 0.85rem; }
 .more-extra a { color: var(--accent); }
@@ -1692,3 +1690,68 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
 
 .guide-rail ol { position: relative; }
 .guide-view > span:first-child { white-space: nowrap; }
+
+/* ---- Home: your season, coming up, tools ---- */
+.home { container: home / inline-size; }
+.dash-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 14px; margin-bottom: 12px; }
+.dash-head .card-title { margin: 0; }
+.dash-server { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+.dash-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.dash-cell { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); color: var(--text); text-decoration: none; min-width: 0; transition: border-color 0.15s, transform 0.15s; }
+.dash-cell:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); transform: translateY(-1px); }
+.dash-cell .ring-label b.dash-pct { font-size: 1.05rem; }
+.dash-cell.empty .ring-fill { display: none; }
+.dash-text { display: grid; gap: 2px; min-width: 0; }
+.dash-text > small { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.dash-value { display: inline-flex; align-items: center; gap: 5px; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.dash-value .game-icon { width: 22px; height: 22px; }
+.dash-sub { font-size: 0.8rem; color: var(--muted); }
+.dash-empty { font-size: 0.85rem; color: var(--muted); line-height: 1.35; }
+.dash-cta { font-size: 0.82rem; color: var(--accent); }
+@container home (max-width: 1100px) { .dash-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container home (max-width: 560px) {
+  .dash-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .dash-cell { flex-direction: column; text-align: center; gap: 8px; padding: 12px 8px; }
+  .dash-text { justify-items: center; }
+  .dash-value { font-size: 1.15rem; }
+  .home-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@container home (max-width: 820px) { .home-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.up-list, .new-list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+.up-list li { --t: var(--accent); display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); border-left: 3px solid var(--t); }
+.up-list li.up-season { --t: #a78bfa; } .up-list li.up-dungeon { --t: #f87171; } .up-list li.up-global { --t: #60a5fa; } .up-list li.up-weekly { --t: #4ade80; }
+.up-date { width: 42px; display: grid; justify-items: center; line-height: 1.05; }
+.up-date b { font-size: 1.2rem; font-weight: 800; }
+.up-date small { font-size: 0.68rem; text-transform: uppercase; color: var(--muted); font-weight: 700; letter-spacing: 0.05em; }
+.up-text { display: grid; gap: 1px; min-width: 0; }
+.up-text b { font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.up-text small { color: var(--muted); font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.new-list li { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; align-items: baseline; font-size: 0.9rem; line-height: 1.4; padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
+.new-list li:last-child { border-bottom: 0; }
+.new-list time { font-size: 0.72rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.04em; }
+.new-list a { color: var(--text); font-weight: 600; }
+.new-list a:hover { color: var(--accent); }
+
+.tool-group { display: grid; gap: 10px; }
+.tool-group .home-heading { margin: 6px 0 0; }
+.tile { position: relative; overflow: hidden; padding: 14px 16px; min-height: 84px; }
+.tile::before { content: ""; position: absolute; inset: 0; background: radial-gradient(80% 120% at 0% 50%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 65%); opacity: 0; transition: opacity 0.2s; }
+.tile:hover::before { opacity: 1; }
+.tile-art { position: relative; width: 56px; height: 56px; flex: none; display: grid; place-items: center; border-radius: 16px; color: var(--accent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, var(--surface-2)), var(--surface-2)); border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--line)); }
+.tile-art img, .tile-art .game-icon { width: 44px; height: 44px; object-fit: contain; transition: transform 0.2s; }
+.tile:hover .tile-art img, .tile:hover .tile-art .game-icon { transform: scale(1.12) rotate(-4deg); }
+.tile-fantomons .tile-art img { width: 54px; height: 54px; }
+.tile-text { position: relative; flex: 1; }
+.tile-go { position: relative; color: var(--muted); font-weight: 700; transition: transform 0.15s, color 0.15s; }
+.tile:hover .tile-go { color: var(--accent); transform: translateX(3px); }
+@container home (max-width: 560px) {
+  .tile-grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .tile { min-height: 0; padding: 10px 12px; }
+  .tile-art { width: 46px; height: 46px; border-radius: 13px; }
+  .tile-art img, .tile-art .game-icon { width: 36px; height: 36px; }
+}
+
+.home .tile-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.dash-cell .ring-label .icon { color: var(--accent); }

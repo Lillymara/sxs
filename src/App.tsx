@@ -220,6 +220,7 @@ export default function App() {
               server && {
                 name: server.name,
                 season: server.season.number,
+                day1: day1!,
                 seasonEnds: server.seasonEnds,
                 dayOfSeason: server.dayOfSeason,
                 seasonDays: server.nextSeason ? server.nextSeason.start - server.season.start : null,
