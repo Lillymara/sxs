@@ -1,0 +1,9 @@
+{
+  "name": "sxs-share",
+  "private": true,
+  "type": "module",
+  "description": "Link previews for SxS Tools loadouts (l.lmthings.com): Discord and other apps get a picture of the build; people are sent on to the site.",
+  "dependencies": {
+    "@vercel/og": "0.11.1"
+  }
+}

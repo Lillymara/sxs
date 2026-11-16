@@ -1,0 +1,8 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/og/:code.png", "destination": "/api/og?code=:code" },
+    { "source": "/:code([A-Za-z0-9_-]{16,})", "destination": "/api/l?code=:code" }
+  ],
+  "redirects": [{ "source": "/", "destination": "https://sxs.lmthings.com/loadouts", "permanent": false }]
+}
