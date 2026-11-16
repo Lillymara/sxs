@@ -39,6 +39,42 @@ export interface ScreenRead {
   rola?: number;
 }
 
+/** Why a screenshot couldn't be read, as a short code the player can pass on. */
+export type ReadErrorCode = "IMG" | "MEM" | "LOAD" | "READ" | "SLOW";
+export class ReadError extends Error {
+  constructor(
+    public code: ReadErrorCode,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+// Every canvas a read makes, so they can be emptied afterwards. Phones (iPhones especially) cap the
+// memory all canvases may use together; without this a batch of screenshots runs out part-way.
+const made: HTMLCanvasElement[] = [];
+function newCanvas(): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  made.push(c);
+  return c;
+}
+/** Empties every canvas made so far, freeing their memory straight away. */
+export function releaseCanvases() {
+  for (const c of made.splice(0)) c.width = c.height = 0;
+}
+function ctx2d(c: HTMLCanvasElement): CanvasRenderingContext2D {
+  const ctx = c.getContext("2d");
+  if (!ctx) throw new ReadError("MEM", `No room for a ${c.width}×${c.height} canvas`);
+  return ctx;
+}
+async function bitmapOf(file: File): Promise<ImageBitmap> {
+  try {
+    return await createImageBitmap(file);
+  } catch (e) {
+    throw new ReadError("IMG", `Couldn't open ${file.type || "the file"} (${Math.round(file.size / 1024)} KB): ${(e as Error)?.message ?? e}`);
+  }
+}
+
 const WIDTH = 1200;
 // Page segmentation mode by value, so the recognizer itself only loads when first used.
 const SINGLE_LINE = "7" as unknown as PSM;
@@ -46,11 +82,11 @@ const SPARSE = "11" as unknown as PSM;
 
 /** The screenshot scaled to a fixed width, which keeps text sizes (and our thresholds) consistent. */
 async function loadCanvas(file: File): Promise<HTMLCanvasElement> {
-  const bitmap = await createImageBitmap(file);
-  const canvas = document.createElement("canvas");
+  const bitmap = await bitmapOf(file);
+  const canvas = newCanvas();
   canvas.width = WIDTH;
   canvas.height = Math.round((bitmap.height * WIDTH) / bitmap.width);
-  const ctx = canvas.getContext("2d")!;
+  const ctx = ctx2d(canvas);
   // Smooth downscaling keeps thin digits intact on large screenshots.
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
@@ -64,10 +100,10 @@ async function loadCanvas(file: File): Promise<HTMLCanvasElement> {
  * off-white with a dark outline over coloured panels, which plain recognition struggles with.
  */
 function masked(src: HTMLCanvasElement): HTMLCanvasElement {
-  const out = document.createElement("canvas");
+  const out = newCanvas();
   out.width = src.width;
   out.height = src.height;
-  const img = src.getContext("2d")!.getImageData(0, 0, src.width, src.height);
+  const img = ctx2d(src).getImageData(0, 0, src.width, src.height);
   const d = img.data;
   for (let i = 0; i < d.length; i += 4) {
     const lo = Math.min(d[i], d[i + 1], d[i + 2]);
@@ -76,7 +112,7 @@ function masked(src: HTMLCanvasElement): HTMLCanvasElement {
     d[i] = d[i + 1] = d[i + 2] = v;
     d[i + 3] = 255;
   }
-  out.getContext("2d")!.putImageData(img, 0, 0);
+  ctx2d(out).putImageData(img, 0, 0);
   return out;
 }
 
@@ -85,13 +121,13 @@ function masked(src: HTMLCanvasElement): HTMLCanvasElement {
  * the light mint-green badge text kept: bright, and at least as green as it is red or blue.
  */
 async function gearBand(file: File): Promise<HTMLCanvasElement> {
-  const bitmap = await createImageBitmap(file);
+  const bitmap = await bitmapOf(file);
   const scale = Math.min(1, 2000 / bitmap.width);
   const top = Math.round(bitmap.height * 0.2), height = Math.round(bitmap.height * 0.4);
-  const c = document.createElement("canvas");
+  const c = newCanvas();
   c.width = Math.round(bitmap.width * scale);
   c.height = Math.round(height * scale);
-  const ctx = c.getContext("2d")!;
+  const ctx = ctx2d(c);
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(bitmap, 0, top, bitmap.width, height, 0, 0, c.width, c.height);
   bitmap.close();
@@ -112,20 +148,31 @@ function crop(src: HTMLCanvasElement, x0: number, y0: number, x1: number, y1: nu
   const left = Math.round(x0), top = Math.round(y0);
   const w = Math.max(1, Math.round(x1) - left);
   const h = Math.max(1, Math.round(y1) - top);
-  const c = document.createElement("canvas");
+  const c = newCanvas();
   c.width = w;
   c.height = h;
-  const ctx = c.getContext("2d")!;
+  const ctx = ctx2d(c);
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(src, left, top, w, h, 0, 0, w, h);
   return c;
 }
 
+/** Stops every reader so the next read starts fresh (after one stalls or fails). */
+export async function resetReaders() {
+  const all = [workerPromise, rowWorkerPromise, topWorkerPromise];
+  workerPromise = rowWorkerPromise = topWorkerPromise = null;
+  await Promise.all(all.map((p) => p?.then((w) => w.terminate()).catch(() => undefined)));
+}
+
+const loadFailed = (e: unknown): never => {
+  throw new ReadError("LOAD", `The text reader didn't download: ${(e as Error)?.message ?? e}`);
+};
+
 let workerPromise: Promise<Worker> | null = null;
 let rowWorkerPromise: Promise<Worker> | null = null;
 /** The page reader, loaded on first use. */
 export function getWorker(): Promise<Worker> {
-  workerPromise ??= import("tesseract.js").then(({ createWorker }) => createWorker("eng"));
+  workerPromise ??= import("tesseract.js").then(({ createWorker }) => createWorker("eng")).catch(loadFailed);
   workerPromise.catch(() => (workerPromise = null));
   return workerPromise;
 }
@@ -140,7 +187,7 @@ const DIGIT_MODES = {
   topBar: { tessedit_char_whitelist: "0123456789.KMB+", tessedit_pageseg_mode: SINGLE_LINE },
 };
 async function getDigitWorker(mode: keyof typeof DIGIT_MODES): Promise<Worker> {
-  rowWorkerPromise ??= import("tesseract.js").then(({ createWorker }) => createWorker("eng"));
+  rowWorkerPromise ??= import("tesseract.js").then(({ createWorker }) => createWorker("eng")).catch(loadFailed);
   rowWorkerPromise.catch(() => (rowWorkerPromise = null));
   const w = await rowWorkerPromise;
   await w.setParameters(DIGIT_MODES[mode]);
@@ -157,7 +204,7 @@ async function getTopWorker(): Promise<Worker> {
     const w = await createWorker("eng");
     await w.setParameters(DIGIT_MODES.topBar);
     return w;
-  });
+  }).catch(loadFailed);
   topWorkerPromise.catch(() => (topWorkerPromise = null));
   return topWorkerPromise;
 }
@@ -171,12 +218,12 @@ async function recognize(worker: Worker, canvas: HTMLCanvasElement): Promise<{ t
 
 /** The screenshot at its own resolution (capped at 2000 px wide), for reading small text. */
 async function fullCanvas(file: File): Promise<HTMLCanvasElement> {
-  const bitmap = await createImageBitmap(file);
+  const bitmap = await bitmapOf(file);
   const scale = Math.min(1, 2000 / bitmap.width);
-  const c = document.createElement("canvas");
+  const c = newCanvas();
   c.width = Math.round(bitmap.width * scale);
   c.height = Math.round(bitmap.height * scale);
-  const ctx = c.getContext("2d")!;
+  const ctx = ctx2d(c);
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(bitmap, 0, 0, c.width, c.height);
   bitmap.close();
@@ -186,25 +233,25 @@ async function fullCanvas(file: File): Promise<HTMLCanvasElement> {
 /** Icon finding works on a smooth copy this wide: enough detail for exact boxes, small enough to be quick. */
 const ICON_WORK = 600;
 function smoothDraw(dst: HTMLCanvasElement, src: HTMLCanvasElement) {
-  const ctx = dst.getContext("2d")!;
+  const ctx = ctx2d(dst);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(src, 0, 0, dst.width, dst.height);
 }
 
-const pixels = (c: HTMLCanvasElement) => c.getContext("2d")!.getImageData(0, 0, c.width, c.height);
+const pixels = (c: HTMLCanvasElement) => ctx2d(c).getImageData(0, 0, c.width, c.height);
 
 /** A 12×12 thumbnail of an area, lightly blurred first so devices with different scaling compare alike. */
 function thumbnail(src: CanvasImageSource, x: number, y: number, w: number, h: number): Uint8ClampedArray {
-  const blurred = document.createElement("canvas");
+  const blurred = newCanvas();
   blurred.width = Math.round(w);
   blurred.height = Math.round(h);
-  const bctx = blurred.getContext("2d")!;
+  const bctx = ctx2d(blurred);
   bctx.filter = `blur(${(w / 60).toFixed(2)}px)`;
   bctx.drawImage(src, x, y, w, h, 0, 0, blurred.width, blurred.height);
-  const small = document.createElement("canvas");
+  const small = newCanvas();
   small.width = small.height = THUMB;
-  const sctx = small.getContext("2d")!;
+  const sctx = ctx2d(small);
   sctx.imageSmoothingQuality = "high";
   sctx.drawImage(blurred, 0, 0, THUMB, THUMB);
   return sctx.getImageData(0, 0, THUMB, THUMB).data;
@@ -232,10 +279,10 @@ function bagTemplates() {
 function inkCanvas(ink: Ink): HTMLCanvasElement {
   const scale = 36 / Math.max(1, ink.height);
   const pad = 12;
-  const src = document.createElement("canvas");
+  const src = newCanvas();
   src.width = ink.width;
   src.height = ink.height;
-  const sctx = src.getContext("2d")!;
+  const sctx = ctx2d(src);
   const img = sctx.createImageData(ink.width, ink.height);
   for (let i = 0; i < ink.ink.length; i++) {
     const v = ink.ink[i] ? 0 : 255;
@@ -243,10 +290,10 @@ function inkCanvas(ink: Ink): HTMLCanvasElement {
     img.data[i * 4 + 3] = 255;
   }
   sctx.putImageData(img, 0, 0);
-  const out = document.createElement("canvas");
+  const out = newCanvas();
   out.width = Math.max(1, Math.round(ink.width * scale)) + pad * 2;
   out.height = 36 + pad * 2;
-  const ctx = out.getContext("2d")!;
+  const ctx = ctx2d(out);
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, out.width, out.height);
   ctx.imageSmoothingQuality = "high";
@@ -259,7 +306,7 @@ function inkCanvas(ink: Ink): HTMLCanvasElement {
  * its corner plate. Rola comes from the first number in the top bar.
  */
 async function readBackpack(full: HTMLCanvasElement): Promise<Pick<ScreenRead, "bag" | "rola">> {
-  const work = document.createElement("canvas");
+  const work = newCanvas();
   work.width = ICON_WORK;
   work.height = Math.round((full.height * ICON_WORK) / full.width);
   smoothDraw(work, full);
@@ -283,10 +330,10 @@ async function readBackpack(full: HTMLCanvasElement): Promise<Pick<ScreenRead, "
     if (!plate) continue;
     const plateCanvas = crop(corner, plate.x, plate.y, plate.x + plate.w, plate.y + plate.h);
     // Enlarge before picking out the text, as the counts are small.
-    const big = document.createElement("canvas");
+    const big = newCanvas();
     big.width = plateCanvas.width * 3;
     big.height = plateCanvas.height * 3;
-    const bctx = big.getContext("2d")!;
+    const bctx = ctx2d(big);
     bctx.imageSmoothingQuality = "high";
     bctx.drawImage(plateCanvas, 0, 0, big.width, big.height);
     const number = trimNumber(whiteInk(pixels(big)));
@@ -305,17 +352,17 @@ async function readBackpack(full: HTMLCanvasElement): Promise<Pick<ScreenRead, "
  */
 async function readTopRola(full: HTMLCanvasElement): Promise<number | undefined> {
   const top = crop(full, full.width * 0.4, full.height * 0.025, full.width, full.height * 0.1);
-  const big = document.createElement("canvas");
+  const big = newCanvas();
   big.width = top.width * 2;
   big.height = top.height * 2;
-  const ctx = big.getContext("2d")!;
+  const ctx = ctx2d(big);
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(top, 0, 0, big.width, big.height);
   // The amount alone, cut out as the item counts are: reliably keeps its K.
-  const enlarged = document.createElement("canvas");
+  const enlarged = newCanvas();
   enlarged.width = top.width * 3;
   enlarged.height = top.height * 3;
-  const ectx = enlarged.getContext("2d")!;
+  const ectx = ctx2d(enlarged);
   ectx.imageSmoothingQuality = "high";
   ectx.drawImage(top, 0, 0, enlarged.width, enlarged.height);
   const number = firstPillNumber(pixels(enlarged));
@@ -338,6 +385,20 @@ async function readTopRola(full: HTMLCanvasElement): Promise<number | undefined>
 
 /** Reads one screenshot. `seasonHint` is used to turn EXP into a level when the screenshot set has no season screen. */
 export async function readScreenshot(file: File, seasonHint: number): Promise<ScreenRead> {
+  try {
+    return await readOne(file, seasonHint);
+  } catch (e) {
+    if (e instanceof ReadError) throw e;
+    // A canvas the browser couldn't make shows up as a failed draw or a missing image.
+    const msg = String((e as Error)?.message ?? e);
+    if (/memory|allocation|canvas|null/i.test(msg)) throw new ReadError("MEM", msg);
+    throw new ReadError("READ", msg);
+  } finally {
+    releaseCanvases();
+  }
+}
+
+async function readOne(file: File, seasonHint: number): Promise<ScreenRead> {
   const worker = await getWorker();
   const canvas = await loadCanvas(file);
   const sharpCanvas = masked(canvas);
@@ -349,7 +410,7 @@ export async function readScreenshot(file: File, seasonHint: number): Promise<Sc
   let full: HTMLCanvasElement | null = null;
   if (kind === "unknown") {
     full = await fullCanvas(file);
-    const work = document.createElement("canvas");
+    const work = newCanvas();
     work.width = ICON_WORK;
     work.height = Math.round((full.height * ICON_WORK) / full.width);
     smoothDraw(work, full);
@@ -440,10 +501,10 @@ export async function readScreenshot(file: File, seasonHint: number): Promise<Sc
           inOrder: !!inOrder,
           cart: out.cart,
           thumbs: [canvas, sharpCanvas].map((c) => {
-            const t = document.createElement("canvas");
+            const t = newCanvas();
             t.width = 240;
             t.height = Math.round((c.height * 240) / c.width);
-            t.getContext("2d")!.drawImage(c, 0, 0, t.width, t.height);
+            ctx2d(t).drawImage(c, 0, 0, t.width, t.height);
             return t.toDataURL("image/jpeg", 0.7);
           }),
         }),

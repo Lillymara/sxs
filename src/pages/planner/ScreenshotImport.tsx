@@ -1,7 +1,7 @@
 // "Fill from screenshots": reads game screenshots on the player's device and fills the planner
 // after they check what was found.
-import { useState } from "react";
-import type { ScreenRead } from "../../lib/screens/read";
+import { useEffect, useState } from "react";
+import type { ReadErrorCode, ScreenRead } from "../../lib/screens/read";
 import { getRule } from "../../data/seasons";
 import { CART_KEYS, mergeReads, readGearPieces, type CartKey, type Found } from "./fromScreens";
 
@@ -65,7 +65,21 @@ const GUIDE = [
   },
 ];
 
-type Status = { file: string; state: "waiting" | "reading" | "done" | "failed"; read?: ScreenRead };
+type Status = { file: string; state: "waiting" | "reading" | "done" | "failed"; read?: ScreenRead; code?: ErrorCode; detail?: string; size?: number; tries?: number };
+
+/** What each error code means, in words a player can act on. CRASH is spotted on the next visit. */
+type ErrorCode = ReadErrorCode | "CRASH";
+const ERRORS: Record<ErrorCode, string> = {
+  IMG: "The image couldn't be opened. It may be a format this browser can't show (like HEIC), or still downloading from cloud storage. Save it to the phone as a normal screenshot (PNG or JPG) and try again.",
+  MEM: "Your browser ran out of memory for pictures. Pick fewer screenshots at a time (one or two), or close other tabs.",
+  LOAD: "The text reader didn't download. Check your connection and try again.",
+  READ: "The text reader stopped part-way. Try this screenshot again on its own.",
+  SLOW: "Reading took too long and was stopped. Try this screenshot again on its own.",
+  CRASH: "Your browser closed the page part-way through the last batch, almost always from running out of memory. Pick one or two screenshots at a time.",
+};
+const BATCH_KEY = "sxs.shotBatch";
+const TIME_LIMIT = 120_000;
+const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * Where the reader is used. The Level Timer only needs the Character and Bed screens and the four
@@ -85,39 +99,114 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [found, setFound] = useState<Found | null>(null);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
+  /** A batch that never finished last time: the page was closed under it. */
+  const [crashed, setCrashed] = useState<{ n: number; done: number; files: string[] } | null>(null);
+  useEffect(() => {
+    try {
+      const b = JSON.parse(localStorage.getItem(BATCH_KEY) ?? "null");
+      localStorage.removeItem(BATCH_KEY);
+      if (b && Date.now() - b.at < 30 * 60_000) {
+        setCrashed(b);
+        setOpen(true);
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
   const busy = statuses.some((s) => s.state === "waiting" || s.state === "reading");
 
   /** Each pick adds to the screenshots already read, so they can be chosen one at a time (as phones tend to). */
   const read = async (files: File[]) => {
     if (!files.length) return;
     setError("");
+    setCrashed(null);
+    setCopied(false);
     const start = statuses.length;
     const earlier = statuses.flatMap((s) => (s.read ? [s.read] : []));
-    setStatuses((s) => [...s, ...files.map((f): Status => ({ file: f.name, state: "waiting" }))]);
+    setStatuses((s) => [...s, ...files.map((f): Status => ({ file: f.name, state: "waiting", size: f.size }))]);
+    // Noted while reading, so if the browser closes the page part-way we can say so next time.
+    const note = (done: number) => {
+      try {
+        localStorage.setItem(BATCH_KEY, JSON.stringify({ at: Date.now(), n: files.length, done, files: files.map((f) => `${f.name} (${Math.round(f.size / 1024)} KB)`) }));
+      } catch {
+        /* storage unavailable */
+      }
+    };
     try {
-      const { readScreenshot } = await import("../../lib/screens/read");
+      const { readScreenshot, releaseCanvases, resetReaders } = await import("../../lib/screens/read");
       const reads: ScreenRead[] = [...earlier];
+      const once = (f: File) =>
+        Promise.race([
+          readScreenshot(f, season),
+          pause(TIME_LIMIT).then(() => {
+            throw Object.assign(new Error("Timed out"), { code: "SLOW" });
+          }),
+        ]);
       for (let i = 0; i < files.length; i++) {
         const at = start + i;
+        note(i);
         setStatuses((s) => s.map((x, j) => (j === at ? { ...x, state: "reading" } : x)));
-        try {
-          const r = await readScreenshot(files[i], season);
-          reads.push(r);
-          setStatuses((s) => s.map((x, j) => (j === at ? { ...x, state: "done", read: r } : x)));
-        } catch {
-          setStatuses((s) => s.map((x, j) => (j === at ? { ...x, state: "failed" } : x)));
+        let last: { code: ErrorCode; detail: string } | null = null;
+        // A failed read gets one more go after memory is freed and the reader restarted.
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const r = await once(files[i]);
+            reads.push(r);
+            last = null;
+            setStatuses((s) => s.map((x, j) => (j === at ? { ...x, state: "done", read: r, tries: attempt } : x)));
+            break;
+          } catch (e) {
+            const code = ((e as { code?: ErrorCode }).code ?? "READ") as ErrorCode;
+            last = { code, detail: String((e as Error)?.message ?? e).slice(0, 200) };
+            if (code === "LOAD") throw e;
+            releaseCanvases();
+            if (code === "SLOW" || code === "READ") await resetReaders();
+            await pause(400);
+          }
         }
+        if (last) setStatuses((s) => s.map((x, j) => (j === at ? { ...x, state: "failed", code: last!.code, detail: last!.detail, tries: 2 } : x)));
+        // A breather between screenshots lets the browser tidy up memory.
+        await pause(150);
       }
       setFound(mergeReads(reads, season));
     } catch {
-      setError("The text reader couldn't load. Check your connection and try again.");
+      setError(`${ERRORS.LOAD} (code LOAD)`);
       setStatuses((s) => s.slice(0, start));
+    } finally {
+      try {
+        localStorage.removeItem(BATCH_KEY);
+      } catch {
+        /* storage unavailable */
+      }
+    }
+  };
+
+  /** Everything useful for a bug report, to paste in Discord. No screenshots or game numbers. */
+  const copyDetails = async () => {
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    const lines = [
+      `SxS Tools screenshot report (${new Date().toISOString()})`,
+      `Browser: ${navigator.userAgent}`,
+      `Screen: ${screen.width}×${screen.height} @${devicePixelRatio}x${nav.deviceMemory ? `, ~${nav.deviceMemory} GB memory` : ""}`,
+      ...(crashed ? [`Last batch stopped (CRASH) after ${crashed.done} of ${crashed.n}: ${crashed.files.join(", ")}`] : []),
+      ...statuses.map(
+        (st) =>
+          `- ${st.file} (${st.size ? Math.round(st.size / 1024) : "?"} KB): ${st.state}${st.read ? ` → ${st.read.kind}` : ""}${st.code ? ` [${st.code}] ${st.detail ?? ""}` : ""}${st.tries && st.tries > 1 && st.state === "done" ? " (worked on retry)" : ""}`,
+      ),
+    ];
+    try {
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setCopied(true);
+    } catch {
+      window.prompt("Copy this report:", lines.join("\n"));
     }
   };
   const startOver = () => {
     setStatuses([]);
     setFound(null);
     setError("");
+    setCrashed(null);
   };
 
   const apply = () => {
@@ -244,6 +333,11 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
         </span>
       </label>
       {error && <p className="error">{error}</p>}
+      {crashed && (
+        <p className="note warn">
+          <b>Code CRASH:</b> your last batch of {crashed.n} screenshots stopped after {crashed.done}. {ERRORS.CRASH}
+        </p>
+      )}
 
       {statuses.length > 0 && !busy && (
         <p className="hint">
@@ -259,11 +353,41 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
             <li key={i}>
               <span className="shot-file">{s.file}</span>
               <span className={s.state === "done" && s.read?.kind !== "unknown" ? "ok-text" : s.state === "failed" || s.read?.kind === "unknown" ? "bad" : "hint"}>
-                {s.state === "waiting" ? "Waiting" : s.state === "reading" ? "Reading…" : s.state === "failed" ? "Couldn't read" : KIND_LABELS[s.read!.kind]}
+                {s.state === "waiting"
+                  ? "Waiting"
+                  : s.state === "reading"
+                    ? "Reading…"
+                    : s.state === "failed"
+                      ? `Couldn't read (code ${s.code ?? "READ"})`
+                      : KIND_LABELS[s.read!.kind]}
               </span>
             </li>
           ))}
         </ul>
+      )}
+      {!busy && statuses.some((s) => s.state === "failed" || s.read?.kind === "unknown") && (
+        <div className="note warn shot-errors">
+          {[...new Set(statuses.filter((s) => s.state === "failed").map((s) => s.code ?? "READ"))].map((c) => (
+            <p key={c}>
+              <b>Code {c}:</b> {ERRORS[c]}
+            </p>
+          ))}
+          {statuses.some((s) => s.read?.kind === "unknown") && (
+            <p>
+              <b>Not recognised:</b> the screenshot opened fine but didn't look like one of the screens above. Check it's the whole screen, uncropped,
+              with no pop-up covering it.
+            </p>
+          )}
+        </div>
+      )}
+      {!busy && (statuses.some((s) => s.state === "failed" || s.read?.kind === "unknown") || crashed) && (
+        <p className="hint">
+          Still stuck?{" "}
+          <button type="button" className="link-button" onClick={copyDetails}>
+            {copied ? "Copied" : "Copy details for a bug report"}
+          </button>{" "}
+          and paste them in the Discord. They list your browser and each file's size and result, not your screenshots or numbers.
+        </p>
       )}
 
       {timer && statuses.some((st) => st.read && st.read.kind !== "unknown" && !TIMER_SCREENS.includes(st.read.kind)) && (
