@@ -70,6 +70,7 @@ type Status = { file: string; state: "waiting" | "reading" | "done" | "failed"; 
 /** What each error code means, in words a player can act on. CRASH is spotted on the next visit. */
 type ErrorCode = ReadErrorCode | "CRASH";
 const ERRORS: Record<ErrorCode, string> = {
+  FILE: "The browser couldn't get at the file you picked. Try picking fewer at a time, or pick them from the Files app instead of the photo picker.",
   IMG: "The image couldn't be opened. It may be a format this browser can't show (like HEIC), or still downloading from cloud storage. Save it to the phone as a normal screenshot (PNG or JPG) and try again.",
   MEM: "Your browser ran out of memory for pictures. Pick fewer screenshots at a time (one or two), or close other tabs.",
   LOAD: "The text reader didn't download. Check your connection and try again.",
@@ -158,7 +159,7 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
             break;
           } catch (e) {
             const code = ((e as { code?: ErrorCode }).code ?? "READ") as ErrorCode;
-            last = { code, detail: String((e as Error)?.message ?? e).slice(0, 200) };
+            last = { code, detail: String((e as Error)?.message ?? e).slice(0, 500) };
             if (code === "LOAD") throw e;
             releaseCanvases();
             if (code === "SLOW" || code === "READ") await resetReaders();
@@ -320,8 +321,16 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
           multiple
           disabled={busy}
           onChange={(e) => {
-            void read([...(e.target.files ?? [])]);
-            e.target.value = "";
+            const input = e.target;
+            const picked = [...(input.files ?? [])];
+            // Copy every picked file into memory straight away: some phone browsers only let a page
+            // read picked files for a short while, or until the picker is cleared.
+            void Promise.all(picked.map((f) => f.arrayBuffer().then((b) => new File([b], f.name, { type: f.type, lastModified: f.lastModified })).catch(() => f))).then(
+              (copies) => {
+                input.value = "";
+                void read(copies);
+              },
+            );
           }}
         />
         <span>

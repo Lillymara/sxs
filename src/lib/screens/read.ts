@@ -40,7 +40,7 @@ export interface ScreenRead {
 }
 
 /** Why a screenshot couldn't be read, as a short code the player can pass on. */
-export type ReadErrorCode = "IMG" | "MEM" | "LOAD" | "READ" | "SLOW";
+export type ReadErrorCode = "FILE" | "IMG" | "MEM" | "LOAD" | "READ" | "SLOW";
 export class ReadError extends Error {
   constructor(
     public code: ReadErrorCode,
@@ -67,12 +67,52 @@ function ctx2d(c: HTMLCanvasElement): CanvasRenderingContext2D {
   if (!ctx) throw new ReadError("MEM", `No room for a ${c.width}×${c.height} canvas`);
   return ctx;
 }
+/** What a file really is, from its first bytes (a .jpg name doesn't guarantee a JPEG). */
+async function sniff(buf: ArrayBuffer): Promise<string> {
+  const b = new Uint8Array(buf.slice(0, 12));
+  const hex = [...b.slice(0, 4)].map((x) => x.toString(16).padStart(2, "0")).join(" ");
+  const tag = String.fromCharCode(...b.slice(4, 12));
+  const kind = b[0] === 0xff && b[1] === 0xd8 ? "JPEG" : b[0] === 0x89 && b[1] === 0x50 ? "PNG" : tag.startsWith("ftyphei") || tag.startsWith("ftypmif") ? "HEIC" : tag.startsWith("ftypavi") ? "AVIF" : String.fromCharCode(...b.slice(0, 4)) === "RIFF" ? "WEBP" : "unknown";
+  return `${kind} (${hex})`;
+}
+
+/**
+ * Opens a screenshot, trying the quick way first and then two slower ones. Some phone browsers hand
+ * over picked files in a way the quick way can't always open.
+ */
 async function bitmapOf(file: File): Promise<ImageBitmap> {
+  const steps: string[] = [];
   try {
     return await createImageBitmap(file);
   } catch (e) {
-    throw new ReadError("IMG", `Couldn't open ${file.type || "the file"} (${Math.round(file.size / 1024)} KB): ${(e as Error)?.message ?? e}`);
+    steps.push(`direct: ${(e as Error)?.name ?? ""} ${(e as Error)?.message ?? e}`);
   }
+  let buf: ArrayBuffer;
+  try {
+    buf = await file.arrayBuffer();
+  } catch (e) {
+    throw new ReadError("FILE", `Couldn't read the file's bytes (${file.size} B): ${(e as Error)?.name ?? ""} ${(e as Error)?.message ?? e}`);
+  }
+  if (!buf.byteLength) throw new ReadError("FILE", `The file arrived empty (0 bytes, said ${file.size})`);
+  const what = await sniff(buf);
+  const type = /^PNG/.test(what) ? "image/png" : /^JPEG/.test(what) ? "image/jpeg" : file.type || "image/jpeg";
+  try {
+    return await createImageBitmap(new Blob([buf], { type }));
+  } catch (e) {
+    steps.push(`bytes: ${(e as Error)?.name ?? ""} ${(e as Error)?.message ?? e}`);
+  }
+  const url = URL.createObjectURL(new Blob([buf], { type }));
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    return await createImageBitmap(img);
+  } catch (e) {
+    steps.push(`img: ${(e as Error)?.name ?? ""} ${(e as Error)?.message ?? e}`);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+  throw new ReadError("IMG", `${what}, ${Math.round(buf.byteLength / 1024)} KB, type "${file.type}". ${steps.join(" | ")}`);
 }
 
 const WIDTH = 1200;
