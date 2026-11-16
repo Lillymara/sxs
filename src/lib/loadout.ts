@@ -153,6 +153,9 @@ export function decodeShort(code: string): Loadout | null {
   }
 }
 
-export const shareUrl = (l: Loadout, origin = window.location.origin) => `${origin}/l/${encodeShort(l)}`;
+/** Share links go through l.lmthings.com (share/ in this repo), which gives Discord and other apps a
+ *  preview picture of the build and sends people on to sxs.lmthings.com/l/<code>. */
+export const SHARE_ORIGIN = "https://l.lmthings.com";
+export const shareUrl = (l: Loadout) => `${SHARE_ORIGIN}/${encodeShort(l)}`;
 
 export const isEmpty = (l: Loadout) => !l.skills.some(Boolean) && !l.charms.some(Boolean) && !l.pet && !l.title.trim() && !l.notes.trim();

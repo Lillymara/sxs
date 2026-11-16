@@ -134,24 +134,15 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
       /* cancelled */
     }
   };
-  /** The Discord post: name and class, the build in three short lines, and the link with its preview turned off. */
-  const discordText = () => {
-    const names = (xs: (number | null)[], sep: string) => xs.map((x) => skill(x)?.name ?? "—").join(sep);
-    return [
-      `**${draft.title.trim() || `${cls.name} loadout`}** · ${cls.name}`,
-      `Techniques: ${names(draft.skills, " › ")}`,
-      `Charms: ${names(draft.charms, " · ")}`,
-      pet ? `Fantomon: ${pet.name}` : "",
-      draft.notes.trim() ? `> ${draft.notes.trim().replace(/\n+/g, "\n> ")}` : "",
-      `<${link}>`,
-    ]
+  /** The Discord post: the name and the link. Discord turns the link into a card with the build's picture. */
+  const discordText = () =>
+    [`**${draft.title.trim() || `${cls.name} loadout`}** · ${cls.name}`, draft.notes.trim() ? `> ${draft.notes.trim().replace(/\n+/g, "\n> ")}` : "", link]
       .filter(Boolean)
       .join("\n");
-  };
   const copyText = async () => {
     try {
       await navigator.clipboard.writeText(discordText());
-      setToast("Text copied. Paste it in Discord.");
+      setToast("Copied. Paste it in Discord: the link shows the build.");
     } catch {
       setToast("Your browser blocked copying.");
     }
@@ -185,7 +176,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
         }
       }
       await navigator.clipboard.write([new ClipboardItem({ "image/png": picture() })]);
-      setToast("Picture copied. Paste it in Discord, then Copy text.");
+      setToast("Picture copied");
     } catch (e) {
       if ((e as Error)?.name === "AbortError") return setToast("");
       downloadPicture();
@@ -354,11 +345,11 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
           <button type="button" className="spin-button" onClick={share} disabled={isEmpty(draft)}>
             <Icon name="share" size={18} /> Share link
           </button>
+          <button type="button" className="lo-btn" onClick={copyText} disabled={isEmpty(draft)}>
+            Copy for Discord
+          </button>
           <button type="button" className="lo-btn" onClick={copyPicture} disabled={isEmpty(draft)}>
             Copy picture
-          </button>
-          <button type="button" className="lo-btn" onClick={copyText} disabled={isEmpty(draft)}>
-            Copy text
           </button>
           <button type="button" className="lo-btn" onClick={downloadPicture} disabled={isEmpty(draft)}>
             Save picture
