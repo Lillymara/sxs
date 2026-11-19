@@ -15,9 +15,19 @@ export interface ServerChoice {
 
 export const DEFAULT_SERVER: ServerChoice = { serverId: "", name: "", day1: "", offset: 0, timezone: "" };
 
+/** Servers whose timeline runs a day behind their opening date (Season 1 lasts a day longer), by roster id.
+ *  Confirmed by players on Godspire; its launch batch (Crimson Fort, Ancient Ruin, Mistwaste) is the same. */
+export const SERVER_SHIFT_DAYS: Record<string, number> = {
+  "70043-13": 1,
+  "70043-14": 1,
+  "70043-15": 1,
+  "70043-16": 1,
+};
+
 export function effectiveDay1(c: ServerChoice): Date | null {
   const base = parseDay(c.day1);
-  return base ? new Date(base.getTime() + c.offset * 86_400_000) : null;
+  const shift = (c.serverId && SERVER_SHIFT_DAYS[c.serverId]) || 0;
+  return base ? new Date(base.getTime() + (c.offset + shift) * 86_400_000) : null;
 }
 
 /** The 13:00 UTC daily reset in local "HH:MM". */

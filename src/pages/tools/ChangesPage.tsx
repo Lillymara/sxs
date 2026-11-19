@@ -2,6 +2,12 @@
 
 export const CHANGES: { date: string; items: { text: string; href?: string }[] }[] = [
   {
+    date: "2026-11-18",
+    items: [
+      { text: "Calendar: Godspire, Crimson Fort, Ancient Ruin and Mistwaste run a day later than their opening date (Season 1 is a day longer), so their dates now line up without adjusting. If you added a day yourself, set it back to 0 days.", href: "/calendar" },
+    ],
+  },
+  {
     date: "2026-11-16",
     items: [
       { text: "Fill from screenshots handles several screenshots at once more reliably: memory is freed after each one and a failed read is tried again. When a screenshot still can't be read you get a code saying why (IMG, MEM, LOAD, READ, SLOW, or CRASH if the browser closed the page part-way) and a Copy details button for a bug report.", href: "/planner" },

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import serverRows from "../data/servers.json";
+import { effectiveDay1 } from "../pages/calendar/server";
 import { buildEntries, dungeonDifficulties, loadServers, parseDay, searchServers, seasonStatus, serverDayAt } from "./calendar";
 
 const servers = loadServers(serverRows as Parameters<typeof loadServers>[0]);
@@ -40,5 +41,13 @@ describe("server calendar", () => {
       { name: "Hard", requirement: "5M Power" },
     ]);
     expect(dungeonDifficulties("Normal · Hard (36K Power)")[1].requirement).toBe("36K Power");
+  });
+
+  it("runs Godspire's batch a day later, so Season 2 starts Nov 26", () => {
+    for (const name of ["Godspire", "Crimson Fort", "Ancient Ruin", "Mistwaste"]) {
+      const s = servers.find((x) => x.name === name)!;
+      const d1 = effectiveDay1({ serverId: s.id, name, day1: s.opened, offset: 0, timezone: "" })!;
+      expect(seasonStatus(d1, new Date("2026-11-20T00:00:00Z")).seasonEnds?.toISOString()).toBe("2026-11-26T13:00:00.000Z");
+    }
   });
 });
