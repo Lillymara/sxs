@@ -22,7 +22,7 @@ import { Summary } from "./Summary";
 import { findProblems } from "./validate";
 import { GoatCard } from "../../components/SillyGoat";
 import { ScreenshotImport } from "./ScreenshotImport";
-import { GoalPlanBox } from "./GoalPlanBox";
+import { GoalPlanBox, StaminaGoalBox } from "./GoalPlanBox";
 import { shareText } from "./shareText";
 import { ProgressLog, addSnapshot, type Snapshot } from "./ProgressLog";
 import { usePersistentState } from "../../lib/storage";
@@ -357,6 +357,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
               {full ? "Each slot's current level and where you plan to take it." : "One level for the whole system: now, and where you plan to take it."} Scoring starts above Lv {floor}
               {rule && <> (relics above +{rule.relicFloor})</>}.
             </p>
+            <StaminaGoalBox result={result} />
             <GoalPlanBox
               result={result}
               onSetGoal={(stars) => set("primostarGoal", String(stars))}

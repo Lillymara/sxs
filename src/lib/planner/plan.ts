@@ -162,6 +162,7 @@ export interface PlannerResult {
   levelNow: number;
   /** The cheapest plan across every system that reaches the goal, or null with no goal to reach. */
   goalPlan: (GoalPlan & { reachableTotal: number }) | null;
+  staminaPlan: (GoalPlan & { available: number; reachableTotal: number; capped: boolean }) | null;
   /** Per category: the lowest plan that reaches the goal with everything else as planned. */
   minimum: Record<SlotCategory, MinimumPlan>;
 }
@@ -499,6 +500,60 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
     reachableTotal: input.primostarsNow + rule.fixedStars + Math.floor((baseScore.total + goalRoute.pointsAdded) / rule.pointsPerStar + 1e-9),
   };
 
+  const refinedHave = Math.max(0, input.refinedOre ?? 0);
+  const refinedGathered = resets * REFINED_ORE_GATHER.perDay * REFINED_ORE_GATHER.each;
+  const staminaPlan = (() => {
+    const pointsNeeded = score.scoreNeeded - baseScore.total;
+    if (pointsNeeded <= 0) return null;
+    const available = Math.floor(stamina / STAMINA_PER_GATHER);
+    // Replace the manual split. Shared mines, dungeon Ore and configured Realm runs still count.
+    const withoutStamina = (k: Gathered) =>
+      Math.max(0, supply(k) - stamina * Math.max(0, input.overworld.split[k] || 0) / 100 * perStamina[k]);
+    const options: Parameters<typeof planForGoal>[1] = {
+      gear: input.gear,
+      skills: input.skills,
+      fantomons: input.fantomons,
+      relics: input.relics,
+      caps: { gear: caps.gear, skill: caps.skill, fantomon: caps.fantomon, relic: caps.relic },
+      pointsNeeded,
+      budget: {
+        ore: withoutStamina("ore"),
+        rola: withoutStamina("rola") - refreshRola,
+        essence: withoutStamina("essence"),
+        sand: withoutStamina("sand"),
+        fantomonExp: supply("treats") * Math.max(0, input.expPerTreat),
+      },
+    };
+    const gathering = {
+      available,
+      yieldPerGather: {
+        ore: perStamina.ore * STAMINA_PER_GATHER,
+        rola: perStamina.rola * STAMINA_PER_GATHER,
+        essence: perStamina.essence * STAMINA_PER_GATHER,
+        sand: perStamina.sand * STAMINA_PER_GATHER,
+      },
+      refinedOre: refinedHave + refinedGathered,
+    };
+    const withoutGathering = planForGoal(rule, { ...options, gathering: { ...gathering, available: 0 } });
+    const route = withoutGathering.pointsShort > 0 && available > 0
+      ? planForGoal(rule, { ...options, gathering })
+      : withoutGathering;
+    const best = route.pointsAdded > withoutGathering.pointsAdded || route.pointsShort === 0 ? route : withoutGathering;
+    const systems = [
+      [input.gear, caps.gear, rule.floor, rule.weights.gear],
+      [input.skills, caps.skill, rule.floor, rule.weights.skill],
+      [input.fantomons, caps.fantomon, rule.floor, rule.weights.fantomon],
+      [input.relics, caps.relic, rule.relicFloor, rule.weights.relic],
+    ] as const;
+    const maxAdded = systems.reduce((sum, [slots, cap, floor, weight]) => {
+      if (weight <= 0 || slots.length === 0) return sum;
+      if (cap === null) return Infinity;
+      return slots.reduce((points, slot) => points + weight * Math.max(0, cap - Math.max(floor, Math.floor(slot.current))), sum);
+    }, 0);
+    const reachableTotal = input.primostarsNow + rule.fixedStars + Math.floor((baseScore.total + best.pointsAdded) / rule.pointsPerStar + 1e-9);
+    return { ...best, available, reachableTotal, capped: maxAdded < pointsNeeded };
+  })();
+
   // Suggested Realm refreshes: per Realm, the fewest daily refreshes whose runs (with saved tools and
   // the daily tasks' free ones) cover a shortfall. Two targets: the levels planned now, and the goal.
   const refreshesFor = (short: Record<RealmMaterial, number>) => {
@@ -572,15 +627,16 @@ export function planSeason(input: PlannerInput): PlannerResult | null {
     rolaBoughtPerDay,
     realmTools,
     goalPlan,
+    staminaPlan,
     scoreNow,
     levelNow,
     realmSuggestion,
     goalRealms,
     refinedOre: {
       need: costs.forgeStones,
-      have: Math.max(0, input.refinedOre ?? 0),
-      gathered: resets * REFINED_ORE_GATHER.perDay * REFINED_ORE_GATHER.each,
-      left: Math.max(0, input.refinedOre ?? 0) + resets * REFINED_ORE_GATHER.perDay * REFINED_ORE_GATHER.each - costs.forgeStones,
+      have: refinedHave,
+      gathered: refinedGathered,
+      left: refinedHave + refinedGathered - costs.forgeStones,
     },
   };
 }

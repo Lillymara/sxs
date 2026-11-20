@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getRule } from "../../data/seasons";
+import { gearStepCost } from "./costs";
 import { planForGoal } from "./optimize";
 
 const s1 = getRule(1)!;
@@ -37,5 +38,33 @@ describe("planning the cheapest route to a goal", () => {
     const plan = planForGoal(s1, { ...base, pointsNeeded: 0, budget: plenty });
     expect(plan.pointsAdded).toBe(0);
     expect(plan.planned.gear).toEqual(Array(5).fill(140));
+  });
+});
+
+describe("planning with one shared pool of stamina", () => {
+  const ore = gearStepCost(s1, 101)!;
+  const options = {
+    gear: at(1, 100), skills: [], fantomons: [], relics: [], caps,
+    pointsNeeded: s1.weights.gear,
+    budget: { ore: 0, rola: 0, essence: 0, sand: 0, fantomonExp: 0 },
+  };
+  const yieldPerGather = { ore, rola: 2 * ore, essence: 1, sand: 1 };
+
+  it("spends whole gathers on both materials, across one shared limit", () => {
+    const short = planForGoal(s1, { ...options, gathering: { available: 1, yieldPerGather, refinedOre: 0 } });
+    expect(short.pointsShort).toBe(options.pointsNeeded);
+    const enough = planForGoal(s1, { ...options, gathering: { available: 2, yieldPerGather, refinedOre: 0 } });
+    expect(enough.pointsShort).toBe(0);
+    expect(enough.gathers).toEqual({ ore: 1, rola: 1, essence: 0, sand: 0 });
+    expect(enough.planned.gear).toEqual([101]);
+  });
+
+  it("requires Refined Ore at a gear milestone", () => {
+    const blocked = planForGoal(s1, {
+      ...options, gear: at(1, 104), budget: plenty,
+      gathering: { available: 10, yieldPerGather, refinedOre: 0 },
+    });
+    expect(blocked.planned.gear).toEqual([104]);
+    expect(blocked.pointsShort).toBe(options.pointsNeeded);
   });
 });

@@ -156,6 +156,23 @@ describe("planSeason", () => {
     rolaBuys: 0,
   };
 
+  it("reallocates stamina independently of the manual split", () => {
+    const player = { ...base, level: 140, xpPerHour: 0, dailyTasks: false };
+    const input = { ...player, primostarGoal: planSeason(player)!.score.projectedTotal + 1 };
+    const plan = planSeason(input)!.staminaPlan!;
+    expect(plan.pointsShort).toBe(0);
+    const gathers = Object.values(plan.gathers).reduce((total, count) => total + count, 0);
+    expect(gathers).toBeGreaterThan(0);
+    expect(gathers).toBeLessThanOrEqual(plan.available);
+    const split = { ...input.overworld.split, ore: 100 };
+    expect(planSeason({ ...input, overworld: { ...input.overworld, split } })!.staminaPlan).toEqual(plan);
+  });
+
+  it("identifies a goal beyond the projected level caps", () => {
+    const result = planSeason({ ...base, xpPerHour: 0, primostarGoal: 100_000 })!;
+    expect(result.staminaPlan?.capped).toBe(true);
+  });
+
   it("projects EXP over real hours plus reset boosts", () => {
     const r = planSeason(base)!;
     expect(r.character.xpGained).toBeCloseTo(260 * 1_000_000);
