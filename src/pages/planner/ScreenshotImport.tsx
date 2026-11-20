@@ -245,9 +245,10 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
       {hint && <small>{hint}</small>}
     </label>
   );
+  const gearPieces = readGearPieces(found?.gearPieces);
   // The five gear pieces should add up to the season Gear total, when both were read.
   const gearMismatch = (() => {
-    const pieces = readGearPieces(found?.gearPieces);
+    const pieces = gearPieces;
     const rule = getRule(Number(found?.season) || season);
     const total = Number(found?.levels.gear);
     if (!pieces || !rule || !found?.levels.gear || !Number.isFinite(total)) return false;
@@ -449,7 +450,10 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
                   "Gear pieces",
                   found.gearPieces,
                   (v) => setFound({ ...found, gearPieces: v }),
-                  "Each piece's level from the Character screen. Used instead of the gear total.",
+                  "Enter all five levels from the Character screen, top to bottom.",
+                )}
+                {!gearPieces && (
+                  <p className="hint warn shot-mismatch">To update current gear, enter five levels separated by commas. Your saved gear levels will stay as they are if this field is blank or incomplete.</p>
                 )}
                 {gearMismatch && (
                   <p className="hint warn shot-mismatch">The gear pieces don't add up to the season Gear total. One of them may be misread, so check both.</p>
@@ -471,7 +475,7 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
                     `${LEVEL_LABELS[k]} season level`,
                     found.levels[k],
                     (v) => setFound({ ...found, levels: { ...found.levels, [k]: v } }),
-                    "Total above the floor, spread evenly over slots",
+                    k === "gear" ? "Combined total for checking the five gear levels" : "Total above the floor, spread evenly over slots",
                   ),
                 )}
                   </>

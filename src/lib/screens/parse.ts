@@ -189,7 +189,7 @@ export function cartRowCentres(words: Word[]): { centres: number[]; pitch: numbe
  */
 export function parseGearBadges(words: Word[]): number[] | undefined {
   const levels = words
-    .filter((w) => /^\+\d{2,3}$/.test(w.text))
+    .filter((w) => /^\+[1-9]\d{0,2}$/.test(w.text))
     .sort((a, b) => a.bbox.y0 - b.bbox.y0 || a.bbox.x0 - b.bbox.x0)
     .map((w) => Number(w.text.slice(1)));
   return levels.length === 5 ? levels : undefined;

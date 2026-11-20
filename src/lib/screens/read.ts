@@ -223,6 +223,7 @@ export function getWorker(): Promise<Worker> {
 const DIGIT_MODES = {
   cartRow: { tessedit_char_whitelist: "+0123456789/h", tessedit_pageseg_mode: SINGLE_LINE },
   gearBadges: { tessedit_char_whitelist: "+0123456789", tessedit_pageseg_mode: SPARSE },
+  gearSlot: { tessedit_char_whitelist: "+0123456789", tessedit_pageseg_mode: SINGLE_LINE },
   count: { tessedit_char_whitelist: "0123456789.KMB", tessedit_pageseg_mode: SINGLE_LINE },
   topBar: { tessedit_char_whitelist: "0123456789.KMB+", tessedit_pageseg_mode: SINGLE_LINE },
 };
@@ -254,6 +255,49 @@ async function recognize(worker: Worker, canvas: HTMLCanvasElement): Promise<{ t
   const words: Word[] = [];
   for (const b of data.blocks ?? []) for (const p of b.paragraphs) for (const l of p.lines) for (const w of l.words) words.push({ text: w.text, bbox: w.bbox });
   return { text: data.text ?? "", words };
+}
+
+/** Read each badge separately when the whole gear area misses a badge. */
+async function readGear(file: File): Promise<number[] | undefined> {
+  const band = await gearBand(file);
+  const badges = await recognize(await getDigitWorker("gearBadges"), band);
+  const complete = parseGearBadges(badges.words);
+  if (complete) return complete;
+
+  const worker = await getDigitWorker("gearSlot");
+  // Badge centers in the uncropped Character screen, in the planner's top-to-bottom order.
+  const centers = [
+    [0.885, 0.363],
+    [0.15, 0.394],
+    [0.925, 0.451],
+    [0.15, 0.513],
+    [0.885, 0.54],
+  ];
+  const levels: number[] = [];
+  for (const [x, y] of centers) {
+    const centerY = (y - 0.2) / 0.4;
+    const badge = crop(
+      band,
+      (x - 0.045) * band.width,
+      (centerY - 0.025) * band.height,
+      (x + 0.045) * band.width,
+      (centerY + 0.025) * band.height,
+    );
+    const enlarged = newCanvas();
+    const pad = 12;
+    enlarged.width = badge.width * 2 + pad * 2;
+    enlarged.height = badge.height * 2 + pad * 2;
+    const ctx = ctx2d(enlarged);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, enlarged.width, enlarged.height);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(badge, pad, pad, badge.width * 2, badge.height * 2);
+    const { data } = await worker.recognize(enlarged);
+    const level = data.text.trim().match(/^\+?\s*([1-9]\d{0,2})$/);
+    if (!level) return undefined;
+    levels.push(Number(level[1]));
+  }
+  return levels;
 }
 
 /** The screenshot at its own resolution (capped at 2000 px wide), for reading small text. */
@@ -466,8 +510,7 @@ async function readOne(file: File, seasonHint: number): Promise<ScreenRead> {
     const xp = parseCharacterXp(plain.text).need ? parseCharacterXp(plain.text) : parseCharacterXp(sharp.text);
     Object.assign(out, xp);
     if (xp.need) out.level = levelFromNeed(seasonHint, xp.need);
-    const badges = await recognize(await getDigitWorker("gearBadges"), await gearBand(file));
-    out.gear = parseGearBadges(badges.words);
+    out.gear = await readGear(file);
   }
 
   if (kind === "progression") {

@@ -32,8 +32,10 @@ const TREAT_EXP = { basicTreats: 50, premiumTreats: 400, deluxeTreats: 2000 } as
 
 /** Five gear levels from text like "140, 137, 135, 135, 135", or undefined. */
 export function readGearPieces(text?: string): number[] | undefined {
-  const levels = (text ?? "").split(/[^\d]+/).filter(Boolean).map(Number);
-  return levels.length === 5 && levels.every((v) => v > 0) ? levels : undefined;
+  const entries = (text ?? "").trim().split(/\s*,\s*|\s+/);
+  return entries.length === 5 && entries.every((entry) => /^\+?[1-9]\d{0,2}$/.test(entry))
+    ? entries.map(Number)
+    : undefined;
 }
 
 /** Combines several screenshots' reads; the season screen's season wins over the planner's. */
@@ -125,8 +127,9 @@ export function applyFound(found: Found, character: Character, form: PlannerForm
     const fields = { gear: "gear", skill: "skills", fantomon: "fantomons", relic: "relics" } as const;
     for (const [key, field] of Object.entries(fields) as [keyof typeof fields, (typeof fields)[keyof typeof fields]][]) {
       const floor = key === "relic" ? rule.relicFloor : rule.floor;
-      // Exact gear levels from the Character screen beat an even spread of the season total.
+      // A combined gear total cannot tell us the five individual levels.
       const pieces = key === "gear" ? readGearPieces(found.gearPieces) : undefined;
+      if (key === "gear" && !pieces) continue;
       const total = Number(found.levels[key]);
       if (!pieces && (found.levels[key] === undefined || !Number.isFinite(total))) continue;
       const levels = pieces ?? spread(Math.max(0, Math.round(total)), f[field].length, floor);

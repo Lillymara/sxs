@@ -34,7 +34,7 @@ describe("filling the planner from screenshots", () => {
   it("fills the character and planner, clearing planned levels now below current", () => {
     const form = { ...DEFAULT_PLANNER, gear: DEFAULT_PLANNER.gear.map(() => ({ current: "", planned: "120" })) };
     const { character: c, form: f } = applyFound(
-      { season: "1", level: "116", xp: "438K", rate: "76567", cart: { rola: "9315" }, levels: { gear: "200", relic: "40" } },
+      { season: "1", level: "116", xp: "438K", rate: "76567", cart: { rola: "9315" }, gearPieces: "140, 140, 140, 140, 140", levels: { gear: "200", relic: "40" } },
       character,
       form,
     );
@@ -50,6 +50,16 @@ describe("filling the planner from screenshots", () => {
     expect(found.gearPieces).toBe("140, 137, 135, 135, 135");
     const { form: f } = applyFound({ ...found, season: "1", levels: { gear: "182" } }, character, DEFAULT_PLANNER);
     expect(f.gear.map((g) => g.current)).toEqual(["140", "137", "135", "135", "135"]);
+  });
+
+  it("keeps saved gear when the screenshot only provides a total or an incomplete read", () => {
+    const gear = [141, 132, 135, 130, 139].map((level) => ({ current: String(level), planned: "145" }));
+    const form = { ...DEFAULT_PLANNER, gear };
+    for (const gearPieces of [undefined, "141, 132, 135, 130", "141, 132, 135, -130, 139"]) {
+      const result = applyFound({ gearPieces, cart: {}, levels: { gear: "27", relic: "20" } }, character, form);
+      expect(result.form.gear).toEqual(gear);
+      expect(result.form.relics[0].current).toBe("14");
+    }
   });
 
   it("turns Backpack amounts into planner materials and saved Realm tools", () => {
