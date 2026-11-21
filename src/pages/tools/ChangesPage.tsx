@@ -2,6 +2,13 @@
 
 export const CHANGES: { date: string; items: { text: string; href?: string }[] }[] = [
   {
+    date: "2026-11-21",
+    items: [
+      { text: "Server Calendar: 28 new servers (Nexus 70046 and 70047, up to Faerie Inn), plus opening dates for the rest of 70044 and 70045, so those servers' calendars work now. The server list now updates twice a week from the community's SxS All In One Database sheet. Thanks to everyone who keeps it up to date.", href: "/calendar" },
+      { text: "Server not listed yet? Type its name in Find your server and pick \"Add as a new server\" to enter its name and Day 1 yourself. It's saved only in your browser, and once the community list has it, your pick switches over on its own.", href: "/calendar" },
+    ],
+  },
+  {
     date: "2026-11-18",
     items: [
       { text: "Calendar: Godspire, Crimson Fort, Ancient Ruin and Mistwaste run a day later than their opening date (Season 1 is a day longer), so their dates now line up without adjusting. If you added a day yourself, set it back to 0 days.", href: "/calendar" },

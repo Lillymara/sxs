@@ -530,6 +530,20 @@ input.silly { border-color: var(--error); color: var(--error); box-shadow: 0 0 0
 .search-results button:hover, .search-results button:focus-visible { background: var(--accent-soft); }
 .search-results small { color: var(--muted); font-size: 0.75rem; }
 .search-results .empty { padding: 8px 10px; color: var(--muted); font-size: 0.85rem; }
+.search-results .add-server { border-top: 1px solid var(--line); border-radius: 0 0 8px 8px; }
+.search-results .add-server b { color: var(--accent); }
+.add-server-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--accent-soft);
+}
+.add-server-form .field:nth-child(-n + 2), .add-server-form .span-all { grid-column: 1 / -1; }
+.add-server-actions { display: flex; align-items: center; gap: 16px; }
+@media (max-width: 360px) { .add-server-form { grid-template-columns: minmax(0, 1fr); } }
 .stepper { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; width: fit-content; }
 .stepper button { border: 0; background: var(--accent-soft); width: 40px; height: 40px; cursor: pointer; font-size: 1.1rem; }
 .stepper output { min-width: 84px; text-align: center; font-variant-numeric: tabular-nums; }

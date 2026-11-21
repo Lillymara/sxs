@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { EventType } from "../../data/calendar";
-import { SERVERS, ServerSearch } from "../../components/ServerSearch";
+import { findServer, ServerSearch, useServers } from "../../components/ServerSearch";
 import { buildEntries, dungeonDifficulties, seasonStatus, type Entry } from "../../lib/calendar";
 import { effectiveDay1, type ServerChoice } from "./server";
 
@@ -41,7 +41,8 @@ export function CalendarPage({ choice, onChange, now }: Props) {
   const [full, setFull] = useState(false);
   const tz = choice.timezone || deviceZone();
 
-  const server = SERVERS.find((s) => s.id === choice.serverId) ?? null;
+  const { servers, custom } = useServers();
+  const server = findServer(servers, choice, custom.list);
   const day1 = effectiveDay1(choice);
   const status = day1 ? seasonStatus(day1, now) : null;
   const day1Time = day1?.getTime();
@@ -78,7 +79,11 @@ export function CalendarPage({ choice, onChange, now }: Props) {
       <section className="card" aria-labelledby="server-heading">
         <div className="card-head">
           <h2 id="server-heading">Your server</h2>
-          {server && <span className="chip">Nexus {server.nexus} · #{server.number}</span>}
+          {server?.nexus ? (
+            <span className="chip">Nexus {server.nexus}{server.number ? ` · #${server.number}` : ""}</span>
+          ) : server?.custom ? (
+            <span className="chip">Added by you</span>
+          ) : null}
         </div>
         <div className="fields">
           <ServerSearch choice={choice} onChange={onChange} className="span-2" />
@@ -88,9 +93,26 @@ export function CalendarPage({ choice, onChange, now }: Props) {
             <input
               type="date"
               value={choice.day1}
-              onChange={(e) => onChange({ ...choice, day1: e.target.value, serverId: server && e.target.value === server.opened ? server.id : "", name: server && e.target.value === server.opened ? server.name : choice.name })}
+              onChange={(e) => {
+                const day1 = e.target.value;
+                // A server added in this browser keeps its pick; the new date is saved with it.
+                if (server?.custom) {
+                  custom.update(server.id, { opened: day1 });
+                  onChange({ ...choice, day1 });
+                } else {
+                  onChange({ ...choice, day1, serverId: server && day1 === server.opened ? server.id : "", name: server && day1 === server.opened ? server.name : choice.name });
+                }
+              }}
             />
-            <small>{server ? (server.opened ? "From the roster." : "Not in the roster; enter it yourself.") : "Custom date."}</small>
+            <small>
+              {server?.custom
+                ? "Saved with your server in this browser."
+                : server
+                  ? server.opened
+                    ? "From the roster."
+                    : "Not in the roster; enter it yourself."
+                  : "Custom date."}
+            </small>
           </label>
 
           <div className="field">

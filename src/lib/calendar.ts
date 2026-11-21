@@ -21,6 +21,8 @@ export interface Server {
   number: number;
   /** Servers that join this one's Nexus at the start of Season 1, 2, 3, 4+. */
   merges: string[][];
+  /** Added by the player in this browser (not in the community roster). */
+  custom?: boolean;
 }
 
 type ServerRow = [string, string, string, number, string[][]];
