@@ -41,15 +41,6 @@ export const PRIORITIES: Use[] = [
     ],
   },
   {
-    title: "Shop refreshes",
-    cost: "Rola, climbing to 20k by the 4th",
-    advice: "Refresh 2 or 3 times a day and buy everything with limited stock, usually the top 9 items.",
-    points: [
-      "The 4th refresh's 20k price starts to feel steep until Season 2 or beyond.",
-      "Stick to your own Rola budget (see the Rola tips below).",
-    ],
-  },
-  {
     title: "Arena tickets",
     cost: "Buy around the weekly reset",
     advice: "Want to jump the leaderboard? Stockpile, then go all in on Monday.",
