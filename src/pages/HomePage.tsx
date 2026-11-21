@@ -6,6 +6,7 @@ import { ProgressRing } from "../components/ProgressRing";
 import { hrefOf } from "../components/Nav";
 import { RESET_UTC_HOUR } from "../data/calendar";
 import { buildEntries } from "../lib/calendar";
+import { localTime, unlockStatus } from "../lib/unlockTime";
 import type { PlannerResult } from "../lib/planner/plan";
 import { formatDuration, type CalcOutcome } from "../lib/xp";
 import { CHANGES } from "./tools/ChangesPage";
@@ -48,6 +49,8 @@ interface Props {
     day1: Date;
     seasonEnds: Date | null;
     dayOfSeason: number;
+    /** Display time zone from the calendar settings ("" = the device's). */
+    timezone: string;
     seasonDays: number | null;
   } | null;
   now: Date;
@@ -62,9 +65,10 @@ function nextReset(now: Date) {
 }
 
 const shortDate = (d: Date) => d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-function whenText(d: Date, now: Date) {
-  const days = Math.round((new Date(d).setHours(0, 0, 0, 0) - new Date(now).setHours(0, 0, 0, 0)) / DAY);
-  return days <= 0 ? "Now" : days === 1 ? "Tomorrow" : `In ${days} days`;
+/** "Unlocks in 2h 14m", "Live now", "Tomorrow, 5:00 AM PST": everything unlocks at reset, not midnight. */
+function whenText(start: Date, end: Date | null, now: Date, timeZone: string) {
+  const u = unlockStatus(start, now, end, timeZone);
+  return u.state === "later" ? `${u.label}, ${localTime(start, timeZone)}` : u.label;
 }
 /** The headline of a changelog line: the part before its first colon. */
 const headline = (t: string) => (t.indexOf(":") > 0 && t.indexOf(":") < 70 ? t.slice(0, t.indexOf(":")) : t.length > 90 ? `${t.slice(0, 88)}…` : t);
@@ -217,7 +221,7 @@ export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
                   <span className="up-text">
                     <b>{e.title}</b>
                     <small>
-                      {whenText(e.date, now)}
+                      {whenText(e.date, e.end, now, server?.timezone ?? "")}
                       {e.meta ? ` · ${e.meta}` : ""}
                     </small>
                   </span>

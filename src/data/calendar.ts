@@ -33,6 +33,8 @@ export interface GlobalEvent {
 
 /** Daily reset hour in UTC. */
 export const RESET_UTC_HOUR = 13;
+/** The game's own server clock is UTC−5 all year (no daylight saving), so reset is 8:00 AM server time. */
+export const SERVER_UTC_OFFSET_HOURS = -5;
 
 /**
  * The extracted offsets were authored against an anchor one day earlier than the

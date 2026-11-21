@@ -228,6 +228,7 @@ export default function App() {
                 day1: day1!,
                 seasonEnds: server.seasonEnds,
                 dayOfSeason: server.dayOfSeason,
+                timezone: serverChoice.timezone,
                 seasonDays: server.nextSeason ? server.nextSeason.start - server.season.start : null,
               }
             }

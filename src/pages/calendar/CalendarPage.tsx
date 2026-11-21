@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import type { EventType } from "../../data/calendar";
+import { RESET_UTC_HOUR, type EventType } from "../../data/calendar";
 import { findServer, ServerSearch, useServers } from "../../components/ServerSearch";
 import { buildEntries, dungeonDifficulties, seasonStatus, type Entry } from "../../lib/calendar";
 import { effectiveDay1, type ServerChoice } from "./server";
+import { localTime, serverResetTime, serverZoneLabel, unlockStatus, type Unlock } from "../../lib/unlockTime";
 
 
 const FILTERS: { id: EventType | "all"; label: string }[] = [
@@ -72,7 +73,10 @@ export function CalendarPage({ choice, onChange, now }: Props) {
   // Always mark today so the timeline has an anchor, even with no events.
   if (status && status.day > 0 && !groups.has(todayKey)) groups.set(todayKey, { date: now, day: status.day, events: [] });
   const ordered = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
-  const next = entries.find((e) => e.date.getTime() >= now.getTime() - 3_600_000);
+  // Next thing that hasn't unlocked yet (everything unlocks at reset, not midnight).
+  const next = entries.find((e) => e.date.getTime() > now.getTime());
+  const nextUnlock = next ? unlockStatus(next.date, now, null, choice.timezone) : null;
+  const todayReset = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), RESET_UTC_HOUR));
 
   return (
     <div className="calendar">
@@ -156,14 +160,14 @@ export function CalendarPage({ choice, onChange, now }: Props) {
               <p className="tile-big small">{status.seasonEnds ? fmtDate(status.seasonEnds, { month: "short", day: "numeric" }) : "Not confirmed"}</p>
               <p className="eta">
                 {status.seasonEnds && status.nextSeason
-                  ? `S${status.nextSeason.number} starts ${relative(daysUntil(status.seasonEnds))} at reset`
+                  ? `S${status.nextSeason.number} starts ${relative(daysUntil(status.seasonEnds))} at reset (${localTime(status.seasonEnds, choice.timezone)})`
                   : "No later season date yet"}
               </p>
             </div>
             <div className="card status-tile">
               <p className="eyebrow">Next up</p>
-              <p className="tile-big small">{next ? relative(daysUntil(next.date)).replace(/^./, (c) => c.toUpperCase()) : "—"}</p>
-              <p className="eta">{next ? `Day ${next.serverDay} · ${next.title}` : ""}</p>
+              <p className="tile-big small">{nextUnlock ? nextUnlock.label.replace(/^Unlocks in/, "In") : "—"}</p>
+              <p className="eta">{next ? `Day ${next.serverDay} · ${next.title} · at reset, ${localTime(next.date, choice.timezone)}` : ""}</p>
             </div>
           </section>
 
@@ -181,6 +185,10 @@ export function CalendarPage({ choice, onChange, now }: Props) {
                 </button>
               </div>
             </div>
+            <p className="hint reset-note">
+              Everything unlocks at the daily reset, not at midnight: <b>{localTime(todayReset, choice.timezone)}</b> your time, which is{" "}
+              {serverResetTime()} ({serverZoneLabel()}).
+            </p>
 
             {groups.size === 0 ? (
               <p className="hint">No events match this filter and range.</p>
@@ -194,7 +202,7 @@ export function CalendarPage({ choice, onChange, now }: Props) {
                     </h3>
                     {g.events.length === 0 && <p className="event-meta">No events today.</p>}
                     {g.events.map((e, i) => (
-                      <EventCard key={i} e={e} serverName={choice.name} fmtDate={fmtDate} />
+                      <EventCard key={i} e={e} serverName={choice.name} fmtDate={fmtDate} when={unlockStatus(e.date, now, e.end, choice.timezone)} />
                     ))}
                   </li>
                 ))}
@@ -211,7 +219,7 @@ export function CalendarPage({ choice, onChange, now }: Props) {
   );
 }
 
-function EventCard({ e, serverName, fmtDate }: { e: Entry; serverName: string; fmtDate: (d: Date, o?: Intl.DateTimeFormatOptions) => string }) {
+function EventCard({ e, serverName, fmtDate, when }: { e: Entry; serverName: string; fmtDate: (d: Date, o?: Intl.DateTimeFormatOptions) => string; when: Unlock }) {
   const difficulties = e.type === "dungeon" ? dungeonDifficulties(e.meta) : [];
   const meta = e.type === "dungeon" ? `Dungeon release · ${difficulties.length} difficult${difficulties.length === 1 ? "y" : "ies"}` : e.meta;
   const tag = e.major ? "Major" : e.tag ?? { season: "Season", dungeon: "Dungeon", feature: "Unlock", weekly: "Weekly", global: "Global" }[e.type];
@@ -226,6 +234,12 @@ function EventCard({ e, serverName, fmtDate }: { e: Entry; serverName: string; f
             {meta}
             {e.end && <> · through {fmtDate(e.end, { month: "short", day: "numeric" })}</>}
           </p>
+          {when.state !== "past" && (
+            <p className={`event-when ${when.state}`}>
+              <b>{when.state === "later" ? "At reset" : when.state === "live" ? "Live now" : when.label}</b>
+              <span>{when.state === "live" ? `since reset, ${when.at.split(" · ")[0]}` : when.at}</span>
+            </p>
+          )}
         </div>
       </header>
       {e.mergeServers?.length ? (
