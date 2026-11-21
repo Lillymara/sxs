@@ -5,6 +5,7 @@ export const CHANGES: { date: string; items: { text: string; href?: string }[] }
     date: "2026-11-21",
     items: [
       { text: "Server Calendar: 28 new servers (Nexus 70046 and 70047, up to Faerie Inn), plus opening dates for the rest of 70044 and 70045, so those servers' calendars work now. The server list now updates twice a week from the community's SxS All In One Database sheet. Thanks to everyone who keeps it up to date.", href: "/calendar" },
+      { text: "Loadouts on phones: My loadouts now sits right under the builder instead of below the whole skill list, a Back to loadout button stays in reach while you pick, and the rank stars are bigger.", href: "/loadouts" },
       { text: "Spending Guide: cosmetics have their own section instead of \"Usually skip\". They're some of the most fun things to own and can be gifted to friends, though they only nudge your Visage score.", href: "/spending" },
       { text: "Season Planner on phones: the material balance table fits without sideways scrolling, so the Left column is visible; Realm refresh picks are two per row.", href: "/planner" },
       { text: "Spending Guide: the Monthly Card is now called by its in-game name, Monthly Pass; the Month Fund / Growth Fund entry is now the Pilgrimage Pass, with a new entry for the occasional long-term growth passes ($10, $15 or $20, always a good buy); and the Weekly Card is the 7-Day Prayer, the weekly pass in the same shop section as the Monthly Pass.", href: "/spending" },

@@ -1897,7 +1897,7 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
   .lo-mini { display: none; }
 }
 .lo-split { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }
-.lo-picker { scroll-margin-top: 72px; }
+.lo-picker, .lo-card { scroll-margin-top: 72px; }
 @container lo (min-width: 980px) {
   .lo-split { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
   .lo-card { position: sticky; top: 16px; }
@@ -2024,4 +2024,21 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
   .avail-tag, .ribbon { font-size: 0.7rem; }
   .cp-bonus { font-size: 0.74rem; }
   .lo-scene .lo-slot-name { font-size: 0.7rem; }
+}
+
+/* Loadouts on one-column screens (phones):
+   - My loadouts sits between the builder and the long picker list instead of at the very bottom.
+   - A "Back to loadout" button stays pinned above the tab bar while you scroll the picker. */
+.lo-back { display: none; }
+@container lo (max-width: 979px) {
+  .lo-split { display: contents; }
+  .lo-picker { order: 1; }
+  .lo-back { display: flex; justify-content: center; position: sticky; bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 5; margin: 12px 0 4px; pointer-events: none; }
+  .lo-back .lo-btn { pointer-events: auto; box-shadow: 0 6px 20px rgb(0 0 0 / 0.45); background: var(--surface); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+}
+/* Phones: rank stars big enough to tap. */
+@media (max-width: 520px) {
+  .lo-stars { gap: 0; flex-wrap: wrap; }
+  .lo-stars button { flex: 1 1 0; min-width: 26px; max-width: 40px; min-height: 40px; padding: 6px 0; font-size: 1.5rem; }
+  .lo-stars-label { flex-basis: 100%; margin: 4px 0 0; }
 }

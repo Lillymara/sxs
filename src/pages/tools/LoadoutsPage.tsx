@@ -685,12 +685,23 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
         ) : (
           <p className="hint">Nothing matches "{query}".</p>
         )}
+        {!isEmpty(draft) && (
+          <div className="lo-back">
+            <button
+              type="button"
+              className="lo-btn"
+              onClick={() => document.querySelector<HTMLElement>(".lo-card")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            >
+              ↑ Back to loadout
+            </button>
+          </div>
+        )}
         <p className="hint">Tap to fill the open slot, or drag onto any slot (press and hold first on a phone). Every {pickKind === "charm" ? "charm" : "skill"} {cls.name} can equip, including the ones from earlier classes in its line.</p>
       </section>
 
       </div>
 
-      <section className="card">
+      <section className="card lo-saved-card">
         <h2 className="subhead">My loadouts</h2>
         {saved.items.length ? (
           <ul className="lo-saved">
