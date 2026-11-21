@@ -25,7 +25,7 @@ export const TIERS: Record<Tier, { label: string; blurb: string }> = {
 
 export const DEALS: Deal[] = [
   {
-    name: "Monthly Card",
+    name: "Monthly Pass",
     tier: "best",
     verdict: "The best value in the shop for anyone who logs in daily.",
     why: [
@@ -35,7 +35,7 @@ export const DEALS: Deal[] = [
     bestFor: "Everyone who spends anything. Skip it only if you won't log in most days, because missed days are lost.",
   },
   {
-    name: "Month Fund / Growth Fund",
+    name: "Growth Fund",
     tier: "best",
     verdict: "Second priority, if you'll keep levelling.",
     why: [
@@ -63,10 +63,10 @@ export const DEALS: Deal[] = [
     link: { label: "See where each blockade is on the World Map", href: "/map" },
   },
   {
-    name: "Weekly Card",
+    name: "7-Day Prayer",
     tier: "good",
-    verdict: "A smaller version of the Monthly Card. Good after the Monthly Card and Fund.",
-    why: ["Better rate than buying currency directly.", "Lower total value than the Monthly Card."],
+    verdict: "The weekly pass, in the same shop section as the Monthly Pass. Good after the Monthly Pass and Growth Fund.",
+    why: ["Better rate than buying currency directly.", "Lower total value than the Monthly Pass."],
   },
   {
     name: "Pop-up packs (relics, skills, materials)",
@@ -87,8 +87,8 @@ export const DEALS: Deal[] = [
   {
     name: "Currency packs (Vouchers)",
     tier: "skip",
-    verdict: "The worst rate for regular spending. Buy cards and funds instead.",
-    why: ["The Monthly Card gives far more for the same money.", "Only top up when you need a specific amount for something planned."],
+    verdict: "The worst rate for regular spending. Buy the passes and Growth Fund instead.",
+    why: ["The Monthly Pass gives far more for the same money.", "Only top up when you need a specific amount for something planned."],
   },
   {
     name: "Random chest / loot box packs",
@@ -112,7 +112,7 @@ export const CHECKLIST: { q: string; good: boolean; flag: string }[] = [
     good: true,
     flag: "It doesn't fix a real wall, so it won't change much.",
   },
-  { q: "Would the same money buy more as a Monthly Card, Fund or Weekly Card?", good: false, flag: "A card or fund gives more for the same money. Buy that instead." },
+  { q: "Would the same money buy more as a Monthly Pass, 7-Day Prayer or Growth Fund?", good: false, flag: "A pass or the Growth Fund gives more for the same money. Buy that instead." },
   { q: "Am I mostly buying it because of the timer or the 'value %' badge?", good: false, flag: "The timer and badge are there to rush you. Let it expire." },
 ];
 
