@@ -106,13 +106,16 @@ export const DEALS: Deal[] = [
     verdict: "Poor and unpredictable value.",
     why: ["Results are random, so the expected value is usually worse than a fixed pack."],
   },
-  {
-    name: "Cosmetic-only packs",
-    tier: "skip",
-    verdict: "No effect on progress. Buy them only if you love the look.",
-    why: ["Zero combat or resource value."],
-  },
 ];
+
+/** Cosmetics get their own section rather than a value rating: they're bought for fun, not progress. */
+export const COSMETICS = {
+  title: "Cosmetics: just for fun",
+  body: [
+    "Cosmetics are some of the most fun things to own in the game, and you can even buy them as gifts for people on your friends list.",
+    "They add very, very little in game terms: a small bump to your Visage score. Buy them because you love the look or want to treat a friend, not for power.",
+  ],
+};
 
 /** Questions to ask about any deal before buying. `good` is the answer that's no red flag; `flag` says why the other one is. */
 export const CHECKLIST: { q: string; good: boolean; flag: string }[] = [

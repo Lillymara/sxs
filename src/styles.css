@@ -373,6 +373,12 @@ input.silly { border-color: var(--error); color: var(--error); box-shadow: 0 0 0
 .honest-answer .honest-next { margin: 14px 0 0; padding-top: 12px; border-top: 1px dashed var(--line); color: var(--muted); font-weight: 600; }
 .spending-fine-print { margin: -4px 4px 0; }
 @media (max-width: 560px) { .honest-answer { grid-template-columns: 1fr; } .honest-answer .salt { justify-self: start; font-size: 2rem; } }
+.cosmetics-note { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: start; }
+.cosmetics-icon { font-size: 2rem; line-height: 1; padding: 10px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); }
+.cosmetics-note .subhead { margin: 2px 0 8px; }
+.cosmetics-note p:not(.eyebrow) { margin: 0 0 8px; line-height: 1.6; max-width: 70ch; }
+.cosmetics-note p:last-child { margin-bottom: 0; }
+@media (max-width: 560px) { .cosmetics-icon { font-size: 1.6rem; padding: 8px; } .cosmetics-note { gap: 12px; } }
 .tier-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px; }
 .tier-badge { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; padding: 5px 12px; border-radius: 999px; }
 .tier-badge.tier-best { background: color-mix(in srgb, #22c55e 18%, transparent); color: #22c55e; }

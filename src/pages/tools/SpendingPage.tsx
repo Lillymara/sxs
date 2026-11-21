@@ -1,6 +1,6 @@
 // What's worth buying in the in-game shop. Content lives in src/data/spending.ts.
 import { useState } from "react";
-import { CHECKLIST, DEALS, TIERS, TIPS, type Tier } from "../../data/spending";
+import { CHECKLIST, COSMETICS, DEALS, TIERS, TIPS, type Tier } from "../../data/spending";
 
 const ORDER: Tier[] = ["best", "good", "situational", "skip"];
 /** Bars lit on the value meter for each tier. */
@@ -153,6 +153,15 @@ export function SpendingPage() {
             );
           })}
         </ul>
+      </section>
+
+      <section className="card cosmetics-note">
+        <span className="cosmetics-icon" aria-hidden>👗</span>
+        <div>
+          <p className="eyebrow">Cosmetics</p>
+          <h2 className="subhead">{COSMETICS.title}</h2>
+          {COSMETICS.body.map((t) => <p key={t}>{t}</p>)}
+        </div>
       </section>
 
       <DealCheck />
