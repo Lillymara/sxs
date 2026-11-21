@@ -16,12 +16,14 @@ export interface ServerChoice {
 export const DEFAULT_SERVER: ServerChoice = { serverId: "", name: "", day1: "", offset: 0, timezone: "" };
 
 /** Servers whose timeline runs a day behind their opening date (Season 1 lasts a day longer), by roster id.
- *  Confirmed by players on Godspire; its launch batch (Crimson Fort, Ancient Ruin, Mistwaste) is the same. */
+ *  Confirmed by players on Godspire; its launch batch (Crimson Fort, Ancient Ruin, Mistwaste) is the same.
+ *  Moonmoth Vale (hand-added, opened Nov 18 2026) confirmed by its players to run a day behind too. */
 export const SERVER_SHIFT_DAYS: Record<string, number> = {
   "70043-13": 1,
   "70043-14": 1,
   "70043-15": 1,
   "70043-16": 1,
+  "70048-2": 1,
 };
 
 export function effectiveDay1(c: ServerChoice): Date | null {

@@ -1,13 +1,18 @@
 import { useEffect, useId, useMemo, useState, type FormEvent } from "react";
 import serverRows from "../data/servers.json";
+import manualRows from "../data/servers-manual.json";
 import { loadServers, searchServers, type Server } from "../lib/calendar";
 import { CUSTOM_PREFIX, makeCustomServer, rosterMatch, useCustomServers, withCustom } from "../lib/customServers";
-import type { ServerChoice } from "../pages/calendar/server";
+import { effectiveDay1, type ServerChoice } from "../pages/calendar/server";
 
 /** Where the roster comes from (scripts/sync-servers.mjs pulls it); credited under the search box. */
 const ROSTER_SHEET_URL = "https://docs.google.com/spreadsheets/d/1uZqmE-71qg2JbEEeBKQXppDToqo4UwQ1zdMFs75UyrU/htmlview#gid=730102442";
 
-export const SERVERS = loadServers(serverRows as Parameters<typeof loadServers>[0]);
+const ROSTER = loadServers(serverRows as Parameters<typeof loadServers>[0]);
+
+/** The community roster plus servers added by hand (servers-manual.json) for ones the sheet hasn't got yet.
+ *  The sync script moves a hand-added server into the roster once the sheet lists it; until then the roster wins any clash. */
+export const SERVERS = withCustom(ROSTER, loadServers(manualRows as Parameters<typeof loadServers>[0]));
 
 /** The community roster plus servers added in this browser. */
 export function useServers() {
@@ -42,7 +47,12 @@ export function ServerSearch({ choice, onChange, className = "" }: { choice: Ser
   // A server added here that has since reached the roster: switch the saved pick to the roster's entry.
   useEffect(() => {
     if (picked && !picked.custom && choice.serverId.startsWith(CUSTOM_PREFIX)) {
-      onChange({ ...choice, serverId: picked.id, name: picked.name, day1: picked.opened || choice.day1 });
+      // Keep the player's calendar where it was: fold any difference (including a known shift) into the adjustment.
+      const next = { ...choice, serverId: picked.id, name: picked.name, day1: picked.opened || choice.day1, offset: 0 };
+      const before = effectiveDay1(choice);
+      const after = effectiveDay1(next);
+      const diff = before && after ? Math.round((before.getTime() - after.getTime()) / 86_400_000) : choice.offset;
+      onChange({ ...next, offset: Math.max(-30, Math.min(30, diff)) });
     }
   }, [picked, choice, onChange]);
 
@@ -159,11 +169,12 @@ export function ServerSearch({ choice, onChange, className = "" }: { choice: Ser
         </small>
       )}
       <small>
-        {SERVERS.length} servers, from the community's{" "}
+        {ROSTER.length} servers, from the community's{" "}
         <a href={ROSTER_SHEET_URL} target="_blank" rel="noreferrer">
           SxS All In One Database
         </a>{" "}
         sheet. Thanks to everyone who keeps it up to date.
+        {SERVERS.length > ROSTER.length && ` Plus ${SERVERS.length - ROSTER.length} newer ${SERVERS.length - ROSTER.length === 1 ? "one" : "ones"} added here until the sheet has ${SERVERS.length - ROSTER.length === 1 ? "it" : "them"}.`}
         {servers.length > SERVERS.length && ` Plus ${servers.length - SERVERS.length} you added.`}
       </small>
     </div>

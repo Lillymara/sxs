@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatRows, mergeRoster, parseCsv, readSheet, sheetDate, titleCase } from "./sync-servers.mjs";
+import { formatRows, mergeRoster, mergeWithManual, parseCsv, readSheet, sheetDate, titleCase } from "./sync-servers.mjs";
 
 const HEADER = `"NEXUS","SERVER #","SERVER NAME","STATUS","SERVER CREATION TIME","START DATE","SEASON STATUS","DAYS LIVE","PROGRESS","NEXUS UNIFIED DATE","SEASON 1","SEASON 2","SEASON 3","SEASON 4 +"`;
 const row = (nexus, n, name, start, s1 = "", s2 = "") => `"${nexus}","${n}","${name}","FULL","","${start}","","","","","${s1}","${s2}","",""`;
@@ -50,6 +50,35 @@ describe("server roster sync", () => {
     expect(report.added.map((x) => x.id)).toEqual(["70047-12"]);
     expect(report.datesFilled.map((x) => x.id)).toEqual(["70047-11"]);
     expect(report.conflicts.map((x) => `${x.id} ${x.field}`)).toEqual(["70001-2 opened", "70001-2 merges"]);
+  });
+
+  it("moves hand-added servers into the roster once the sheet has them", () => {
+    const ours = [["Faerie Inn", "2026-11-15", "70047", 12, [[], [], [], []]]];
+    const manual = [
+      ["Moonmoth Vale", "2026-11-18", "70048", 2, [[], [], [], []]], // sheet lists it at the same spot
+      ["Kite Meadow", "2026-11-20", "70048", 5, [[], [], [], []]], // sheet has it under another number
+      ["Starshard Cove", "2026-11-21", "70048", 7, [[], [], [], []]], // sheet doesn't have it yet
+    ];
+    const sheet = readSheet(
+      [
+        HEADER,
+        row("70047", 12, "FAERIE INN", "11/15/2026 9:00 AM"),
+        row("70048", 2, "MOONMOTH VALE", "11/19/2026 9:00 AM", "AURORA TUNDRA"),
+        row("70048", 1, "KITE MEADOW", "11/18/2026 9:00 AM"),
+      ].join("\n"),
+    );
+    const { rows, manual: left, report } = mergeWithManual(ours, manual, sheet);
+    expect(rows.map((r) => r.slice(0, 4))).toEqual([
+      ["Faerie Inn", "2026-11-15", "70047", 12],
+      ["Kite Meadow", "2026-11-18", "70048", 1],
+      ["Moonmoth Vale", "2026-11-18", "70048", 2],
+    ]);
+    expect(rows[2][4]).toEqual([["Aurora Tundra"], [], [], []]);
+    expect(left.map((r) => r[0])).toEqual(["Starshard Cove"]);
+    expect(report.manualMoved.map((x) => x.id)).toEqual(["70048-2"]);
+    expect(report.manualReplaced).toEqual([{ id: "70048-5", name: "Kite Meadow", sheetId: "70048-1" }]);
+    expect(report.conflicts.map((x) => `${x.id} ${x.field}`)).toEqual(["70048-2 opened"]);
+    expect(report.missingFromSheet).toEqual([]);
   });
 
   it("writes one server per line", () => {

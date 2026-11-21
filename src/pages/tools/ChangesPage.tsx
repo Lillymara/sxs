@@ -5,6 +5,7 @@ export const CHANGES: { date: string; items: { text: string; href?: string }[] }
     date: "2026-11-21",
     items: [
       { text: "Server Calendar: 28 new servers (Nexus 70046 and 70047, up to Faerie Inn), plus opening dates for the rest of 70044 and 70045, so those servers' calendars work now. The server list now updates twice a week from the community's SxS All In One Database sheet. Thanks to everyone who keeps it up to date.", href: "/calendar" },
+      { text: "Moonmoth Vale (Nexus 70048 #2, opened Nov 18) is in the server list ahead of the community sheet, with its one-day shift built in. If you'd added it yourself, your pick switches to this one and your calendar stays the same.", href: "/calendar" },
       { text: "Server not listed yet? Type its name in Find your server and pick \"Add as a new server\" to enter its name and Day 1 yourself. It's saved only in your browser, and once the community list has it, your pick switches over on its own.", href: "/calendar" },
     ],
   },

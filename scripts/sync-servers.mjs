@@ -24,6 +24,8 @@ export const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/htm
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const SERVERS_PATH = path.join(ROOT, "src/data/servers.json");
+// Servers added by hand before the sheet has them; merged into servers.json once it does.
+const MANUAL_PATH = path.join(ROOT, "src/data/servers-manual.json");
 
 /** Sheet values we've already compared with ours and chose to keep ours over, keyed "id field".
  *  They aren't reported again unless the sheet changes them. Ours came from player reports. */
@@ -175,10 +177,38 @@ export function mergeRoster(ourRows, sheetServers) {
   return { rows, report };
 }
 
+/**
+ * Like mergeRoster, but also handles the hand-added list (servers-manual.json): servers we added before
+ * the sheet had them. Once the sheet lists one with the same Nexus and number, it moves into the roster
+ * (our date and name kept, blanks filled from the sheet). If the sheet lists the same name under a
+ * different Nexus/number, the sheet's entry replaces ours. The rest stay in the hand-added list.
+ */
+export function mergeWithManual(ourRows, manualRows, sheetServers) {
+  const id = (r) => `${r[2]}-${r[3]}`;
+  const manualIds = new Set(manualRows.map(id));
+  const { rows, report } = mergeRoster([...ourRows, ...manualRows.filter((r) => !ourRows.some((o) => id(o) === id(r)))], sheetServers);
+  const sheetIds = new Set(sheetServers.map((s) => s.id));
+  const sheetByName = new Map(sheetServers.map((s) => [key(s.name), s]));
+  report.manualMoved = [];
+  report.manualReplaced = [];
+  const roster = [];
+  const manual = [];
+  for (const r of rows) {
+    if (!manualIds.has(id(r))) roster.push(r);
+    else if (sheetIds.has(id(r))) {
+      roster.push(r);
+      report.manualMoved.push({ id: id(r), name: r[0] });
+    } else if (sheetByName.has(key(r[0]))) {
+      report.manualReplaced.push({ id: id(r), name: r[0], sheetId: sheetByName.get(key(r[0])).id });
+    } else manual.push(r);
+  }
+  report.missingFromSheet = report.missingFromSheet.filter((x) => !manualIds.has(x));
+  return { rows: roster, manual, report };
+}
+
 /** One server per line, so changes show up as readable diffs. */
 export const formatRows = (rows) => `[\n${rows.map((r) => JSON.stringify(r)).join(",\n")}\n]\n`;
 
-export const hasChanges = (r) => r.added.length + r.datesFilled.length + r.mergesFilled.length > 0;
 
 export function describe(report) {
   const lines = [];
@@ -193,6 +223,12 @@ export function describe(report) {
     `\`${x.id}\` ${x.field}: ours ${JSON.stringify(x.ours)}, sheet ${JSON.stringify(x.sheet)}`,
   );
   list("In our roster but not the sheet (kept)", report.missingFromSheet, (x) => `\`${x}\``);
+  list("Hand-added servers now in the sheet (moved into the roster)", report.manualMoved ?? [], (x) => `\`${x.id}\` ${x.name}`);
+  list(
+    "Hand-added servers the sheet lists under a different Nexus/number (replaced by the sheet's; check SERVER_SHIFT_DAYS)",
+    report.manualReplaced ?? [],
+    (x) => `${x.name}: ours \`${x.id}\`, sheet \`${x.sheetId}\``,
+  );
   return lines.join("\n");
 }
 
@@ -208,27 +244,33 @@ async function main() {
 
   const ourText = await readFile(SERVERS_PATH, "utf8");
   const ours = JSON.parse(ourText);
+  const manualText = await readFile(MANUAL_PATH, "utf8").catch(() => "[]");
+  const manualRows = JSON.parse(manualText);
   // Guard against a renamed tab or a half-empty sheet wiping nothing but still misleading us.
   if (sheet.length < ours.length * 0.9) {
     throw new Error(`The sheet has only ${sheet.length} servers but we have ${ours.length}. Not syncing; check ${SHEET_URL}`);
   }
 
-  const { rows, report } = mergeRoster(ours, sheet);
+  const { rows, manual, report } = mergeWithManual(ours, manualRows, sheet);
   const text = describe(report);
-  console.log(`Sheet: ${sheet.length} servers. Ours: ${ours.length} → ${rows.length}.\n`);
+  console.log(`Sheet: ${sheet.length} servers. Ours: ${ours.length} → ${rows.length}. Hand-added: ${manualRows.length} → ${manual.length}.\n`);
   console.log(text || "Nothing to report.");
 
-  const next = formatRows(rows);
-  const changed = next !== ourText;
   if (summaryPath) {
     const body = [`Synced from the community roster: ${SHEET_URL}`, "", text || "No data changes."].join("\n");
     await writeFile(summaryPath, body + "\n");
   }
-  if (!changed) console.log("\nservers.json is already up to date.");
-  else if (dryRun) console.log("\n(dry run, servers.json not written)");
-  else {
-    await writeFile(SERVERS_PATH, next);
-    console.log(`\nWrote ${path.relative(ROOT, SERVERS_PATH)}.`);
+  for (const [file, before, after] of [
+    [SERVERS_PATH, ourText, formatRows(rows)],
+    [MANUAL_PATH, manualText, formatRows(manual)],
+  ]) {
+    const name = path.relative(ROOT, file);
+    if (after === before) console.log(`\n${name} is already up to date.`);
+    else if (dryRun) console.log(`\n(dry run, ${name} not written)`);
+    else {
+      await writeFile(file, after);
+      console.log(`\nWrote ${name}.`);
+    }
   }
 }
 
