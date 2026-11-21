@@ -4,7 +4,9 @@ import { effectiveDay1 } from "../calendar/server";
 import type { ToolProps } from "./props";
 
 const HOUR = 3_600_000;
-const when = (d: Date) => d.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+/** Exact time in the saved server timezone (device zone when none is set), with the zone name. */
+const when = (d: Date, timeZone?: string) =>
+  d.toLocaleString(undefined, { timeZone, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
 const left = (d: Date, now: Date) => {
   const h = (d.getTime() - now.getTime()) / HOUR;
   if (h <= 0) return "passed";
@@ -39,6 +41,7 @@ export function PrepPage({ choice, now }: ToolProps) {
   const day1 = effectiveDay1(choice);
   const status = day1 ? seasonStatus(day1, now) : null;
   const end = status?.seasonEnds ?? null;
+  const tz = choice.timezone || undefined;
 
   return (
     <div className="tool prep">
@@ -49,19 +52,19 @@ export function PrepPage({ choice, now }: ToolProps) {
               {choice.name || "Your server"} · Season {status!.season.number}
             </p>
             <p className="prep-end">
-              Season ends <b>{when(end)}</b> <span className="hint">({left(end, now)})</span>
+              Season ends <b>{when(end, tz)}</b> <span className="hint">({left(end, now)})</span>
             </p>
             <ol className="prep-timeline">
               {STEPS.filter((s) => s.hoursBefore).map((s) => {
                 const at = new Date(end.getTime() - s.hoursBefore! * HOUR);
                 return (
                   <li key={s.title}>
-                    <b>{when(at)}</b> <span className="hint">({left(at, now)})</span> · {s.title}
+                    <b>{when(at, tz)}</b> <span className="hint">({left(at, now)})</span> · {s.title}
                   </li>
                 );
               })}
               <li>
-                <b>{when(end)}</b> · Season ends: levels turn into Primostars
+                <b>{when(end, tz)}</b> · Season ends: levels turn into Primostars
               </li>
             </ol>
           </>
@@ -86,6 +89,14 @@ export function PrepPage({ choice, now }: ToolProps) {
                   {s.hoursBefore && <span className="chip">Last {s.hoursBefore}h</span>}
                 </div>
                 <p className="deal-verdict">{s.body}</p>
+                {s.hoursBefore && end && (() => {
+                  const at = new Date(end.getTime() - s.hoursBefore * HOUR);
+                  return (
+                    <p className="hint">
+                      {choice.name || "Your server"}: last claim before <b>{when(at, tz)}</b> ({left(at, now)}), then leave it until the season ends <b>{when(end, tz)}</b>.
+                    </p>
+                  );
+                })()}
                 {s.link && (
                   <p className="hint deal-link">
                     <a href={s.link.href}>{s.link.label} →</a>
