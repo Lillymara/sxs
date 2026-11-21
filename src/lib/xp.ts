@@ -219,12 +219,13 @@ export function formatDuration(hours: number): string {
 }
 
 /** Local wall-clock time `hours` from `now`. */
-export function formatEta(hours: number, now: Date = new Date()): string {
+/** "Sat, Nov 21, 4:33 AM"; `short` drops the weekday ("Nov 21, 4:33 AM") for narrow spaces. */
+export function formatEta(hours: number, now: Date = new Date(), short = false): string {
   if (!Number.isFinite(hours)) return "—";
   const eta = new Date(now.getTime() + hours * 3_600_000);
   const sameYear = eta.getFullYear() === now.getFullYear();
   return eta.toLocaleString(undefined, {
-    weekday: "short",
+    ...(short ? {} : { weekday: "short" }),
     month: "short",
     day: "numeric",
     ...(sameYear ? {} : { year: "numeric" }),

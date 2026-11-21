@@ -112,7 +112,7 @@ export function Results({ character, outcome, now }: Props) {
             close to accurate. Anything further out will likely come sooner than shown.
           </p>
           <div className="table-wrap">
-            <table>
+            <table className="level-table">
               <thead>
                 <tr>
                   <th scope="col">Level</th>
@@ -127,7 +127,10 @@ export function Results({ character, outcome, now }: Props) {
                     <td>{s.level}</td>
                     <td title={fmt(s.xpRemaining)}>{formatXpShort(s.xpRemaining)}</td>
                     <td>{formatDuration(s.hours)}</td>
-                    <td>{formatEta(s.cumulativeHours, now)}</td>
+                    <td>
+                      <span className="eta-long">{formatEta(s.cumulativeHours, now)}</span>
+                      <span className="eta-short">{formatEta(s.cumulativeHours, now, true)}</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>

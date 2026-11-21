@@ -434,6 +434,13 @@ input.silly { border-color: var(--error); color: var(--error); box-shadow: 0 0 0
 .balance td.ok { color: #15803d; font-weight: 700; }
 :root[data-tone="dark"] .balance td.ok { color: #4ade80; }
 .balance td.bad { font-weight: 700; }
+/* Level Timer table: the weekday drops on phones so the Reached column fits. */
+.level-table .eta-short { display: none; }
+@media (max-width: 520px) {
+  .level-table .eta-long { display: none; }
+  .level-table .eta-short { display: inline; }
+  .level-table th, .level-table td { padding: 6px 5px; }
+}
 /* Phones: fit all five columns (the Left column matters most) without sideways scrolling. */
 @media (max-width: 520px) {
   .balance th, .balance td { padding: 6px 3px; }
