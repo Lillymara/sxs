@@ -37,6 +37,24 @@ const STEPS: { title: string; body: string; hoursBefore?: number; link?: { href:
   },
 ];
 
+/** Launch-day order, from eog.gg's Season 2 prep guide. */
+const LAUNCH: { title: string; body: string }[] = [
+  { title: "Claim your Seasonal Rewards", body: "Collect what Season 1 earned you as soon as you log in." },
+  { title: "Spend every Primostar in the Astral Pact", body: "Your season levels have just turned into Primostars. Put them all into the Astral Pact's permanent bonuses." },
+  { title: "Progress before you speed up", body: "Push as far as you can on normal progress first: it's free EXP. Keep Speed-Ups and Temporal Crystals for when you actually stall." },
+  { title: "Do your Relic pulls", body: "Don't let launch day end without them." },
+];
+
+/** Season 2 levels worth spending Speed-Ups to reach, from the same guide. */
+const MILESTONES: { level: number; unlocks: string }[] = [
+  { level: 106, unlocks: "Tier 4, your next power tier" },
+  { level: 108, unlocks: "Your Fantomon grows into its Adult form" },
+  { level: 116, unlocks: "The Tower opens (Gem drops)" },
+  { level: 130, unlocks: "Second dungeon, with the first seasonal gear drops" },
+];
+
+const SOURCE = "https://eog.gg/games/sword-x-staff/guides/season-2-prep/";
+
 export function PrepPage({ choice, now }: ToolProps) {
   const day1 = effectiveDay1(choice);
   const status = day1 ? seasonStatus(day1, now) : null;
@@ -107,6 +125,72 @@ export function PrepPage({ choice, now }: ToolProps) {
           ))}
         </ol>
         <p className="hint">The Season Planner's "Save bed EXP" and "Save Cart resources" options (on by default) already leave those last 36 hours out.</p>
+      </section>
+
+      <section className="card">
+        <h2 className="subhead">When Season 2 starts</h2>
+        <p className="hint">
+          {end ? (
+            <>
+              {choice.name || "Your server"}: <b>{when(end, tz)}</b>. Work through these in order on your first login.
+            </>
+          ) : (
+            "Work through these in order on your first login."
+          )}
+        </p>
+        <ol className="dawn-uses">
+          {LAUNCH.map((s, i) => (
+            <li key={s.title}>
+              <span className="dawn-rank" aria-hidden>
+                {i + 1}
+              </span>
+              <div>
+                <div className="dawn-title">
+                  <h3>{s.title}</h3>
+                </div>
+                <p className="deal-verdict">{s.body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="card">
+        <h2 className="subhead">When to spend Speed-Ups</h2>
+        <p className="hint">
+          Once you stall, spend Speed-Ups and Temporal Crystals only to cross a level that unlocks something.
+        </p>
+        <div className="table-wrap flat">
+          <table>
+            <thead>
+              <tr>
+                <th>Level</th>
+                <th>Unlocks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {MILESTONES.map((m) => (
+                <tr key={m.level}>
+                  <td>
+                    <b>Lv. {m.level}</b>
+                  </td>
+                  <td>{m.unlocks}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="hint">
+          Or hold all of them until the end of the season: if you're chasing extra Primostars, cashing them in after every new statue is unlocked gets the most
+          EXP out of each one.
+        </p>
+        <p className="hint">
+          Launch-day order and milestones from{" "}
+          <a href={SOURCE} target="_blank" rel="noreferrer">
+            eog.gg's Season 2 prep guide
+          </a>
+          .
+        </p>
       </section>
     </div>
   );
