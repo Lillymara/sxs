@@ -4,6 +4,7 @@ export const CHANGES: { date: string; items: { text: string; href?: string }[] }
   {
     date: "2026-11-21",
     items: [
+      { text: "New Guides section in the menu: Season Prep (what to do as a season ends, with the exact times to stop claiming the bed and the Cart on your server), the Spending Guide and the Dawnium Guide.", href: "/prep" },
       { text: "Server Calendar: 28 new servers (Nexus 70046 and 70047, up to Faerie Inn), plus opening dates for the rest of 70044 and 70045, so those servers' calendars work now. The server list now updates twice a week from the community's SxS All In One Database sheet. Thanks to everyone who keeps it up to date.", href: "/calendar" },
       { text: "Loadouts on phones: My loadouts now sits right under the builder instead of below the whole skill list, a Back to loadout button stays in reach while you pick, and the rank stars are bigger.", href: "/loadouts" },
       { text: "Spending Guide: cosmetics have their own section instead of \"Usually skip\". They're some of the most fun things to own and can be gifted to friends, though they only nudge your Visage score.", href: "/spending" },

@@ -269,7 +269,7 @@ export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
 
       {groups.map((g) => (
         <section key={g} className="tool-group">
-          <h2 className="home-heading">{g === "Plan" ? "Plan your season" : g === "Info" ? "Look it up" : "Tools"}</h2>
+          <h2 className="home-heading">{g === "Plan" ? "Plan your season" : g === "Info" ? "Look it up" : g === "Guides" ? "Guides" : "Tools"}</h2>
           <div className="tile-grid">
             {tiles
               .filter((t) => t.group === g)

@@ -59,7 +59,7 @@ const DEFAULT_CHARACTER: Character = {
 };
 
 type Page = "home" | "timer" | "planner" | "calendar" | keyof typeof SIMPLE_PAGES;
-type Group = "" | "Plan" | "Info";
+type Group = "" | "Plan" | "Info" | "Guides";
 /** `hidden` pages are reached by link only, not the menu. `blurb` is the home page tile's line. */
 const PAGES: { id: Page; group: Group; label: string; icon: IconName; blurb: string; title: string; lede: string; wide?: boolean; hidden?: boolean }[] = [
   { id: "home", group: "", label: "Home", icon: "home", blurb: "", title: "SxS Tools", lede: "", wide: true },
@@ -71,11 +71,11 @@ const PAGES: { id: Page; group: Group; label: string; icon: IconName; blurb: str
   { id: "fantomons", group: "Info", label: "Fantomons", icon: "fantomons", blurb: "Stats, forms and abilities", title: "Fantomons", lede: "Every Fantomon's stats, baby and adult forms, and abilities at any grade and level.", wide: true },
   { id: "companions", group: "Info", label: "Companions", icon: "companions", blurb: "Bonuses, gifts and best classes", title: "Companions", lede: "Companion stat bonuses by friendship level, favorite gifts, unlocks and the classes they suit.", wide: true },
   { id: "map", group: "Info", label: "World Map", icon: "map", blurb: "Lucky Wheels and unlockable areas", title: "World Map", lede: "Lucky Wheels, unlockable areas and their loot, region by region.", wide: true },
-  { id: "spending", group: "Info", label: "Spending Guide", icon: "spending", blurb: "Which deals are worth it", title: "Spending Guide", lede: "If you do spend: which deals give you the most, and which to skip.", wide: true },
   { id: "guide", group: "Plan", label: "Planner Guide", icon: "guide", blurb: "", title: "How to use the Season Planner", lede: "Step by step: what each part of the planner asks for, what it does, and how to read the results.", wide: true, hidden: true },
-  { id: "prep", group: "Info", label: "Season Prep", icon: "prep", blurb: "What to do as a season ends", title: "Next-Season Prep", lede: "What to do as a season ends, timed for your server.", wide: true, hidden: true },
   { id: "changes", group: "Info", label: "What's New", icon: "changes", blurb: "", title: "What's New", lede: "Recent changes to the site, newest first.", wide: true, hidden: true },
-  { id: "dawnium", group: "Info", label: "Dawnium Guide", icon: "dawnium", blurb: "Where Dawnium does the most good", title: "Dawnium Guide", lede: "Where your Dawnium (and Rola) does the most good, and what to skip.", wide: true },
+  { id: "prep", group: "Guides", label: "Season Prep", icon: "prep", blurb: "What to do as a season ends", title: "Next-Season Prep", lede: "What to do as a season ends, timed for your server.", wide: true },
+  { id: "spending", group: "Guides", label: "Spending Guide", icon: "spending", blurb: "Which deals are worth it", title: "Spending Guide", lede: "If you do spend: which deals give you the most, and which to skip.", wide: true },
+  { id: "dawnium", group: "Guides", label: "Dawnium Guide", icon: "dawnium", blurb: "Where Dawnium does the most good", title: "Dawnium Guide", lede: "Where your Dawnium (and Rola) does the most good, and what to skip.", wide: true },
 ];
 
 const pageFromPath = (): Page => {
