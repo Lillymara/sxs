@@ -189,10 +189,31 @@ function WorldMap({ data }: { data: WorldData }) {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.lineJoin = "round";
-    for (const label of filter.places ? [...map.labels].sort((a, b) => Number(a.major) - Number(b.major)) : []) {
+    // Place names skip any spot where they'd overlap another name or a Lucky Wheel badge (major names first),
+    // so a zoomed-out map, especially on a phone, stays readable and more names appear as you zoom in.
+    type Box = { l: number; t: number; r: number; b: number };
+    const taken: Box[] = [];
+    const hits = (a: Box) => taken.some((b) => a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t);
+    if (filter.wheels) {
+      for (const wheel of Object.values(map.wheels || {})) {
+        const p = { x: v.ox + wheel.world[0] * v.scale, y: v.oy - wheel.world[1] * v.scale };
+        const size = Math.max(42, Math.min(60, v.scale * 9.5));
+        taken.push({ l: p.x - Math.max(size / 2, 60), r: p.x + Math.max(size / 2, 60), t: p.y - size / 2, b: p.y + size * 0.55 + 24 });
+      }
+    }
+    const placed: { label: (typeof map.labels)[number]; p: { x: number; y: number }; size: number }[] = [];
+    for (const label of filter.places ? [...map.labels].sort((a, b) => Number(b.major) - Number(a.major)) : []) {
       if (!label.major && zoom < 0.84) continue;
       const p = { x: v.ox + label.x * v.scale, y: v.oy - label.y * v.scale };
       const size = label.major ? Math.max(10, Math.min(14, v.scale * 2.2)) : Math.max(8, Math.min(11, v.scale * 1.62));
+      ctx.font = `${label.major ? 900 : 700} ${size}px system-ui`;
+      const half = ctx.measureText(label.name).width / 2 + 3;
+      const box = { l: p.x - half, r: p.x + half, t: p.y - size * 0.7, b: p.y + size * 0.7 };
+      if (hits(box)) continue;
+      taken.push(box);
+      placed.push({ label, p, size });
+    }
+    for (const { label, p, size } of placed.reverse()) {
       ctx.font = `${label.major ? 900 : 700} ${size}px system-ui`;
       ctx.lineWidth = Math.max(2, size * 0.26);
       ctx.strokeStyle = "rgba(7,18,14,.9)";
