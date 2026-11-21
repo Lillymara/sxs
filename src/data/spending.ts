@@ -35,7 +35,7 @@ export const DEALS: Deal[] = [
     bestFor: "Everyone who spends anything. Skip it only if you won't log in most days, because missed days are lost.",
   },
   {
-    name: "Growth Fund",
+    name: "Pilgrimage Pass",
     tier: "best",
     verdict: "Second priority, if you'll keep levelling.",
     why: [
@@ -43,6 +43,16 @@ export const DEALS: Deal[] = [
       "You only get full value if you actually reach those levels.",
     ],
     bestFor: "Players planning to stick with the game for a while.",
+  },
+  {
+    name: "Long-term growth passes",
+    tier: "best",
+    verdict: "Occasional passes that pay out like the Pilgrimage Pass, usually $10, $15 or $20. Always a good buy when one shows up.",
+    why: [
+      "They pay out over time as you progress, so the total is far more than a pack at the same price.",
+      "They only come round now and then, so pick one up when you see it.",
+    ],
+    bestFor: "Anyone who already has the Monthly Pass and Pilgrimage Pass and plans to keep playing.",
   },
   {
     name: "Starter / New Player Pack",
@@ -65,7 +75,7 @@ export const DEALS: Deal[] = [
   {
     name: "7-Day Prayer",
     tier: "good",
-    verdict: "The weekly pass, in the same shop section as the Monthly Pass. Good after the Monthly Pass and Growth Fund.",
+    verdict: "The weekly pass, in the same shop section as the Monthly Pass. Good after the Monthly Pass and Pilgrimage Pass.",
     why: ["Better rate than buying currency directly.", "Lower total value than the Monthly Pass."],
   },
   {
@@ -87,7 +97,7 @@ export const DEALS: Deal[] = [
   {
     name: "Currency packs (Vouchers)",
     tier: "skip",
-    verdict: "The worst rate for regular spending. Buy the passes and Growth Fund instead.",
+    verdict: "The worst rate for regular spending. Buy the passes instead.",
     why: ["The Monthly Pass gives far more for the same money.", "Only top up when you need a specific amount for something planned."],
   },
   {
@@ -112,7 +122,7 @@ export const CHECKLIST: { q: string; good: boolean; flag: string }[] = [
     good: true,
     flag: "It doesn't fix a real wall, so it won't change much.",
   },
-  { q: "Would the same money buy more as a Monthly Pass, 7-Day Prayer or Growth Fund?", good: false, flag: "A pass or the Growth Fund gives more for the same money. Buy that instead." },
+  { q: "Would the same money buy more as a Monthly Pass, 7-Day Prayer or Pilgrimage Pass?", good: false, flag: "A pass gives more for the same money. Buy that instead." },
   { q: "Am I mostly buying it because of the timer or the 'value %' badge?", good: false, flag: "The timer and badge are there to rush you. Let it expire." },
 ];
 
