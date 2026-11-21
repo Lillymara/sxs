@@ -93,7 +93,7 @@ export function CharacterForm({ character, onChange, onReset, table, compact, re
                 aria-label="Current XP"
                 value={character.currentXp}
                 onChange={(e) => set("currentXp", e.target.value)}
-                placeholder="As shown in game, e.g. 4.13k or 1.52B"
+                placeholder="e.g. 4.13k or 1.52B"
               />
             ) : (
               <input
