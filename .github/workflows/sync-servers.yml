@@ -1,0 +1,50 @@
+name: Sync server roster
+
+# Pulls new servers, opening dates and merge lists from the community roster sheet
+# (see scripts/sync-servers.mjs) and opens a pull request when anything changed.
+# Nothing reaches the live site until that PR is merged.
+on:
+  schedule:
+    - cron: "0 15 * * 1,4" # Mondays and Thursdays, 15:00 UTC (two hours after the daily reset)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-servers
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      BRANCH: bot/server-roster-sync
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sync from the roster sheet
+        run: node scripts/sync-servers.mjs --summary=pr-body.md
+
+      - name: Open or update the pull request
+        run: |
+          if git diff --quiet -- src/data/servers.json; then
+            echo "No roster changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$BRANCH"
+          git add src/data/servers.json
+          git commit -m "Sync server roster from the community sheet"
+          git push --force origin "$BRANCH"
+          if gh pr view "$BRANCH" --json state --jq .state 2>/dev/null | grep -q OPEN; then
+            gh pr edit "$BRANCH" --body-file pr-body.md
+          else
+            gh pr create --head "$BRANCH" --base main --title "Server roster update" --body-file pr-body.md
+          fi

@@ -20,7 +20,7 @@ import { currentPath, listen } from "./lib/router";
 import { DISCORD_URL } from "./data/site";
 import type { ToolProps } from "./pages/tools/props";
 
-// The calendar carries the 720-server roster, so it loads only when opened.
+// The calendar carries the full server roster, so it loads only when opened.
 const CalendarPage = lazy(() => import("./pages/calendar/CalendarPage").then((m) => ({ default: m.CalendarPage })));
 const ConversionPage = lazy(() => import("./pages/tools/ConversionPage").then((m) => ({ default: m.ConversionPage })));
 const FantomonsPage = lazy(() => import("./pages/tools/FantomonsPage").then((m) => ({ default: m.FantomonsPage })));
