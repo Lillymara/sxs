@@ -5,7 +5,7 @@ An unofficial web app for **Sword x Staff**: https://sxs.lmthings.com/
 - **Level Timer**: time to your next level (and a rough goal-level plan) from your current EXP and the XP/hr shown on your bed.
 - **Season Planner**: season-end level projection with daily reset boosts and the bed EXP save, Primostar score and goal,
   gear/skill/Fantomon/relic upgrade costs, and a material plan covering cart, shop, overworld stamina, dungeon Ore and Material Realms.
-- **Server Calendar**: find your server (720-server roster) to see its current day and season, when the season ends,
+- **Server Calendar**: find your server (community roster, synced with `npm run sync:servers`) to see its current day and season, when the season ends,
   Nexus merges, dungeon releases, unlocks, weekly events and global events. The planner uses your server's season end.
 - **Class Change / Fantomons**: see what your skills can reroll into when you change class; browse every Fantomon's
   stats and abilities.
