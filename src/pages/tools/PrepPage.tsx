@@ -14,7 +14,7 @@ const left = (d: Date, now: Date) => {
 };
 
 /** What to do before a season ends, in order. Each item is advice players have confirmed in game. */
-const STEPS: { title: string; body: string; hoursBefore?: number; link?: { href: string; label: string } }[] = [
+const STEPS: { title: string; body: string; hoursBefore?: number; /** What to do in the window, when it isn't "leave it unclaimed". */ during?: string; link?: { href: string; label: string } }[] = [
   {
     title: "Aim for an Astral Pact tier",
     body: "Your season levels turn into Primostars when the season ends, and the Astral Pact's permanent bonuses unlock at set Primostar totals. Check which tier you'll land on and whether a little more gets you to the next one.",
@@ -35,13 +35,25 @@ const STEPS: { title: string; body: string; hoursBefore?: number; link?: { href:
     body: "Do the same with the Cart for the last 36 hours: its resources carry into next season, ready for the new upgrades.",
     hoursBefore: 36,
   },
+  {
+    title: "Save your Stamina",
+    during: "only spend Stamina on your daily quests",
+    body: "For the last 36 hours, only spend the Stamina you need to finish your daily quests. Gathering rewards go up with your rank, and you can rank up the moment the new season starts, so the Stamina you save is worth more then.",
+    hoursBefore: 36,
+  },
+  {
+    title: "Save your dungeon runs",
+    body: "On the last day of the season, skip your daily dungeon runs and save 4. The new dungeon opens on day one of Season 2, so you can run it 6 times.",
+    during: "don't use your daily dungeon runs",
+    hoursBefore: 24,
+  },
 ];
 
 /** Launch-day order, from eog.gg's Season 2 prep guide. */
 const LAUNCH: { title: string; body: string }[] = [
   { title: "Claim your Seasonal Rewards", body: "Collect what Season 1 earned you as soon as you log in." },
   { title: "Spend every Primostar in the Astral Pact", body: "Your season levels have just turned into Primostars. Put them all into the Astral Pact's permanent bonuses." },
-  { title: "Progress before you speed up", body: "Push as far as you can on normal progress first: it's free EXP. Keep Speed-Ups and Temporal Crystals for when you actually stall." },
+  { title: "Explore as far as you can to claim statues", body: "Statues are free EXP, so claim every one you can reach before speeding anything up. Keep Speed-Ups and Temporal Crystals for when you actually stall." },
   { title: "Do your Relic pulls", body: "Don't let launch day end without them." },
 ];
 
@@ -88,7 +100,7 @@ export function PrepPage({ choice, now }: ToolProps) {
           </>
         ) : (
           <p className="hint">
-            <a href="/calendar">Pick your server</a> to see your season's end date and when to stop claiming the bed and the Cart.
+            <a href="/calendar">Pick your server</a> to see your season's end date and when to stop claiming the bed and the Cart and start saving Stamina and dungeon runs.
           </p>
         )}
       </section>
@@ -111,7 +123,16 @@ export function PrepPage({ choice, now }: ToolProps) {
                   const at = new Date(end.getTime() - s.hoursBefore * HOUR);
                   return (
                     <p className="hint">
-                      {choice.name || "Your server"}: last claim before <b>{when(at, tz)}</b> ({left(at, now)}), then leave it until the season ends <b>{when(end, tz)}</b>.
+                      {choice.name || "Your server"}:{" "}
+                      {s.during ? (
+                        <>
+                          from <b>{when(at, tz)}</b> ({left(at, now)}) until the season ends <b>{when(end, tz)}</b>, {s.during}.
+                        </>
+                      ) : (
+                        <>
+                          last claim before <b>{when(at, tz)}</b> ({left(at, now)}), then leave it until the season ends <b>{when(end, tz)}</b>.
+                        </>
+                      )}
                     </p>
                   );
                 })()}
