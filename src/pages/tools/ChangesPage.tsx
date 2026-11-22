@@ -4,6 +4,7 @@ export const CHANGES: { date: string; items: { text: string; href?: string }[] }
   {
     date: "2026-11-22",
     items: [
+      { text: "Season Prep has tabs now, one per guide (Aqualis opening, Season 1 → 2), and opens on whichever is next for your server. Pick or change your server right at the top to line every time up with it. Both guides share one layout: key times, the one rule to remember, then short Before and When steps.", href: "/prep" },
       { text: "Season Prep: the Aqualis opening run, a seven-step order for the morning Aqualis opens (server day 11, at the daily reset), timed for your server. It sits at the top of the page while Aqualis is still coming on your server.", href: "/prep" },
       { text: "Season Prep: save your Stamina for the last 36 hours (daily quests only, since gathering pays more once you rank up in the new season), and skip your dungeon runs on the last day so you can run the new dungeon 6 times on day one. Launch morning now says to explore as far as you can to claim statues.", href: "/prep" },
     ],

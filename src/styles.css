@@ -2042,3 +2042,16 @@ img.brand-mark { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 6
   .lo-stars button { flex: 1 1 0; min-width: 26px; max-width: 40px; min-height: 40px; padding: 6px 0; font-size: 1.5rem; }
   .lo-stars-label { flex-basis: 100%; margin: 4px 0 0; }
 }
+
+/* Season Prep guide tabs: one per island opening or season change, scrolls sideways when there are many. */
+.prep-tabs { display: flex; gap: 6px; padding: 5px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.prep-tabs::-webkit-scrollbar { display: none; }
+.prep-tabs button { flex: 1 0 auto; display: grid; gap: 1px; justify-items: start; padding: 9px 14px; border: 0; border-radius: 11px; background: none; color: var(--muted); font: inherit; text-align: left; cursor: pointer; white-space: nowrap; }
+.prep-tabs button span { font-weight: 700; font-size: 0.95rem; }
+.prep-tabs button small { font-size: 0.75rem; font-variant-numeric: tabular-nums; }
+.prep-tabs button:hover:not([aria-selected="true"]) { color: var(--text); }
+.prep-tabs button[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / 0.18); }
+.prep-tabs button[aria-selected="true"] span { color: var(--accent); }
+.prep-panel { display: grid; gap: inherit; }
+.prep-phase { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+.prep-timed { margin: 6px 0 0; }
