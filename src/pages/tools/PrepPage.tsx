@@ -1,6 +1,7 @@
-// Next-season prep: what to do as a season ends, timed from the saved server's season end.
+// Season prep: the Aqualis opening run and what to do as a season ends, timed for the saved server.
 import { seasonStatus } from "../../lib/calendar";
 import { effectiveDay1 } from "../calendar/server";
+import { AQUALIS_DAY, AqualisRun, aqualisOpens } from "./AqualisRun";
 import type { ToolProps } from "./props";
 
 const HOUR = 3_600_000;
@@ -72,9 +73,26 @@ export function PrepPage({ choice, now }: ToolProps) {
   const status = day1 ? seasonStatus(day1, now) : null;
   const end = status?.seasonEnds ?? null;
   const tz = choice.timezone || undefined;
+  const aqualis = day1 ? aqualisOpens(day1) : null;
+  const aqualisSoon = aqualis !== null && aqualis > now;
+  const aqualisRun = (
+    <AqualisRun
+      label={
+        aqualis ? (
+          <>
+            {choice.name || "Your server"}: Aqualis {aqualisSoon ? "opens" : "opened"} <b>{when(aqualis, tz)}</b>
+            {aqualisSoon && <> ({left(aqualis, now)})</>}, at the daily reset on server day {AQUALIS_DAY}.
+          </>
+        ) : (
+          <>Aqualis opens at the daily reset on server day {AQUALIS_DAY}. <a href="/calendar">Pick your server</a> to see when.</>
+        )
+      }
+    />
+  );
 
   return (
     <div className="tool prep">
+      {aqualisSoon && aqualisRun}
       <section className="card">
         {end ? (
           <>
@@ -213,6 +231,7 @@ export function PrepPage({ choice, now }: ToolProps) {
           .
         </p>
       </section>
+      {!aqualisSoon && aqualisRun}
     </div>
   );
 }

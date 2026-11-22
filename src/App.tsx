@@ -73,7 +73,7 @@ const PAGES: { id: Page; group: Group; label: string; icon: IconName; blurb: str
   { id: "map", group: "Info", label: "World Map", icon: "map", blurb: "Lucky Wheels and unlockable areas", title: "World Map", lede: "Lucky Wheels, unlockable areas and their loot, region by region.", wide: true },
   { id: "guide", group: "Plan", label: "Planner Guide", icon: "guide", blurb: "", title: "How to use the Season Planner", lede: "Step by step: what each part of the planner asks for, what it does, and how to read the results.", wide: true, hidden: true },
   { id: "changes", group: "Info", label: "What's New", icon: "changes", blurb: "", title: "What's New", lede: "Recent changes to the site, newest first.", wide: true, hidden: true },
-  { id: "prep", group: "Guides", label: "Season Prep", icon: "prep", blurb: "What to do as a season ends", title: "Next-Season Prep", lede: "What to do as a season ends, timed for your server.", wide: true },
+  { id: "prep", group: "Guides", label: "Season Prep", icon: "prep", blurb: "Aqualis opening run and season end", title: "Season Prep", lede: "The Aqualis opening run and what to do as a season ends, timed for your server.", wide: true },
   { id: "spending", group: "Guides", label: "Spending Guide", icon: "spending", blurb: "Which deals are worth it", title: "Spending Guide", lede: "If you do spend: which deals give you the most, and which to skip.", wide: true },
   { id: "dawnium", group: "Guides", label: "Dawnium Guide", icon: "dawnium", blurb: "Where Dawnium does the most good", title: "Dawnium Guide", lede: "Where your Dawnium (and Rola) does the most good, and what to skip.", wide: true },
 ];
