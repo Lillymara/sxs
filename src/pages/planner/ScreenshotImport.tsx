@@ -1,6 +1,6 @@
 // "Fill from screenshots": reads game screenshots on the player's device and fills the planner
 // after they check what was found.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReadErrorCode, ScreenRead } from "../../lib/screens/read";
 import { getRule } from "../../data/seasons";
 import { CART_KEYS, mergeReads, readGearPieces, type CartKey, type Found } from "./fromScreens";
@@ -87,6 +87,24 @@ const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * character values; the planner uses all five screens.
  */
 export type ImportScope = "planner" | "timer";
+
+/**
+ * The SxS Overlay Android app (the floating bubble over the game) adds this to the page. Its capture()
+ * hides the panel, reads the game screen behind it, and answers with an "sxs-overlay-shot" event.
+ */
+type OverlayBridge = { capture: () => void };
+type OverlayShot = { image?: string; error?: string };
+const overlay = () => (window as Window & { SxSOverlay?: OverlayBridge }).SxSOverlay;
+
+/** A data URL from the app as a File, so it goes through the same reader as a picked screenshot. */
+function dataUrlFile(url: string, name: string): File {
+  const [head, body = ""] = url.split(",");
+  const type = /^data:([^;,]+)/.exec(head)?.[1] ?? "image/jpeg";
+  const bin = atob(body);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new File([bytes], `${name}.${type === "image/png" ? "png" : "jpg"}`, { type, lastModified: Date.now() });
+}
 const TIMER_SCREENS = ["character", "bed"];
 
 export function ScreenshotImport({ season, onApply, scope = "planner" }: { season: number; onApply: (found: Found) => void; scope?: ImportScope }) {
@@ -116,6 +134,10 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
     }
   }, []);
   const busy = statuses.some((s) => s.state === "waiting" || s.state === "reading");
+  const inOverlay = !!overlay();
+  /** Waiting on the app to read the game screen. */
+  const [grabbing, setGrabbing] = useState(false);
+  const grabs = useRef(0);
 
   /** Each pick adds to the screenshots already read, so they can be chosen one at a time (as phones tend to). */
   const read = async (files: File[]) => {
@@ -181,6 +203,40 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
         /* storage unavailable */
       }
     }
+  };
+
+  // The app's answer to "Read the game screen". The ref keeps it reading into the latest batch.
+  const readLatest = useRef(read);
+  readLatest.current = read;
+  useEffect(() => {
+    if (!inOverlay) return;
+    const onShot = (e: Event) => {
+      const shot = ((e as CustomEvent<OverlayShot>).detail ?? {}) as OverlayShot;
+      setGrabbing(false);
+      if (!shot.image) {
+        setError(shot.error ?? "The game screen couldn't be read. Try again.");
+        return;
+      }
+      grabs.current += 1;
+      try {
+        void readLatest.current([dataUrlFile(shot.image, `Game screen ${grabs.current}`)]);
+      } catch {
+        setError("The game screen came through damaged. Try again.");
+      }
+    };
+    window.addEventListener("sxs-overlay-shot", onShot);
+    return () => window.removeEventListener("sxs-overlay-shot", onShot);
+  }, [inOverlay]);
+  // If the app never answers (it was closed mid-read), don't leave the button stuck.
+  useEffect(() => {
+    if (!grabbing) return;
+    const t = setTimeout(() => setGrabbing(false), 90_000);
+    return () => clearTimeout(t);
+  }, [grabbing]);
+  const grab = () => {
+    setError("");
+    setGrabbing(true);
+    overlay()?.capture();
   };
 
   /** Everything useful for a bug report, to paste in Discord. No screenshots or game numbers. */
@@ -342,6 +398,18 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
               : "Choose screenshots"}
         </span>
       </label>
+      {inOverlay && (
+        <>
+          <button type="button" className={`shot-drop${busy || grabbing ? " busy" : ""}`} disabled={busy || grabbing} onClick={grab}>
+            <span>{grabbing ? "Reading the game screen…" : "📸 Read the game screen"}</span>
+          </button>
+          <p className="hint">
+            No saving needed: open one of the screens above in the game, behind this panel, then tap Read the game screen. The panel hides for a
+            moment while the screen is read. The first time, Android asks to let SxS Overlay record or cast the screen: allow it for the entire
+            screen (or Sword x Staff). It stays allowed until you stop the bubble.
+          </p>
+        </>
+      )}
       {error && <p className="error">{error}</p>}
       {crashed && (
         <p className="note warn">
