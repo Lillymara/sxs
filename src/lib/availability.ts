@@ -2,6 +2,7 @@
 import { publicServerDay } from "../data/calendar";
 import { dayDate, parseDay } from "./calendar";
 import { formatLocale } from "../i18n/format";
+import { english, type Tr } from "../i18n/tr";
 
 export type Rule =
   /** Not in the global game yet. */
@@ -71,30 +72,51 @@ const fmt = (d: Date) => d.toLocaleDateString(formatLocale(), { month: "short", 
  * What a rule means for a server that opened on `day1` (null if no server is chosen), as of `now`.
  * Event items count as missed only if the event ended before the server opened.
  */
-export function availabilityFor(rule: Rule | undefined, day1: Date | null, now: Date): Availability {
+export function availabilityFor(rule: Rule | undefined, day1: Date | null, now: Date, tr: Tr = english): Availability {
   if (!rule) return { state: "available" };
   switch (rule.kind) {
     case "unreleased":
-      return { state: "unreleased", tag: "Unreleased", detail: `${rule.note}. Not obtainable on global servers yet.` };
+      return { state: "unreleased", tag: tr("avl.unreleased"), detail: tr("avl.unreleasedDetail", { note: ruleText(rule.note, tr) }) };
     case "limited":
-      return { state: "limited", tag: "Limited", detail: `${rule.label}. Event-only; dates aren't known, so it can't be checked against your server.` };
+      return { state: "limited", tag: tr("avl.limited"), detail: tr("avl.limitedDetail", { label: ruleText(rule.label, tr) }) };
     case "serverDay": {
       const day = publicServerDay(rule.day);
-      if (!day1) return { state: "available", tag: `Day ${day}`, detail: `Arrives on server day ${day} (${rule.label}). Pick a server to check yours.` };
+      const tag = tr("avl.day", { n: day });
+      if (!day1) return { state: "available", tag, detail: tr("avl.dayNoServer", { n: day, label: ruleText(rule.label, tr) }) };
       const date = dayDate(day1, day);
       return date > now
-        ? { state: "upcoming", tag: `Day ${day}`, detail: `Arrives on your server on day ${day}, ${fmt(date)}.` }
-        : { state: "available", tag: `Day ${day}`, detail: `Arrived on your server on day ${day}, ${fmt(date)}.` };
+        ? { state: "upcoming", tag, detail: tr("avl.dayUpcoming", { n: day, date: fmt(date) }) }
+        : { state: "available", tag, detail: tr("avl.dayArrived", { n: day, date: fmt(date) }) };
     }
     case "event": {
       const start = parseDay(rule.start)!;
       const end = parseDay(rule.end)!;
-      const when = `${fmt(start)} – ${fmt(end)}`;
-      if (now < start) return { state: "upcoming", tag: "Event", detail: `${rule.label}, ${when}. Not out yet.` };
-      if (day1 && day1 > end) return { state: "missed", tag: "Missed", detail: `${rule.label}, ${when}, ended before your server opened.` };
-      return { state: "available", tag: "Event", detail: `${rule.label}, ${when}.` };
+      const vars = { label: ruleText(rule.label, tr), when: `${fmt(start)} – ${fmt(end)}` };
+      if (now < start) return { state: "upcoming", tag: tr("avl.event"), detail: tr("avl.eventSoon", vars) };
+      if (day1 && day1 > end) return { state: "missed", tag: tr("avl.missed"), detail: tr("avl.eventMissed", vars) };
+      return { state: "available", tag: tr("avl.event"), detail: tr("avl.eventOn", vars) };
     }
   }
+}
+
+/** Rule notes and labels in the chosen language. Event and collaboration names stay as the game writes them. */
+const RULE_TEXT: Record<string, Parameters<Tr>[0]> = {
+  "Future collaboration": "avr.futureCollab",
+  "Future event": "avr.futureEvent",
+  "Aeperis region, not open yet": "avr.aeperis",
+  "TW / future content": "avr.tw",
+  "In the global client but not released": "avr.notReleased",
+  "Crossover event": "avr.crossover",
+  "Starfrost (winter) event": "avr.starfrost",
+  "Spring 2026 event": "avr.spring",
+  "Halloween 2026 event": "avr.halloween",
+  "Ignis opens (Season 5)": "avr.ignis",
+};
+function ruleText(text: string, tr: Tr): string {
+  if (RULE_TEXT[text]) return tr(RULE_TEXT[text]);
+  const m = text.match(/^(.+) (release|collaboration)$/);
+  if (m) return tr(m[2] === "release" ? "avr.release" : "avr.collab", { name: m[1] });
+  return text;
 }
 
 /** Hidden when the player asks to see only what their server can get. */

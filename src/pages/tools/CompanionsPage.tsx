@@ -12,6 +12,7 @@ import { usePersistentState } from "../../lib/storage";
 import { effectiveDay1 } from "../calendar/server";
 import type { ToolProps } from "./props";
 import { formatLocale } from "../../i18n/format";
+import { useT } from "../../i18n";
 
 interface Companion {
   id: number;
@@ -68,9 +69,10 @@ const short = (name: string) => name.replace("Travel Reward Bonus", "Travel rewa
 const isNew = (c: Companion) => c.source === "purrwikimania";
 
 export function CompanionsPage({ choice, onServerChange, now }: ToolProps) {
+  const { t } = useT();
   const [filter, setFilter] = usePersistentState<{ only: boolean; limited: boolean }>("sxs.availability", { only: false, limited: false });
   const day1 = effectiveDay1(choice);
-  const avail = (x: Companion) => availabilityFor(companionRule(x.id, x.availability), day1, now);
+  const avail = (x: Companion) => availabilityFor(companionRule(x.id, x.availability), day1, now, t);
   const [search, setSearch] = useState("");
   const [cls, setCls] = useState("");
   const [rarity, setRarity] = useState("");
@@ -120,28 +122,28 @@ export function CompanionsPage({ choice, onServerChange, now }: ToolProps) {
           onToggleLimited={(limited) => setFilter({ ...filter, limited })}
           limitedCount={DATA.filter((x) => avail(x).state === "limited").length}
           hiddenCount={DATA.filter((x) => !isObtainable(avail(x))).length}
-          description="Hides unreleased companions, ones your server hasn't reached yet, and event companions from before it opened"
+          description={t("cp.desc")}
         />
       </section>
 
       <section className="card cp-roster">
         <div className="roster-head">
           <h2>
-            Companions <span className="chip">{list.length}</span>
+            {t("cp.title")} <span className="chip">{list.length}</span>
           </h2>
-          <input className="roster-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name, class, gift, region" aria-label="Search companions" />
+          <input className="roster-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("cp.search")} aria-label={t("cp.searchLabel")} />
         </div>
-        <div className="filter-row" role="group" aria-label="Filter companions">
+        <div className="filter-row" role="group" aria-label={t("cp.filterLabel")}>
           {CLASSES.map((k) => (
-            <button key={k.name} type="button" className={`class-chip c-${k.name}`} aria-pressed={cls === k.name} onClick={() => setCls(cls === k.name ? "" : k.name)} title={`Good for ${k.name}s`}>
+            <button key={k.name} type="button" className={`class-chip c-${k.name}`} aria-pressed={cls === k.name} onClick={() => setCls(cls === k.name ? "" : k.name)} title={t("cp.goodForCls", { cls: k.name })}>
               <GameArt path={`classes/${k.badge}.webp`} name={k.name} alt="" className="class-mini" />
               {k.name}
             </button>
           ))}
           <span className="filter-gap" aria-hidden />
           {[
-            ["premium", "Premium"],
-            ["standard", "Standard"],
+            ["premium", t("cp.premium")],
+            ["standard", t("cp.standard")],
           ].map(([v, l]) => (
             <button key={v} type="button" aria-pressed={rarity === v} onClick={() => setRarity(rarity === v ? "" : v)}>
               {l}
@@ -154,11 +156,11 @@ export function CompanionsPage({ choice, onServerChange, now }: ToolProps) {
             </button>
           ))}
           <button type="button" className="link-button" aria-expanded={showStats} onClick={() => setShowStats((s) => !s)}>
-            {showStats ? "Hide stat filters" : `Stat filters${stats.size ? ` (${stats.size})` : ""}`}
+            {showStats ? t("cp.hideStats") : stats.size ? t("cp.statFiltersN", { n: stats.size }) : t("cp.statFilters")}
           </button>
         </div>
         {showStats && (
-          <div className="filter-row stat-filter" role="group" aria-label="Must have these stats">
+          <div className="filter-row stat-filter" role="group" aria-label={t("cp.mustHave")}>
             {STAT_FILTERS.map((s) => (
               <button key={s} type="button" aria-pressed={stats.has(s)} onClick={() => toggleStat(s)}>
                 {s}
@@ -166,17 +168,17 @@ export function CompanionsPage({ choice, onServerChange, now }: ToolProps) {
             ))}
           </div>
         )}
-        {cls && <p className="hint">Companions whose bonuses suit a {cls}.</p>}
+        {cls && <p className="hint">{t("cp.suits", { cls })}</p>}
         <div className="cp-grid">
           {ordered.map((x) => {
             const a = avail(x);
             const top = Object.entries(finalOf(x)).filter(([n]) => !CORE_KEYS.has(n) && !TRAVEL.has(n)).slice(0, 2);
             return (
               <button key={x.id} type="button" className={`cp-card c-${x.nativeClass}`} aria-pressed={x.id === c.id} onClick={() => pick(x.id)}>
-                {isNew(x) && <span className="ribbon">New</span>}
+                {isNew(x) && <span className="ribbon">{t("fm.new")}</span>}
                 <span className="cp-portrait">
                   <GameArt path={`companions/icon_${x.id}.webp`} name={x.name} alt="" />
-                  {x.premium && <span className="cp-star" title="Premium" aria-label="Premium">★</span>}
+                  {x.premium && <span className="cp-star" title={t("cp.premium")} aria-label={t("cp.premium")}>★</span>}
                   {badgeOf(x.nativeClass) && <GameArt path={`classes/${badgeOf(x.nativeClass)}.webp`} name={x.nativeClass} alt="" className="cp-class" />}
                 </span>
                 <b>{x.name}</b>
@@ -185,7 +187,7 @@ export function CompanionsPage({ choice, onServerChange, now }: ToolProps) {
               </button>
             );
           })}
-          {!list.length && <p className="hint">No companions match these filters.</p>}
+          {!list.length && <p className="hint">{t("cp.none")}</p>}
         </div>
       </section>
 
@@ -195,6 +197,7 @@ export function CompanionsPage({ choice, onServerChange, now }: ToolProps) {
 }
 
 function Profile({ c, detail, availState }: { c: Companion; detail?: string; availState: string }) {
+  const { t } = useT();
   const [level, setLevel] = useState(c.maxLevel);
   const [chartStat, setChartStat] = useState("ATK");
   const lv = c.maxOnly ? c.maxLevel : Math.max(1, Math.min(c.maxLevel, level));
@@ -211,15 +214,15 @@ function Profile({ c, detail, availState }: { c: Companion; detail?: string; ava
           <GameArt
             path={c.figure ? `companions/figure_${c.id}.webp` : `companions/icon_${c.id}.webp`}
             name={c.name}
-            alt={`${c.name} artwork`}
+            alt={t("cp.artAlt", { name: c.name })}
             className={c.figure ? "figure" : "portrait-icon"}
           />
         </div>
         <div className="cp-id">
           <p className="eyebrow">
-            {c.premium ? "★ Premium" : "Standard"} · {c.catalog}
-            {DUPLICATE_NAMES.has(c.name) ? ` · entry ${c.id}` : ""}
-            {isNew(c) && <span className="ribbon inline">New</span>}
+            {c.premium ? `★ ${t("cp.premium")}` : t("cp.standard")} · {c.catalog}
+            {DUPLICATE_NAMES.has(c.name) ? ` · ${t("cp.entry", { id: c.id })}` : ""}
+            {isNew(c) && <span className="ribbon inline">{t("fm.new")}</span>}
           </p>
           <h2 className="pet-name">{c.name}</h2>
           <p className="cp-native">
@@ -229,7 +232,7 @@ function Profile({ c, detail, availState }: { c: Companion; detail?: string; ava
           </p>
           {c.recommended.length > 0 && (
             <div className="cp-good">
-              <span>Good for</span>
+              <span>{t("cp.goodFor")}</span>
               {c.recommended.map((r) => (
                 <span key={r} className={`class-pill c-${r}`}>
                   {badgeOf(r) && <GameArt path={`classes/${badgeOf(r)}.webp`} name={r} alt="" className="class-mini" />}
@@ -245,7 +248,7 @@ function Profile({ c, detail, availState }: { c: Companion; detail?: string; ava
 
       <div className="cp-facts">
         <div className="cp-fact gifts">
-          <span>Favourite gifts · {c.gift || "not specified"}</span>
+          <span>{t("cp.gifts", { gift: c.gift || t("cp.giftUnknown") })}</span>
           <div className="gift-row">
             {giftItems.map((g) => (
               <img key={g.name} src={`${import.meta.env.BASE_URL}art/${g.icon}`} alt={g.name} title={g.name} loading="lazy" />
@@ -253,24 +256,24 @@ function Profile({ c, detail, availState }: { c: Companion; detail?: string; ava
           </div>
         </div>
         <div className="cp-fact">
-          <span>Unlock</span>
+          <span>{t("cp.unlock")}</span>
           <b>{c.unlock.label}</b>
           {c.unlock.sources.length > 0 && <small>{c.unlock.sources.join(", ")}</small>}
         </div>
       </div>
 
       {c.maxOnly ? (
-        <p className="note">Only the max-friendship bonuses are known for {c.name} so far, so the level slider and growth chart are off.</p>
+        <p className="note">{t("cp.maxOnly", { name: c.name })}</p>
       ) : (
         <div className="cp-friend">
           <div className="cp-level">
-            <span>Friendship</span>
+            <span>{t("cp.friendship")}</span>
             <b>{lv}</b>
-            <small>of {c.maxLevel}</small>
+            <small>{t("cp.of", { n: c.maxLevel })}</small>
           </div>
           <div className="cp-slider">
-            <input type="range" min={1} max={c.maxLevel} value={lv} onChange={(e) => setLevel(+e.target.value)} aria-label="Friendship level" />
-            <small>{lv < c.maxLevel ? `Next level at ${(c.exp[lv] || 0).toLocaleString(formatLocale())} total friendship EXP` : "Max friendship"}</small>
+            <input type="range" min={1} max={c.maxLevel} value={lv} onChange={(e) => setLevel(+e.target.value)} aria-label={t("cp.friendLabel")} />
+            <small>{lv < c.maxLevel ? t("cp.nextAt", { xp: (c.exp[lv] || 0).toLocaleString(formatLocale()) }) : t("cp.maxFriend")}</small>
           </div>
         </div>
       )}
@@ -284,12 +287,12 @@ function Profile({ c, detail, availState }: { c: Companion; detail?: string; ava
             aria-pressed={chartStat === s.key}
             onClick={() => setChartStat(s.key)}
             disabled={c.maxOnly}
-            title={c.maxOnly ? undefined : `Show how ${s.key} grows`}
+            title={c.maxOnly ? undefined : t("cp.showGrow", { stat: s.key })}
           >
             <GameIcon name={s.icon} />
             <span>{s.key}</span>
             <b>+{fmt(s.key, at[s.key] || 0)}</b>
-            <small>max +{fmt(s.key, final[s.key] || 0)}</small>
+            <small>{t("cp.max", { v: fmt(s.key, final[s.key] || 0) })}</small>
           </button>
         ))}
       </div>
@@ -297,7 +300,7 @@ function Profile({ c, detail, availState }: { c: Companion; detail?: string; ava
 
       {special.length > 0 && (
         <>
-          <h3 className="subhead">Special bonuses</h3>
+          <h3 className="subhead">{t("cp.special")}</h3>
           <div className="cp-bonuses">
             {special.map((n) => {
               const v = at[n] || 0;
@@ -306,7 +309,7 @@ function Profile({ c, detail, availState }: { c: Companion; detail?: string; ava
                 <div key={n} className={v ? "on" : "off"}>
                   <span>{n}</span>
                   <b>{v ? `+${fmt(n, v)}` : "—"}</b>
-                  <small>{v === final[n] ? "max" : `max +${fmt(n, final[n])}${unlockAt && !v ? ` · from Lv ${unlockAt}` : ""}`}</small>
+                  <small>{v === final[n] ? t("cp.maxWord") : `${t("cp.max", { v: fmt(n, final[n]) })}${unlockAt && !v ? ` · ${t("cp.fromLv", { n: unlockAt })}` : ""}`}</small>
                 </div>
               );
             })}
@@ -315,25 +318,26 @@ function Profile({ c, detail, availState }: { c: Companion; detail?: string; ava
       )}
       {travel.length > 0 && (
         <>
-          <h3 className="subhead">Travel</h3>
+          <h3 className="subhead">{t("cp.travel")}</h3>
           <div className="cp-bonuses">
             {travel.map((n) => (
               <div key={n} className={at[n] ? "on" : "off"}>
                 <span>{short(n)}</span>
                 <b>{at[n] ? `+${fmt(n, at[n])}` : "—"}</b>
-                <small>max +{fmt(n, final[n])}</small>
+                <small>{t("cp.max", { v: fmt(n, final[n]) })}</small>
               </div>
             ))}
           </div>
         </>
       )}
-      {isNew(c) && <p className="hint source-note">{c.name} comes from Purrwikimania until the client data catches up.</p>}
+      {isNew(c) && <p className="hint source-note">{t("cp.pwm", { name: c.name })}</p>}
     </section>
   );
 }
 
 /** How one core stat grows over friendship levels, with the chosen level marked. Click to jump there. */
 function GrowthChart({ c, stat, level, onLevel }: { c: Companion; stat: string; level: number; onLevel: (lv: number) => void }) {
+  const { t } = useT();
   const W = 600;
   const H = 120;
   const pad = 6;
@@ -351,7 +355,7 @@ function GrowthChart({ c, stat, level, onLevel }: { c: Companion; stat: string; 
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
         role="img"
-        aria-label={`${stat} bonus by friendship level, up to +${max.toLocaleString(formatLocale())}`}
+        aria-label={t("cp.chartAria", { stat, max: max.toLocaleString(formatLocale()) })}
         onClick={(e) => {
           const r = (e.currentTarget as SVGSVGElement).getBoundingClientRect();
           onLevel(Math.max(1, Math.min(c.maxLevel, Math.round(((e.clientX - r.left) / r.width) * (values.length - 1)) + 1)));
@@ -368,9 +372,9 @@ function GrowthChart({ c, stat, level, onLevel }: { c: Companion; stat: string; 
         <line x1={cx} x2={cx} y1={pad} y2={H - pad} stroke="var(--text)" strokeOpacity="0.5" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
       </svg>
       <figcaption>
-        <span>{stat} bonus by friendship level · click to jump</span>
+        <span>{t("cp.chartCap", { stat })}</span>
         <span>
-          Lv {level}: <b>+{(values[level - 1] || 0).toLocaleString(formatLocale())}</b>
+          {t("fm.lv", { n: level })}: <b>+{(values[level - 1] || 0).toLocaleString(formatLocale())}</b>
         </span>
       </figcaption>
     </figure>

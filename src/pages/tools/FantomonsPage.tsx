@@ -12,6 +12,7 @@ import { effectiveDay1 } from "../calendar/server";
 import type { ToolProps } from "./props";
 import { GlossaryText, Loading, useExplorer } from "./shared";
 import { formatLocale } from "../../i18n/format";
+import { rich, useT } from "../../i18n";
 
 export function FantomonsPage(props: ToolProps) {
   const { explorer, error } = useExplorer();
@@ -36,10 +37,11 @@ const TREE_MATS: Record<string, { family: string; tiers: { name: string; art: st
 const artUrl = (p: string) => `${import.meta.env.BASE_URL}art/${p}`;
 
 function Fantomons({ explorer, choice, onServerChange, now }: { explorer: Explorer } & ToolProps) {
+  const { t } = useT();
   const all = useMemo(() => buildFantomons(explorer), [explorer]);
   const [filter, setFilter] = usePersistentState<{ only: boolean; limited: boolean }>("sxs.availability", { only: false, limited: false });
   const day1 = effectiveDay1(choice);
-  const avail = (id: number) => availabilityFor(FANTOMON_RULES[id], day1, now);
+  const avail = (id: number) => availabilityFor(FANTOMON_RULES[id], day1, now, t);
 
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("");
@@ -78,21 +80,21 @@ function Fantomons({ explorer, choice, onServerChange, now }: { explorer: Explor
           hideLimited={filter.limited}
           onToggleLimited={(limited) => setFilter({ ...filter, limited })}
           limitedCount={all.filter((f) => avail(f.id).state === "limited").length}
-          label="Hide missed and unreleased"
-          description="Hides unreleased Fantomons and event Fantomons your server missed. Ones still on the way stay listed"
+          label={t("fm.onlyLabel")}
+          description={t("fm.onlyDesc")}
         />
       </section>
 
       <section className="card fm-roster">
         <div className="roster-head">
           <h2>
-            Collection <span className="chip">{shown.length}</span>
+            {t("fm.collection")} <span className="chip">{shown.length}</span>
           </h2>
-          <input className="roster-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name or skill" aria-label="Search Fantomons" />
+          <input className="roster-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("fm.search")} aria-label={t("fm.searchLabel")} />
         </div>
-        <div className="filter-row" role="group" aria-label="Filter by role and starting quality">
+        <div className="filter-row" role="group" aria-label={t("fm.filterLabel")}>
           <button type="button" aria-pressed={!role && !start} onClick={() => (setRole(""), setStart(""))}>
-            All
+            {t("fm.all")}
           </button>
           {roles.map((r) => (
             <button key={r} type="button" className="role-chip" aria-pressed={role === r} onClick={() => setRole(role === r ? "" : r)}>
@@ -107,20 +109,20 @@ function Fantomons({ explorer, choice, onServerChange, now }: { explorer: Explor
             </button>
           ))}
         </div>
-        {!shown.length && <p className="hint">Nothing matches. Clear a filter to see more.</p>}
+        {!shown.length && <p className="hint">{t("fm.none")}</p>}
         <div className="fm-grid">
           {shown.map((f) => {
             const a = avail(f.id);
             return (
               <button key={f.id} type="button" className={`fm-card q-${f.quality}`} aria-pressed={f.id === pet.id} onClick={() => pick(f.id)}>
-                {f.isNew && <span className="ribbon">New</span>}
+                {f.isNew && <span className="ribbon">{t("fm.new")}</span>}
                 <span className="fm-art">
                   <GameArt path={f.adult ?? f.baby} name={f.name} alt="" />
                 </span>
                 <b>{f.name}</b>
                 <small>
                   {qualityName(f.quality)} · {f.role ?? f.type}
-                  {f.moves ? ` · ${f.moves === "Fly" ? "Flies" : "Runs"}` : ""}
+                  {f.moves ? ` · ${f.moves === "Fly" ? t("fm.flies") : t("fm.runs")}` : ""}
                 </small>
                 {a.tag && <span className={`avail-tag ${a.state}`}>{a.tag}</span>}
               </button>
@@ -135,6 +137,7 @@ function Fantomons({ explorer, choice, onServerChange, now }: { explorer: Explor
 }
 
 function Profile({ pet, detail, availState }: { pet: FantomonView; detail?: string; availState: string }) {
+  const { t, tn } = useT();
   const [level, setLevel] = useState(100);
   const levels = qualitiesFrom(pet.skillStart);
   const [quality, setQuality] = useState<QualityRaw>(levels[Math.min(levels.length - 1, 1)].raw);
@@ -147,18 +150,18 @@ function Profile({ pet, detail, availState }: { pet: FantomonView; detail?: stri
       <div className="fm-hero">
         <div className="fm-evo">
           <figure className={adultNow ? "dim" : ""}>
-            <GameArt path={pet.baby} name={pet.name} alt={`${pet.name}, baby form`} />
-            <figcaption>Baby</figcaption>
+            <GameArt path={pet.baby} name={pet.name} alt={t("fm.babyAlt", { name: pet.name })} />
+            <figcaption>{t("fm.baby")}</figcaption>
           </figure>
           {pet.adult && (
             <>
               <span className="evo-step" aria-hidden>
                 <span>→</span>
-                <small>Lv {pet.adultLevel}</small>
+                <small>{t("fm.lv", { n: pet.adultLevel ?? "" })}</small>
               </span>
               <figure className={adultNow ? "" : "dim"}>
-                <GameArt path={pet.adult} name={pet.name} alt={`${pet.name}, adult form`} />
-                <figcaption>Adult</figcaption>
+                <GameArt path={pet.adult} name={pet.name} alt={t("fm.adultAlt", { name: pet.name })} />
+                <figcaption>{t("fm.adult")}</figcaption>
               </figure>
             </>
           )}
@@ -166,34 +169,34 @@ function Profile({ pet, detail, availState }: { pet: FantomonView; detail?: stri
         <div className="fm-id">
           <p className="eyebrow">
             <span className={`q-text q-${pet.quality}`}>{qualityName(pet.quality)}</span> · {pet.role ?? pet.type}
-            {pet.isNew && <span className="ribbon inline">New</span>}
+            {pet.isNew && <span className="ribbon inline">{t("fm.new")}</span>}
           </p>
           <h2 className="pet-name">{pet.name}</h2>
           <div className="fm-facts">
             {pet.moves && (
               <div>
-                <span>Moves</span>
-                <b>{pet.moves === "Fly" ? "Flies" : "Runs"}</b>
+                <span>{t("fm.moves")}</span>
+                <b>{pet.moves === "Fly" ? t("fm.flies") : t("fm.runs")}</b>
               </div>
             )}
             {pet.shardsToSummon !== undefined && (
               <div>
-                <span>To summon</span>
-                <b>{pet.shardsToSummon} shards</b>
+                <span>{t("fm.toSummon")}</span>
+                <b>{tn("fm.shards", pet.shardsToSummon)}</b>
               </div>
             )}
             <div>
-              <span>Evolves</span>
-              <b>{pet.adultLevel ? `Lv ${pet.adultLevel}` : "No adult form"}</b>
+              <span>{t("fm.evolves")}</span>
+              <b>{pet.adultLevel ? t("fm.lv", { n: pet.adultLevel }) : t("fm.noAdult")}</b>
             </div>
             <div>
-              <span>Skills start</span>
+              <span>{t("fm.skillsStart")}</span>
               <b className={`q-text q-${pet.skillStart}`}>{qualityName(pet.skillStart)}</b>
             </div>
           </div>
           {pet.role && TREE_MATS[pet.role] && (
             <div className="tree-mats">
-              <span>Ability tree · {TREE_MATS[pet.role].family}</span>
+              <span>{t("fm.tree", { family: TREE_MATS[pet.role].family })}</span>
               <div>
                 {TREE_MATS[pet.role].tiers.map((t, i) => (
                   <span key={t.name} className="tree-tier">
@@ -211,7 +214,7 @@ function Profile({ pet, detail, availState }: { pet: FantomonView; detail?: stri
       </div>
 
       <div className="fm-controls">
-        <div className="q-stepper" role="radiogroup" aria-label="Skill quality">
+        <div className="q-stepper" role="radiogroup" aria-label={t("fm.qualityLabel")}>
           {levels.map((q) => (
             <button key={q.raw} type="button" role="radio" aria-checked={quality === q.raw} className={`q-${q.raw}`} onClick={() => setQuality(q.raw)}>
               {q.name}
@@ -219,10 +222,8 @@ function Profile({ pet, detail, availState }: { pet: FantomonView; detail?: stri
           ))}
         </div>
         <label className="lv-control">
-          <span>
-            Level <b>{level}</b>
-          </span>
-          <input type="range" min={1} max={MAX_LEVEL} value={level} onChange={(e) => setLevel(+e.target.value)} aria-label="Fantomon level" />
+          <span>{rich(t("fm.level", { n: level }))}</span>
+          <input type="range" min={1} max={MAX_LEVEL} value={level} onChange={(e) => setLevel(+e.target.value)} aria-label={t("fm.levelLabel")} />
         </label>
       </div>
 
@@ -240,18 +241,18 @@ function Profile({ pet, detail, availState }: { pet: FantomonView; detail?: stri
               <span className="meter" aria-hidden>
                 <span style={{ width: `${pct}%` }} />
               </span>
-              {base !== undefined && base !== 100 && <small className={base > 100 ? "up" : "down"}>{base}% in battle</small>}
+              {base !== undefined && base !== 100 && <small className={base > 100 ? "up" : "down"}>{t("fm.inBattle", { n: base })}</small>}
             </div>
           );
         })}
       </div>
-      <p className="hint">Stats at level {level}. Every Fantomon shares one growth curve.</p>
+      <p className="hint">{t("fm.statsAt", { n: level })}</p>
 
-      <SkillGroup title="Support skill" note={pet.adult ? "Baby and adult" : undefined} skills={pet.support} quality={quality} level={level} />
+      <SkillGroup title={t("fm.support")} note={pet.adult ? t("fm.babyAndAdult") : undefined} skills={pet.support} quality={quality} level={level} />
       {pet.field && (
         <div className="skill-group">
           <h3 className="subhead">
-            Field skill <span className="hint">Adult</span>
+            {t("fm.field")} <span className="hint">{t("fm.adult")}</span>
           </h3>
           <article className="fm-skill field">
             <span className="fm-skill-icon">{pet.adult && <GameArt path={pet.adult} name={pet.name} alt="" />}</span>
@@ -262,13 +263,14 @@ function Profile({ pet, detail, availState }: { pet: FantomonView; detail?: stri
           </article>
         </div>
       )}
-      {pet.battle.length > 0 && <SkillGroup title="Battle skills" note="Adult, once materialized" skills={pet.battle} quality={quality} level={level} />}
-      {pet.fromPwm && <p className="hint source-note">This Fantomon's numbers come from Purrwikimania until the client data catches up.</p>}
+      {pet.battle.length > 0 && <SkillGroup title={t("fm.battle")} note={t("fm.battleNote")} skills={pet.battle} quality={quality} level={level} />}
+      {pet.fromPwm && <p className="hint source-note">{t("fm.pwm")}</p>}
     </section>
   );
 }
 
 function SkillGroup({ title, note, skills, quality, level }: { title: string; note?: string; skills: ViewSkill[]; quality: QualityRaw; level: number }) {
+  const { t } = useT();
   if (!skills.length) return null;
   return (
     <div className="skill-group">
@@ -285,7 +287,7 @@ function SkillGroup({ title, note, skills, quality, level }: { title: string; no
               <div className="fm-skill-head">
                 <b>{s.name}</b>
                 {kind && <span className={`kind kind-${kind.toLowerCase()}`}>{kind}</span>}
-                {s.tags.some((t) => /passive/i.test(t)) && <span className="kind">Passive</span>}
+                {s.tags.some((t) => /passive/i.test(t)) && <span className="kind">{t("fm.passive")}</span>}
               </div>
               <div className="fm-skill-desc">
                 <GlossaryText text={s.description} />
@@ -309,13 +311,21 @@ function SkillGroup({ title, note, skills, quality, level }: { title: string; no
 }
 
 function FantasmiaMeter({ f }: { f: { cap: number; initial: number; perTurn: number; perDmg: number; note: string } }) {
+  const { t, tn } = useT();
   const turns = Math.max(0, Math.ceil((f.cap - f.initial) / f.perTurn));
-  const said = f.note ? f.note.replace(/^./, (c) => c.toUpperCase()) : "";
+  const noteTurns = f.note.match(/^about (\d+) turns? to materialize if you take no hits$/);
+  const said = noteTurns
+    ? tn("fm.noteTurns", +noteTurns[1])
+    : f.note === "materializes on its first turn"
+      ? t("fm.noteFirst")
+      : f.note
+        ? f.note.replace(/^./, (c) => c.toUpperCase())
+        : "";
   return (
     <div className="fantasmia">
       <div className="fantasmia-head">
         <span>Fantasmia</span>
-        <b>{said || `Materializes in about ${turns} turn${turns === 1 ? "" : "s"}`}</b>
+        <b>{said || tn("fm.materializes", turns)}</b>
       </div>
       <span className="fantasmia-bar" aria-hidden>
         <span style={{ width: `${(f.initial / f.cap) * 100}%` }} />
@@ -324,7 +334,12 @@ function FantasmiaMeter({ f }: { f: { cap: number; initial: number; perTurn: num
         ))}
       </span>
       <small>
-        Starts at {f.initial.toLocaleString(formatLocale())} of {f.cap.toLocaleString(formatLocale())} · +{f.perTurn} a turn · +{f.perDmg} for each hit taken
+        {t("fm.fantasmia", {
+          initial: f.initial.toLocaleString(formatLocale()),
+          cap: f.cap.toLocaleString(formatLocale()),
+          turn: f.perTurn.toLocaleString(formatLocale()),
+          hit: f.perDmg.toLocaleString(formatLocale()),
+        })}
       </small>
     </div>
   );
