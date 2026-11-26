@@ -18,6 +18,9 @@ import type { IconName } from "./components/Icon";
 import { HomePage } from "./pages/HomePage";
 import { currentPath, listen } from "./lib/router";
 import { DISCORD_URL } from "./data/site";
+import { LanguagePicker } from "./components/LanguagePicker";
+import { useT } from "./i18n";
+import type { MessageKey } from "./i18n/en";
 import type { ToolProps } from "./pages/tools/props";
 
 // The calendar carries the full server roster, so it loads only when opened.
@@ -175,10 +178,19 @@ export default function App() {
     return input ? planSeason(input) : null;
   }, [page, character, currentXp, planner, timeDefaults, now]);
 
-  const current = PAGES.find((p) => p.id === page)!;
+  const { t } = useT();
+  // Page names and descriptions in the chosen language (ids and groups stay as keys).
+  const pages = PAGES.map((p) => ({
+    ...p,
+    label: t(`page.${p.id}.label` as MessageKey),
+    title: t(`page.${p.id}.title` as MessageKey),
+    blurb: p.blurb && t(`page.${p.id}.blurb` as MessageKey),
+    lede: p.lede && t(`page.${p.id}.lede` as MessageKey),
+  }));
+  const current = pages.find((p) => p.id === page)!;
   /** Clears the planner's own inputs (character, server and Simple/Full stay), after a check. */
   const clearPlanner = () => {
-    if (window.confirm("Clear the Season Planner? Your goal, levels, plan, materials and Realm choices are emptied. Your character and server stay."))
+    if (window.confirm(t("planner.clearConfirm")))
       setPlanner({ ...DEFAULT_PLANNER, mode: planner.mode });
   };
 
@@ -190,24 +202,28 @@ export default function App() {
   const footerTools = (
     <>
       <ColorChooser />
+      <LanguagePicker />
       <InstallApp />
     </>
   );
 
   return (
     <div className="app">
-      <Sidebar pages={PAGES} current={page} footer={footerTools} />
+      <Sidebar pages={pages} current={page} footer={footerTools} />
       <div className="app-main">
       <div className="topbar">
         <Brand />
         <div className="top-actions">
-          <ColorChooser />
+          <div className="top-actions-row">
+            <ColorChooser />
+            <LanguagePicker />
+          </div>
         </div>
       </div>
       <div className={`shell ${current.wide ? "wide" : ""}`}>
       {page !== "home" && (
       <header className="masthead">
-        <p className="eyebrow">{current.group}</p>
+        <p className="eyebrow">{current.group && t(`group.${current.group}` as MessageKey)}</p>
         <h1>{current.title}</h1>
         <p className="lede">{current.lede}</p>
       </header>
@@ -216,7 +232,7 @@ export default function App() {
       {page === "home" ? (
         <main>
           <HomePage
-            tiles={PAGES.filter((p) => !p.hidden && p.id !== "home")}
+            tiles={pages.filter((p) => !p.hidden && p.id !== "home")}
             level={character.level}
             outcome={outcome}
             plan={plan}
@@ -237,7 +253,7 @@ export default function App() {
       ) : 
 page in SIMPLE_PAGES ? (
         <main>
-          <Suspense fallback={<p className="hint">Loading…</p>}>
+          <Suspense fallback={<p className="hint">{t("loading")}</p>}>
             {(() => {
               const Tool = SIMPLE_PAGES[page as keyof typeof SIMPLE_PAGES] as ComponentType<ToolProps>;
               return <Tool choice={serverChoice} onServerChange={setServerChoice} now={now} />;
@@ -246,7 +262,7 @@ page in SIMPLE_PAGES ? (
         </main>
       ) : page === "calendar" ? (
         <main>
-          <Suspense fallback={<p className="hint">Loading calendar…</p>}>
+          <Suspense fallback={<p className="hint">{t("loadingCalendar")}</p>}>
             <CalendarPage choice={serverChoice} onChange={setServerChoice} now={now} />
           </Suspense>
         </main>
@@ -265,10 +281,9 @@ page in SIMPLE_PAGES ? (
             table={table}
             resetNote={
               <>
-                Bed boosts are counted as used just after each daily reset:{" "}
-                <b>{resetLabel}</b>
-                {serverChoice.name ? <> ({serverChoice.name}).</> : <>. <a href="/calendar">Pick your server</a> to see it in its time zone.</>}
-                {" "}Every server resets at 13:00 UTC.
+                {t("timer.resetNote")} <b>{resetLabel}</b>
+                {serverChoice.name ? <> ({serverChoice.name}).</> : <>. <a href="/calendar">{t("timer.pickServer")}</a> {t("timer.pickServerTail")}</>}
+                {" "}{t("timer.everyServer")}
               </>
             }
           />
@@ -288,7 +303,7 @@ page in SIMPLE_PAGES ? (
           />
           <p className="reset-row">
             <button type="button" className="link-button" onClick={clearPlanner}>
-              Clear planner
+              {t("planner.clear")}
             </button>
           </p>
         </main>
@@ -296,28 +311,26 @@ page in SIMPLE_PAGES ? (
 
       <footer className="footer">
         <p className="footer-links">
-          <a href="/changes">What's new</a>
-          <a href="/guide">Planner guide</a>
+          <a href="/changes">{t("footer.whatsNew")}</a>
+          <a href="/guide">{t("footer.guide")}</a>
           <a href={DISCORD_URL} target="_blank" rel="noreferrer">
-            Discord: news, bug reports and ideas
+            {t("footer.discord")}
           </a>
         </p>
-        <p>
-          SxS Tools by LM Things (Lilly Mara's things). Unofficial fan tool, not affiliated with Boltray Games. Sword x Staff and all its art and icons belong to Boltray Games. Your inputs are saved only in this
-          browser. Page visits are counted anonymously (no cookies, nothing personal).
-        </p>
+        <p>{t("footer.about")}</p>
       </footer>
       </div>
       </div>
       <TabBar
-        pages={PAGES}
+        pages={pages}
         current={page}
         extra={
           <>
+            <LanguagePicker />
             <InstallApp />
-            <a href="/changes">What's new</a>
+            <a href="/changes">{t("footer.whatsNew")}</a>
             <a href={DISCORD_URL} target="_blank" rel="noreferrer">
-              Discord
+              {t("footer.discordShort")}
             </a>
           </>
         }

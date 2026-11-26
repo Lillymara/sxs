@@ -6,7 +6,9 @@ import { ProgressRing } from "../components/ProgressRing";
 import { hrefOf } from "../components/Nav";
 import { RESET_UTC_HOUR } from "../data/calendar";
 import { buildEntries } from "../lib/calendar";
-import { localTime, unlockStatus } from "../lib/unlockTime";
+import { countdown, daysAway, localTime, unlockStatus } from "../lib/unlockTime";
+import { rich, useT } from "../i18n";
+import type { MessageKey } from "../i18n/en";
 import type { PlannerResult } from "../lib/planner/plan";
 import { formatDuration, type CalcOutcome } from "../lib/xp";
 import { CHANGES } from "./tools/ChangesPage";
@@ -64,11 +66,16 @@ function nextReset(now: Date) {
   return r;
 }
 
-const shortDate = (d: Date) => d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+type T = ReturnType<typeof useT>;
+const shortDate = (d: Date, locale: string) => d.toLocaleDateString(locale, { weekday: "short", month: "short", day: "numeric" });
 /** "Unlocks in 2h 14m", "Live now", "Tomorrow, 5:00 AM PST": everything unlocks at reset, not midnight. */
-function whenText(start: Date, end: Date | null, now: Date, timeZone: string) {
+function whenText(start: Date, end: Date | null, now: Date, timeZone: string, { t, tn }: T) {
   const u = unlockStatus(start, now, end, timeZone);
-  return u.state === "later" ? `${u.label}, ${localTime(start, timeZone)}` : u.label;
+  if (u.state === "soon") return t("when.unlocksIn", { time: countdown(start.getTime() - now.getTime()) });
+  if (u.state === "live") return t("when.liveNow");
+  if (u.state === "past") return u.label;
+  const days = daysAway(start, now, timeZone);
+  return `${days <= 1 ? t("when.tomorrow") : tn("when.inDays", days)}, ${localTime(start, timeZone)}`;
 }
 /** The headline of a changelog line: the part before its first colon. */
 const headline = (t: string) => (t.indexOf(":") > 0 && t.indexOf(":") < 70 ? t.slice(0, t.indexOf(":")) : t.length > 90 ? `${t.slice(0, 88)}…` : t);
@@ -108,6 +115,8 @@ function TileArt({ id, icon }: { id: string; icon: IconName }) {
 }
 
 export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
+  const i18n = useT();
+  const { t, locale } = i18n;
   const next = outcome?.ok ? outcome.result : null;
   const reset = nextReset(now);
   const resetHours = (reset.getTime() - now.getTime()) / 3_600_000;
@@ -126,18 +135,15 @@ export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
         <div className="hero-text">
           <p className="eyebrow">Sword x Staff Tools</p>
           <h1>
-            Plan your season. <span className="grad">Time every level.</span>
+            {t("home.title1")} <span className="grad">{t("home.title2")}</span>
           </h1>
-          <p className="lede">
-            Season planner, level timer, server calendar and guides, all filled in from your game screenshots. Free, no ads, nothing to sign up
-            for.
-          </p>
+          <p className="lede">{t("home.lede")}</p>
           <div className="hero-actions">
             <a className="spin-button" href={hrefOf("planner")}>
-              Open the Season Planner
+              {t("home.openPlanner")}
             </a>
             <a className="hero-link" href={hrefOf("timer")}>
-              Level Timer →
+              {t("home.timerLink")}
             </a>
           </div>
         </div>
@@ -148,15 +154,15 @@ export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
         </div>
       </section>
 
-      <section className="card dash" aria-label="Your season">
+      <section className="card dash" aria-label={t("home.yourSeason")}>
         <div className="dash-head">
           <h2 className="card-title">
-            <Icon name="star" /> Your season
+            <Icon name="star" /> {t("home.yourSeason")}
           </h2>
           {server && (
             <span className="dash-server">
-              {server.name || "Your server"} · Season {server.season}
-              {server.seasonDays ? ` · Day ${server.dayOfSeason} of ${server.seasonDays}` : ""}
+              {server.name || t("home.yourServer")} · {t("home.seasonN", { n: server.season })}
+              {server.seasonDays ? ` · ${t("home.dayOf", { day: server.dayOfSeason, total: server.seasonDays })}` : ""}
             </span>
           )}
         </div>
@@ -164,25 +170,25 @@ export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
           <Stat
             href={hrefOf("timer")}
             ring={next ? Math.min(1, next.progress) : null}
-            label={`Level ${level || ""}`.trim()}
-            value={next ? (next.hoursToNext > 0 ? formatDuration(next.hoursToNext) : "Ready") : null}
-            sub={next ? `to Lv ${Number(level) + 1}` : undefined}
-            empty="Your level-up countdown"
-            cta="Fill from screenshots"
+            label={level ? t("home.level", { level }) : t("home.levelPlain")}
+            value={next ? (next.hoursToNext > 0 ? formatDuration(next.hoursToNext) : t("home.ready")) : null}
+            sub={next ? t("home.toLv", { n: Number(level) + 1 }) : undefined}
+            empty={t("home.levelEmpty")}
+            cta={t("home.fillScreens")}
           />
           <Stat
             href={hrefOf("calendar")}
             ring={server?.seasonDays ? Math.min(1, server.dayOfSeason / server.seasonDays) : null}
-            label="Season left"
+            label={t("home.seasonLeft")}
             value={seasonLeft !== null ? formatDuration(seasonLeft) : null}
-            sub={server?.seasonEnds ? `ends ${shortDate(server.seasonEnds)}` : undefined}
-            empty="How long the season has left"
-            cta="Pick your server"
+            sub={server?.seasonEnds ? t("home.ends", { date: shortDate(server.seasonEnds, locale) }) : undefined}
+            empty={t("home.seasonLeftEmpty")}
+            cta={t("home.pickServer")}
           />
           <Stat
             href={hrefOf("planner")}
             ring={plan && plan.score.goal > 0 ? Math.min(1, plan.score.projectedTotal / plan.score.goal) : null}
-            label="Primostars by season end"
+            label={t("home.primostars")}
             value={
               plan ? (
                 <>
@@ -190,17 +196,17 @@ export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
                 </>
               ) : null
             }
-            sub={plan && plan.score.goal > 0 ? `of your ${fmt(plan.score.goal)} goal` : undefined}
-            empty="Your projected Primostars"
-            cta="Set a goal"
+            sub={plan && plan.score.goal > 0 ? t("home.ofGoal", { goal: fmt(plan.score.goal) }) : undefined}
+            empty={t("home.primostarsEmpty")}
+            cta={t("home.setGoal")}
           />
           <Stat
             href={hrefOf("calendar")}
             ring={1 - resetHours / 24}
-            label="Daily reset"
+            label={t("home.dailyReset")}
             center={<Icon name="timer" size={24} />}
             value={formatDuration(resetHours)}
-            sub={`at ${reset.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`}
+            sub={t("home.at", { time: reset.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" }) })}
           />
         </div>
       </section>
@@ -208,20 +214,20 @@ export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
       <div className="home-grid">
         <section className="card coming-up">
           <h2 className="card-title">
-            <Icon name="calendar" /> Coming up on your server
+            <Icon name="calendar" /> {t("home.comingUp")}
           </h2>
           {upcoming.length ? (
             <ol className="up-list">
               {upcoming.map((e) => (
                 <li key={`${e.title}${e.date.getTime()}`} className={`up-${e.type}`}>
                   <span className="up-date">
-                    <b>{e.date.toLocaleDateString(undefined, { day: "numeric" })}</b>
-                    <small>{e.date.toLocaleDateString(undefined, { month: "short" })}</small>
+                    <b>{e.date.toLocaleDateString(locale, { day: "numeric" })}</b>
+                    <small>{e.date.toLocaleDateString(locale, { month: "short" })}</small>
                   </span>
                   <span className="up-text">
                     <b>{e.title}</b>
                     <small>
-                      {whenText(e.date, e.end, now, server?.timezone ?? "")}
+                      {whenText(e.date, e.end, now, server?.timezone ?? "", i18n)}
                       {e.meta ? ` · ${e.meta}` : ""}
                     </small>
                   </span>
@@ -230,27 +236,27 @@ export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
             </ol>
           ) : (
             <div className="glance-empty">
-              <p>Pick your server to see its next dungeons, events and season start.</p>
+              <p>{t("home.comingUpEmpty")}</p>
               <a className="fill-btn" href={hrefOf("calendar")}>
-                Pick your server
+                {t("home.pickServer")}
               </a>
             </div>
           )}
           {upcoming.length > 0 && (
             <a className="hero-link" href={hrefOf("calendar")}>
-              Full calendar →
+              {t("home.fullCalendar")}
             </a>
           )}
         </section>
 
         <section className="card whats-new">
           <h2 className="card-title">
-            <Icon name="changes" /> What's new
+            <Icon name="changes" /> {t("home.whatsNew")}
           </h2>
           <ol className="new-list">
             {changes.map((it) => (
               <li key={it.text}>
-                <time dateTime={it.date}>{new Date(`${it.date}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</time>
+                <time dateTime={it.date}>{new Date(`${it.date}T12:00:00`).toLocaleDateString(locale, { month: "short", day: "numeric" })}</time>
                 {it.href ? (
                   <a href={it.href} title={it.text} {...(it.href.startsWith("http") ? { target: "_blank", rel: "noreferrer" } : {})}>
                     {headline(it.text)}
@@ -262,14 +268,14 @@ export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
             ))}
           </ol>
           <a className="hero-link" href={hrefOf("changes")}>
-            All changes →
+            {t("home.allChanges")}
           </a>
         </section>
       </div>
 
       {groups.map((g) => (
         <section key={g} className="tool-group">
-          <h2 className="home-heading">{g === "Plan" ? "Plan your season" : g === "Info" ? "Look it up" : g === "Guides" ? "Guides" : "Tools"}</h2>
+          <h2 className="home-heading">{t(`home.group.${g}` as MessageKey)}</h2>
           <div className="tile-grid">
             {tiles
               .filter((t) => t.group === g)
@@ -292,16 +298,13 @@ export function HomePage({ tiles, level, outcome, plan, server, now }: Props) {
       <section className="card community">
         <div className="community-text">
           <h2 className="card-title">
-            <Icon name="chat" /> Join the community
+            <Icon name="chat" /> {t("home.community")}
           </h2>
-          <p>
-            Announcements and changelogs, plus a place to <b>report bugs</b> and <b>suggest ideas</b>. If a screenshot reads wrong, post it there
-            and it gets fixed.
-          </p>
+          <p>{rich(t("home.communityText"))}</p>
         </div>
         <div className="community-actions">
           <a className="spin-button" href={DISCORD_URL} target="_blank" rel="noreferrer">
-            Join the Discord
+            {t("home.joinDiscord")}
           </a>
         </div>
       </section>

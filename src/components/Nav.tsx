@@ -3,6 +3,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Icon, type IconName } from "./Icon";
 import { Logo } from "./Logo";
+import { useT } from "../i18n";
+import type { MessageKey } from "../i18n/en";
 
 export interface NavPage {
   id: string;
@@ -18,18 +20,20 @@ export const hrefOf = (id: string) => (id === "home" ? "/" : `/${id}`);
 const TAB_BAR = ["home", "timer", "planner", "calendar"];
 
 export function Brand() {
+  const { t } = useT();
   return (
     <a className="brand" href="/">
       <Logo size={34} />
       <span>
         SxS Tools
-        <small>by LM Things</small>
+        <small>{t("brand.by")}</small>
       </span>
     </a>
   );
 }
 
 function NavLinks({ pages, current, onPick }: { pages: NavPage[]; current: string; onPick?: () => void }) {
+  const { t } = useT();
   const groups = [...new Set(pages.filter((p) => !p.hidden && p.group).map((p) => p.group))];
   return (
     <>
@@ -40,7 +44,7 @@ function NavLinks({ pages, current, onPick }: { pages: NavPage[]; current: strin
         ))}
       {groups.map((g) => (
         <div key={g} className="nav-group">
-          <p className="nav-group-label">{g}</p>
+          <p className="nav-group-label">{t(`group.${g}` as MessageKey)}</p>
           {pages
             .filter((p) => p.group === g && !p.hidden)
             .map((p) => (
@@ -62,10 +66,11 @@ function NavLink({ p, current, onPick }: { p: NavPage; current: string; onPick?:
 }
 
 export function Sidebar({ pages, current, footer }: { pages: NavPage[]; current: string; footer: ReactNode }) {
+  const { t } = useT();
   return (
     <aside className="sidebar">
       <Brand />
-      <nav className="side-nav" aria-label="Tools">
+      <nav className="side-nav" aria-label={t("nav.tools")}>
         <NavLinks pages={pages} current={current} />
       </nav>
       <div className="sidebar-foot">{footer}</div>
@@ -74,6 +79,7 @@ export function Sidebar({ pages, current, footer }: { pages: NavPage[]; current:
 }
 
 export function TabBar({ pages, current, extra }: { pages: NavPage[]; current: string; extra?: ReactNode }) {
+  const { t } = useT();
   const [more, setMore] = useState(false);
   // Close the sheet when the page changes (a link was followed) or Escape is pressed.
   useEffect(() => setMore(false), [current]);
@@ -88,25 +94,25 @@ export function TabBar({ pages, current, extra }: { pages: NavPage[]; current: s
 
   return (
     <>
-      <nav className="tabbar" aria-label="Main tools">
+      <nav className="tabbar" aria-label={t("nav.mainTools")}>
         {inBar.map((p) => (
           <a key={p.id} href={hrefOf(p.id)} aria-current={p.id === current ? "page" : undefined}>
             <Icon name={p.icon} size={22} />
-            <span>{p.id === "planner" ? "Planner" : p.id === "timer" ? "Timer" : p.id === "calendar" ? "Calendar" : p.label}</span>
+            <span>{t(`tab.${p.id}` as MessageKey)}</span>
           </a>
         ))}
         <button type="button" aria-expanded={more} className={moreActive ? "active" : undefined} onClick={() => setMore((m) => !m)}>
           <Icon name="more" size={22} />
-          <span>More</span>
+          <span>{t("tab.more")}</span>
         </button>
       </nav>
       {more && (
-        <div className="more-sheet" role="dialog" aria-label="All tools" onClick={(e) => e.target === e.currentTarget && setMore(false)}>
+        <div className="more-sheet" role="dialog" aria-label={t("nav.allTools")} onClick={(e) => e.target === e.currentTarget && setMore(false)}>
           <div className="more-panel">
             <div className="more-head">
-              <b>All tools</b>
+              <b>{t("nav.allTools")}</b>
               <button type="button" className="link-button" onClick={() => setMore(false)}>
-                Close
+                {t("nav.close")}
               </button>
             </div>
             <nav className="side-nav">

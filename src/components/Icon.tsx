@@ -22,9 +22,17 @@ export type IconName =
   | "star"
   | "chat"
   | "loadouts"
-  | "share";
+  | "share"
+  | "globe";
 
 const PATHS: Record<IconName, ReactNode> = {
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M3.5 12h17" />
+      <path d="M12 3.5c2.4 2.3 3.6 5.1 3.6 8.5s-1.2 6.2-3.6 8.5c-2.4-2.3-3.6-5.1-3.6-8.5S9.6 5.8 12 3.5Z" />
+    </>
+  ),
   loadouts: (
     <>
       <rect x="3.5" y="3.5" width="7" height="7" rx="2" />

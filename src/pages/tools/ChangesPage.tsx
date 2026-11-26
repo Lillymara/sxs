@@ -2,6 +2,12 @@
 
 export const CHANGES: { date: string; items: { text: string; href?: string }[] }[] = [
   {
+    date: "2026-11-26",
+    items: [
+      { text: "Languages: the site now speaks Español, Português, Русский, Deutsch and Français. Tap the globe at the top to switch; it starts in your device's language. The menus, page titles and home page are translated so far, with the tools themselves coming next. Game names (Primostars, Dawnium, skills, Fantomons) stay in English for now." },
+    ],
+  },
+  {
     date: "2026-11-22",
     items: [
       { text: "Season Prep has tabs now, one per guide (Aqualis opening, Season 1 → 2), and opens on whichever is next for your server. Pick or change your server right at the top to line every time up with it. Both guides share one layout: key times, the one rule to remember, then short Before and When steps.", href: "/prep" },

@@ -13,6 +13,7 @@ import {
   savedAccent,
   savedBackground,
 } from "../lib/theme";
+import { useT } from "../i18n";
 
 interface Option {
   id: string;
@@ -31,6 +32,7 @@ function Picker({ label, title, options, value, defaultId, onPick, footer }: {
   /** Extra control under the grid; gets a function that closes the menu. */
   footer?: (close: () => void) => ReactNode;
 }) {
+  const defaultLabel = useT().t("theme.default");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const current = options.find((o) => o.id === value) ?? options[0];
@@ -52,7 +54,7 @@ function Picker({ label, title, options, value, defaultId, onPick, footer }: {
     <div className="color-chooser" ref={ref}>
       <button type="button" aria-haspopup="true" aria-expanded={open} onClick={() => setOpen(!open)} title={`${title}: ${current.name}`}>
         {current.swatch}
-        {label}
+        <span className="picker-label">{label}</span>
       </button>
       {open && (
         <div className="color-menu" role="radiogroup" aria-label={title}>
@@ -69,7 +71,7 @@ function Picker({ label, title, options, value, defaultId, onPick, footer }: {
             >
               {o.swatch}
               {o.name}
-              {o.id === defaultId && <small>default</small>}
+              {o.id === defaultId && <small>{defaultLabel}</small>}
             </button>
           ))}
           {footer?.(() => setOpen(false))}
@@ -83,6 +85,7 @@ const split = (a: string, b: string) => <span className="swatch" style={{ backgr
 
 /** Accent color and background pickers shown in the top bar. */
 export function ColorChooser() {
+  const { t } = useT();
   const [accent, setAccent] = useState(savedAccent);
   const [background, setBackground] = useState(savedBackground);
   const tone = resolveBackground(background).tone;
@@ -94,14 +97,14 @@ export function ColorChooser() {
   });
   const backgroundOptions: Option[] = [
     ...BACKGROUNDS.map((b) => ({ id: b.id, name: b.name, swatch: split(b.bg, b.surface2) })),
-    { id: SYSTEM_BACKGROUND, name: "Device", swatch: split(resolveBackground("midnight").bg, resolveBackground("daylight").bg) },
+    { id: SYSTEM_BACKGROUND, name: t("theme.device"), swatch: split(resolveBackground("midnight").bg, resolveBackground("daylight").bg) },
   ];
 
   return (
     <div className="theme-pickers">
       <Picker
-        label="Color"
-        title="Accent color"
+        label={t("theme.color")}
+        title={t("theme.accent")}
         options={accentOptions}
         value={accent}
         defaultId={DEFAULT_ACCENT}
@@ -121,13 +124,13 @@ export function ColorChooser() {
               close();
             }}
           >
-            Reset to default
+            {t("theme.reset")}
           </button>
         )}
       />
       <Picker
-        label="Background"
-        title="Background"
+        label={t("theme.background")}
+        title={t("theme.background")}
         options={backgroundOptions}
         value={background}
         defaultId={DEFAULT_BACKGROUND}
