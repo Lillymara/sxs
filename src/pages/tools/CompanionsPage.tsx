@@ -62,8 +62,8 @@ const STAT_FILTERS = STAT_ORDER.filter((s) => DATA.some((c) => Number(finalOf(c)
 const DUPLICATE_NAMES = new Set(DATA.filter((c, i) => DATA.findIndex((x) => x.name === c.name) !== i).map((c) => c.name));
 const fmt = (name: string, v: number) =>
   name.includes("%") || PERCENTISH.includes(name)
-    ? `${Number(v).toLocaleString(undefined, { maximumFractionDigits: 2 })}%`
-    : Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 });
+    ? `${Number(v).toLocaleString(formatLocale(), { maximumFractionDigits: 2 })}%`
+    : Number(v).toLocaleString(formatLocale(), { maximumFractionDigits: 0 });
 const short = (name: string) => name.replace("Travel Reward Bonus", "Travel reward").replace("Travel Extra Reward Chance", "Travel bonus chance");
 const isNew = (c: Companion) => c.source === "purrwikimania";
 

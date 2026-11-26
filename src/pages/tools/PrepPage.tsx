@@ -7,6 +7,7 @@ import { effectiveDay1, type ServerChoice } from "../calendar/server";
 import { aqualisGuide, aqualisOpens, AQUALIS_DAY } from "./AqualisRun";
 import { hoursBefore, left, PrepGuide, when, type Guide, type GuideContext } from "./PrepGuide";
 import type { ToolProps } from "./props";
+import { formatLocale } from "../../i18n/format";
 
 /** Season 2 levels worth spending Speed-Ups to reach, from eog.gg's Season 2 prep guide. */
 const SPEEDUP_LEVELS: { level: number; unlocks: string }[] = [
@@ -181,7 +182,7 @@ function PrepServer({ choice, onChange }: { choice: ServerChoice; onChange: (c: 
 export function PrepPage({ choice, onServerChange, now }: ToolProps) {
   const day1 = effectiveDay1(choice);
   const ctx: GuideContext = { name: choice.name || "Your server", tz: choice.timezone || undefined, now };
-  const shortDate = (d: Date) => d.toLocaleDateString(undefined, { timeZone: ctx.tz, month: "short", day: "numeric" });
+  const shortDate = (d: Date) => d.toLocaleDateString(formatLocale(), { timeZone: ctx.tz, month: "short", day: "numeric" });
 
   /** Every guide, in the order they happen on a server. */
   const guides: { id: string; label: string; fallback: string; guide: Guide }[] = [

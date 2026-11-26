@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { byLine, lineOf } from "../lib/classLines";
 import type { Profession } from "../lib/gamedata";
 import { GameArt } from "./GameArt";
+import { useT } from "../i18n";
 
 interface Props {
   label: string;
@@ -12,6 +13,7 @@ interface Props {
 
 /** A class dropdown that shows each class badge (native selects can't show images). */
 export function ClassSelect({ label, value, classes: unordered, onChange }: Props) {
+  const { t } = useT();
   const classes = byLine(unordered);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -94,7 +96,7 @@ export function ClassSelect({ label, value, classes: unordered, onChange }: Prop
         <span id={`${id}-value`}>
           <b>{selected.name}</b>
           <small>
-            {lineOf(selected).name} · Rank {selected.rank}
+            {lineOf(selected).name} · {t("lo.rank", { n: selected.rank })}
           </small>
         </span>
         <span className="chevron" aria-hidden>▾</span>
@@ -120,7 +122,7 @@ export function ClassSelect({ label, value, classes: unordered, onChange }: Prop
             >
               {badge(c, "small")}
               <b>{c.name}</b>
-              <small>Rank {c.rank}</small>
+              <small>{t("lo.rank", { n: c.rank })}</small>
             </li>,
           ])}
         </ul>

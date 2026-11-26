@@ -23,6 +23,8 @@ import {
 } from "../../lib/loadout";
 import { usePersistentState } from "../../lib/storage";
 import { GlossaryText, Loading, useExplorer } from "./shared";
+import { rich, useT } from "../../i18n";
+import { formatLocale } from "../../i18n/format";
 
 type Slot = { kind: "skills" | "charms"; i: number } | { kind: "pet" };
 const UNNAMED = /^(?:Skill \d+|DNTB)/i;
@@ -33,6 +35,7 @@ export function LoadoutsPage() {
 }
 
 function Loadouts({ explorer }: { explorer: Explorer }) {
+  const { t, tn } = useT();
   const { D } = explorer;
   const classes = D.professions;
   const pets = useMemo(() => buildFantomons(explorer), [explorer]);
@@ -257,16 +260,16 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
    *  the build's name, skills and picture, so nothing else is needed. */
   const shareText = () => [draft.notes.trim() ? `> ${draft.notes.trim().replace(/\n+/g, "\n> ")}` : "", link].filter(Boolean).join("\n");
   const share = async () => {
-    const title = draft.title.trim() || `${cls.name} loadout`;
+    const title = draft.title.trim() || t("lo.defaultName", { cls: cls.name });
     try {
       if (navigator.share && matchMedia("(pointer: coarse)").matches) {
         await navigator.share({ title, text: draft.notes.trim() || undefined, url: link });
         return;
       }
       await navigator.clipboard.writeText(shareText());
-      setToast("Copied. Paste it in Discord and the link shows the build.");
+      setToast(t("lo.copiedShare"));
     } catch (e) {
-      if ((e as Error)?.name !== "AbortError") setToast("Your browser blocked copying.");
+      if ((e as Error)?.name !== "AbortError") setToast(t("lo.blocked"));
     }
   };
   const picture = () => {
@@ -277,7 +280,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
       return { name: s.name, art: `skills/skill_${s.id}.webp`, quality: g.raw, stars: g.stars };
     };
     return drawLoadout({
-      title: draft.title.trim(),
+      title: draft.title.trim() || t("lo.defaultName", { cls: cls.name }),
       className: cls.name,
       badge: `classes/${cls.badge}.webp`,
       skills: draft.skills.map(slotOf),
@@ -289,7 +292,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
   const fileName = () => `${(draft.title.trim() || `${cls.name} loadout`).replace(/[^\w-]+/g, "-").toLowerCase()}.png`;
   /** Phones: share the picture and text straight to Discord. Computers: copy the picture to paste. */
   const copyPicture = async () => {
-    setToast("Drawing…");
+    setToast(t("lo.drawing"));
     try {
       if (matchMedia("(pointer: coarse)").matches && navigator.canShare) {
         const file = new File([await picture()], fileName(), { type: "image/png" });
@@ -300,7 +303,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
         }
       }
       await navigator.clipboard.write([new ClipboardItem({ "image/png": picture() })]);
-      setToast("Picture copied");
+      setToast(t("lo.picCopied"));
     } catch (e) {
       if ((e as Error)?.name === "AbortError") return setToast("");
       downloadPicture();
@@ -313,7 +316,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
     a.download = fileName();
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 5000);
-    setToast("Picture saved");
+    setToast(t("lo.picSaved"));
   };
   const save = () => {
     if (!draft.title.trim()) {
@@ -327,7 +330,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
     setSaved((s) => ({ items: [item, ...s.items.filter((x) => x.id !== id)] }));
     setEditingId(id);
     setOpened(false);
-    setToast(editingId ? "Saved" : "Saved to My loadouts");
+    setToast(editingId ? t("lo.saved") : t("lo.savedMy"));
   };
   const startNew = () => {
     setDraft(emptyLoadout(draft.cls));
@@ -350,13 +353,13 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
     openSaved(items[at < 0 ? (by > 0 ? 0 : items.length - 1) : (at + by + items.length) % items.length], false);
   };
   const rename = (s: SavedLoadout) => {
-    const name = window.prompt("Loadout name", s.title)?.trim().slice(0, TITLE_MAX);
+    const name = window.prompt(t("lo.namePrompt"), s.title)?.trim().slice(0, TITLE_MAX);
     if (!name) return;
     setSaved((x) => ({ items: x.items.map((it) => (it.id === s.id ? { ...it, title: name } : it)) }));
     if (editingId === s.id) edit({ title: name });
   };
   const remove = (id: string) => {
-    if (!window.confirm("Delete this loadout from My loadouts?")) return;
+    if (!window.confirm(t("lo.deleteConfirm"))) return;
     setSaved((s) => ({ items: s.items.filter((x) => x.id !== id) }));
     if (editingId === id) setEditingId(null);
   };
@@ -370,7 +373,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
     const d = explorer.detail(s.id, raw, stars, calc.level, calc.combatRank, rank);
     return (
       <div className={`lo-rank q-${raw}`}>
-        <div className="q-stepper" role="radiogroup" aria-label="Grade">
+        <div className="q-stepper" role="radiogroup" aria-label={t("lo.grade")}>
           {grades.map(([g, [a]]) => (
             <button
               key={g}
@@ -385,14 +388,14 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
           ))}
         </div>
         {hi > lo && (
-          <div className="lo-stars" role="radiogroup" aria-label="Stars">
+          <div className="lo-stars" role="radiogroup" aria-label={t("lo.stars")}>
             {Array.from({ length: hi - lo }, (_, i) => i + 1).map((n) => (
               <button
                 key={n}
                 type="button"
                 role="radio"
                 aria-checked={n === stars}
-                aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                aria-label={tn("lo.starN", n)}
                 className={n <= stars ? "lit" : undefined}
                 onClick={() => setRank(s, Math.max(baseRank(s), lo + (n === stars ? n - 1 : n)))}
               >
@@ -414,17 +417,17 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
             ))}
             {d.cd ? (
               <div>
-                <dt>Cooldown</dt>
-                <dd>{d.cd} turns</dd>
+                <dt>{t("lo.cooldown")}</dt>
+                <dd>{tn("lo.turns", d.cd)}</dd>
               </div>
             ) : null}
           </dl>
         ) : (
-          <p className="hint">The game data has no numbers for this one.</p>
+          <p className="hint">{t("lo.noNumbers")}</p>
         )}
         <div className="lo-calc">
           <label>
-            Your level
+            {t("lo.yourLevel")}
             <input
               type="number"
               min={1}
@@ -434,7 +437,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
             />
           </label>
           <label>
-            Combat rank
+            {t("lo.combatRank")}
             <select value={calc.combatRank} onChange={(e) => setCalc((c) => ({ ...c, combatRank: e.target.value }))}>
               {explorer.C.combatRanks.map((r) => (
                 <option key={r.raw} value={r.raw}>
@@ -443,7 +446,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
               ))}
             </select>
           </label>
-          <small>The fixed part of each number grows with your level and combat rank.</small>
+          <small>{t("lo.fixedHint")}</small>
         </div>
       </div>
     );
@@ -465,7 +468,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
         data-slot={slotKey(s)}
         className={`lo-slot ${s.kind}${on ? " on" : ""}${filled ? " filled" : ""}${can ? " can-drop" : ""}${over === slotKey(s) ? " over" : ""}`}
         aria-pressed={on}
-        aria-label={`${label}: ${s.kind === "pet" ? pet?.name ?? "empty" : info?.name ?? "empty"}`}
+        aria-label={`${label}: ${s.kind === "pet" ? pet?.name ?? t("lo.empty") : info?.name ?? t("lo.empty")}`}
         {...(drags || {})}
         onClick={tap(() => {
           setSlot(s);
@@ -487,7 +490,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
           )}
           {n !== undefined && <b className="lo-num">{n}</b>}
         </span>
-        <span className="lo-slot-name">{s.kind === "pet" ? pet?.name ?? "Fantomon" : info?.name ?? label}</span>
+        <span className="lo-slot-name">{s.kind === "pet" ? pet?.name ?? t("lo.fantomon") : info?.name ?? label}</span>
       </button>
     );
   };
@@ -498,7 +501,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
         <p className="lo-banner">
           <Icon name="share" size={18} />
           <span>
-            Someone shared this loadout with you. <b>Save it</b> to keep a copy in My loadouts.
+            {rich(t("lo.shared"))}
           </span>
         </p>
       )}
@@ -507,19 +510,19 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
       <section className="card lo-card">
         {/* Laid out like the game's Skill screen: techniques left, charms right, Fantomon in the middle. */}
         <div className="lo-scene">
-          <div className="lo-col left">{draft.skills.map((_, i) => <span key={i}>{slotButton({ kind: "skills", i }, `Technique ${i + 1}`, i + 1)}</span>)}</div>
+          <div className="lo-col left">{draft.skills.map((_, i) => <span key={i}>{slotButton({ kind: "skills", i }, t("lo.techniqueN", { n: i + 1 }), i + 1)}</span>)}</div>
           <div className="lo-stage">
             <span className="lo-emblem" aria-hidden>
               <GameArt path={`classes/${cls.badge}.webp`} name={cls.name} alt="" />
             </span>
-            {slotButton({ kind: "pet" }, "Fantomon")}
+            {slotButton({ kind: "pet" }, t("lo.fantomon"))}
             <span className="lo-stage-class">{cls.name}</span>
           </div>
-          <div className="lo-col right">{draft.charms.map((_, i) => <span key={i}>{slotButton({ kind: "charms", i }, `Charm ${i + 1}`)}</span>)}</div>
+          <div className="lo-col right">{draft.charms.map((_, i) => <span key={i}>{slotButton({ kind: "charms", i }, t("lo.charmN", { n: i + 1 }))}</span>)}</div>
         </div>
 
         <div className={`lo-namebar${nameNeeded ? " needed" : ""}`}>
-          <button type="button" className="lo-arrow" onClick={() => cycle(-1)} disabled={!saved.items.length} aria-label="Previous saved loadout">
+          <button type="button" className="lo-arrow" onClick={() => cycle(-1)} disabled={!saved.items.length} aria-label={t("lo.prev")}>
             ‹
           </button>
           <label className="lo-name-box">
@@ -529,15 +532,15 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
               className="lo-title"
               value={draft.title}
               maxLength={TITLE_MAX}
-              placeholder="NAME YOUR LOADOUT"
-              aria-label="Loadout name"
+              placeholder={t("lo.namePh")}
+              aria-label={t("lo.nameAria")}
               onChange={(e) => {
                 edit({ title: e.target.value });
                 setNameNeeded(false);
               }}
             />
           </label>
-          <button type="button" className="lo-arrow" onClick={() => cycle(1)} disabled={!saved.items.length} aria-label="Next saved loadout">
+          <button type="button" className="lo-arrow" onClick={() => cycle(1)} disabled={!saved.items.length} aria-label={t("lo.nextSaved")}>
             ›
           </button>
         </div>
@@ -546,37 +549,37 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
             {saved.items.map((it) => <i key={it.id} className={it.id === editingId ? "on" : undefined} />)}
           </p>
         )}
-        {nameNeeded && <p className="lo-name-hint">Give it a name so you can find it in My loadouts.</p>}
+        {nameNeeded && <p className="lo-name-hint">{t("lo.nameHint")}</p>}
 
         <div className="lo-class-row">
-          <ClassSelect label="Class" value={draft.cls} classes={classes} onChange={changeClass} />
+          <ClassSelect label={t("lo.class")} value={draft.cls} classes={classes} onChange={changeClass} />
         </div>
 
         <textarea
           className="lo-notes"
           rows={2}
           maxLength={NOTES_MAX}
-          placeholder="Notes for whoever opens this: when to use it, rotation, swaps…"
+          placeholder={t("lo.notesPh")}
           value={draft.notes}
           onChange={(e) => edit({ notes: e.target.value })}
         />
 
         <div className="lo-actions">
           <button type="button" className="spin-button" onClick={share} disabled={isEmpty(draft)}>
-            <Icon name="share" size={18} /> Share
+            <Icon name="share" size={18} /> {t("lo.share")}
           </button>
           <button type="button" className="lo-btn" onClick={copyPicture} disabled={isEmpty(draft)}>
-            Copy picture
+            {t("lo.copyPic")}
           </button>
           <button type="button" className="lo-btn" onClick={downloadPicture} disabled={isEmpty(draft)}>
-            Save picture
+            {t("lo.savePic")}
           </button>
           <span className="lo-actions-break" />
           <button type="button" className="lo-btn" onClick={save} disabled={isEmpty(draft)}>
-            {editingId ? "Save changes" : "Save to My loadouts"}
+            {editingId ? t("lo.saveChanges") : t("lo.saveMy")}
           </button>
           <button type="button" className="link-button" onClick={startNew}>
-            New loadout
+            {t("lo.new")}
           </button>
         </div>
         {toast && (
@@ -587,7 +590,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
       </section>
 
       <section className="card lo-picker">
-        <div className="lo-tabs" role="tablist" aria-label="What to pick">
+        <div className="lo-tabs" role="tablist" aria-label={t("lo.whatToPick")}>
           {(["skills", "charms", "pet"] as const).map((k) => (
             <button
               key={k}
@@ -599,17 +602,17 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
                 else if (slot.kind !== k) setSlot({ kind: k, i: Math.max(0, draft[k].findIndex((x) => !x)) });
               }}
             >
-              {k === "skills" ? "Technique" : k === "charms" ? "Charm" : "Fantomon"}
+              {t(k === "skills" ? "lo.tab.skills" : k === "charms" ? "lo.tab.charms" : "lo.tab.pet")}
             </button>
           ))}
         </div>
         <div className="lo-picker-head">
           <div>
-            <p className="eyebrow">{slot.kind === "pet" ? "Fantomon" : slot.kind === "skills" ? `Technique ${slot.i + 1}` : `Charm ${slot.i + 1}`}</p>
-            <h2 className="subhead">{slot.kind === "pet" ? "Pick a Fantomon" : slot.kind === "skills" ? "Pick a technique" : "Pick a charm"}</h2>
+            <p className="eyebrow">{slot.kind === "pet" ? t("lo.fantomon") : slot.kind === "skills" ? t("lo.techniqueN", { n: slot.i + 1 }) : t("lo.charmN", { n: slot.i + 1 })}</p>
+            <h2 className="subhead">{slot.kind === "pet" ? t("lo.pickPet") : slot.kind === "skills" ? t("lo.pickTech") : t("lo.pickCharm")}</h2>
           </div>
           {slot.kind !== "pet" && (
-            <input type="search" placeholder="Search name or effect" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search skills" />
+            <input type="search" placeholder={t("lo.searchPh")} value={query} onChange={(e) => setQuery(e.target.value)} aria-label={t("lo.searchAria")} />
           )}
         </div>
 
@@ -635,16 +638,16 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
             <div className="lo-focus-tools">
               {slot.kind === "skills" && (
                 <>
-                  <button type="button" className="lo-btn small" onClick={() => move(slot.i, -1)} disabled={slot.i === 0} aria-label="Cast earlier">
+                  <button type="button" className="lo-btn small" onClick={() => move(slot.i, -1)} disabled={slot.i === 0} aria-label={t("lo.earlier")}>
                     ←
                   </button>
-                  <button type="button" className="lo-btn small" onClick={() => move(slot.i, 1)} disabled={slot.i === SKILL_SLOTS - 1} aria-label="Cast later">
+                  <button type="button" className="lo-btn small" onClick={() => move(slot.i, 1)} disabled={slot.i === SKILL_SLOTS - 1} aria-label={t("lo.later")}>
                     →
                   </button>
                 </>
               )}
               <button type="button" className="lo-btn small" onClick={() => clearSlot(slot)}>
-                Remove
+                {t("lo.remove")}
               </button>
             </div>
             {focused && rankPanel(focused)}
@@ -665,7 +668,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
         ) : groups.length ? (
           groups.map((g) => (
             <div key={g.code} className="lo-group">
-              <p className="lo-group-label">From {className(g.code)}</p>
+              <p className="lo-group-label">{t("lo.from", { cls: className(g.code) })}</p>
               <ul className="lo-list">
                 {g.items.map((s) => (
                   <li key={s.id}>
@@ -675,7 +678,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
                         <b>{s.name}</b>
                         <small>{s.description}</small>
                       </span>
-                      {used.has(s.id) && <em>In use</em>}
+                      {used.has(s.id) && <em>{t("lo.inUse")}</em>}
                     </button>
                   </li>
                 ))}
@@ -683,7 +686,7 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
             </div>
           ))
         ) : (
-          <p className="hint">Nothing matches "{query}".</p>
+          <p className="hint">{t("lo.noMatch", { q: query })}</p>
         )}
         {!isEmpty(draft) && (
           <div className="lo-back">
@@ -692,17 +695,17 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
               className="lo-btn"
               onClick={() => document.querySelector<HTMLElement>(".lo-card")?.scrollIntoView({ behavior: "smooth", block: "start" })}
             >
-              ↑ Back to loadout
+              {t("lo.back")}
             </button>
           </div>
         )}
-        <p className="hint">Tap to fill the open slot, or drag onto any slot (press and hold first on a phone). Every {pickKind === "charm" ? "charm" : "skill"} {cls.name} can equip, including the ones from earlier classes in its line.</p>
+        <p className="hint">{t(pickKind === "charm" ? "lo.hintCharm" : "lo.hintSkill", { cls: cls.name })}</p>
       </section>
 
       </div>
 
       <section className="card lo-saved-card">
-        <h2 className="subhead">My loadouts</h2>
+        <h2 className="subhead">{t("lo.my")}</h2>
         {saved.items.length ? (
           <ul className="lo-saved">
             {saved.items.map((s) => {
@@ -712,9 +715,9 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
                   <button type="button" className="lo-saved-open" onClick={() => openSaved(s)}>
                     {c && <GameArt path={`classes/${c.badge}.webp`} name={c.name} alt="" className="lo-badge small" />}
                     <span className="lo-saved-text">
-                      <b>{s.title.trim() || `${c?.name ?? s.cls} loadout`}</b>
+                      <b>{s.title.trim() || t("lo.defaultName", { cls: c?.name ?? s.cls })}</b>
                       <small>
-                        {c?.name ?? s.cls} · {new Date(s.savedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                        {c?.name ?? s.cls} · {new Date(s.savedAt).toLocaleDateString(formatLocale(), { month: "short", day: "numeric" })}
                       </small>
                     </span>
                     <span className="lo-mini">
@@ -729,26 +732,26 @@ function Loadouts({ explorer }: { explorer: Explorer }) {
                     onClick={async () => {
                       try {
                         await navigator.clipboard.writeText(shareUrl(s));
-                        setToast("Link copied");
+                        setToast(t("lo.linkCopied"));
                       } catch {
                         /* blocked */
                       }
                     }}
                   >
-                    Copy link
+                    {t("lo.copyLink")}
                   </button>
                   <button type="button" className="lo-btn small" onClick={() => rename(s)}>
-                    Rename
+                    {t("lo.rename")}
                   </button>
                   <button type="button" className="link-button" onClick={() => remove(s.id)}>
-                    Delete
+                    {t("lo.delete")}
                   </button>
                 </li>
               );
             })}
           </ul>
         ) : (
-          <p className="hint">Loadouts you save appear here. They're kept in this browser only; share the link to move one to another device.</p>
+          <p className="hint">{t("lo.myEmpty")}</p>
         )}
       </section>
     </div>

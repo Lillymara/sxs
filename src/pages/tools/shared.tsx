@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import glossary from "../../data/skill_glossary.json";
 import { createExplorer, type Explorer } from "../../lib/explorer";
 import { loadGameData } from "../../lib/gamedata";
+import { useT } from "../../i18n";
 
 /** Loads the shared game data and builds the skill explorer. */
 export function useExplorer(): { explorer: Explorer | null; error: string } {
@@ -16,9 +17,10 @@ export function useExplorer(): { explorer: Explorer | null; error: string } {
 }
 
 export function Loading({ error }: { error: string }) {
+  const { t } = useT();
   return (
     <section className="card results empty">
-      {error ? <p className="error">{error}. Refresh to try again.</p> : <p>Loading game data (about 1 MB)…</p>}
+      {error ? <p className="error">{t("lo.loadError", { error })}</p> : <p>{t("lo.loadingData")}</p>}
     </section>
   );
 }

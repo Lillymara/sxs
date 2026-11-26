@@ -186,6 +186,6 @@ export type Explorer = ReturnType<typeof createExplorer>;
 
 /** "45% ATK + 1,234 fixed" or "12.5%" for a detail row. */
 export function rowText(r: DetailRow): string {
-  if (r.kind === "passive" || r.pct === undefined) return `${(r.value ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}${r.unit ?? ""}`;
+  if (r.kind === "passive" || r.pct === undefined) return `${(r.value ?? 0).toLocaleString(formatLocale(), { maximumFractionDigits: 2 })}${r.unit ?? ""}`;
   return `${r.pct.toFixed(2).replace(/\.00$/, "")}% ${r.source}${r.fixed ? ` + ${r.fixed.toLocaleString(formatLocale())} fixed` : ""}`;
 }

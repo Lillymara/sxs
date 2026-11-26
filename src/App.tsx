@@ -22,6 +22,7 @@ import { LanguagePicker } from "./components/LanguagePicker";
 import { useT } from "./i18n";
 import type { MessageKey } from "./i18n/en";
 import type { ToolProps } from "./pages/tools/props";
+import { formatLocale } from "./i18n/format";
 
 // The calendar carries the full server roster, so it loads only when opened.
 const CalendarPage = lazy(() => import("./pages/calendar/CalendarPage").then((m) => ({ default: m.CalendarPage })));
@@ -137,9 +138,9 @@ export default function App() {
   // The reset shown in the saved server's time zone (or the device's).
   const resetLabel = (() => {
     try {
-      return nextReset.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone: serverChoice.timezone || undefined, timeZoneName: "short" });
+      return nextReset.toLocaleTimeString(formatLocale(), { hour: "numeric", minute: "2-digit", timeZone: serverChoice.timezone || undefined, timeZoneName: "short" });
     } catch {
-      return nextReset.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+      return nextReset.toLocaleTimeString(formatLocale(), { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
     }
   })();
   const boosts =

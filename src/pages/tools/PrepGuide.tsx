@@ -1,11 +1,12 @@
 // One Season Prep guide (an island opening, a season change), all laid out the same way:
 // a summary of the key times, the one rule to remember, then "Before…" / "When…" phases of short, tagged steps.
 import type { ReactNode } from "react";
+import { formatLocale } from "../../i18n/format";
 
 const HOUR = 3_600_000;
 /** Exact time in the saved server timezone (device zone when none is set), with the zone name. */
 export const when = (d: Date, timeZone?: string) =>
-  d.toLocaleString(undefined, { timeZone, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+  d.toLocaleString(formatLocale(), { timeZone, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
 export const left = (d: Date, now: Date) => {
   const h = (d.getTime() - now.getTime()) / HOUR;
   if (h <= 0) return "passed";

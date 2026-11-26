@@ -1,6 +1,7 @@
 // When each Fantomon and companion can be obtained, and what that means for a given server.
 import { publicServerDay } from "../data/calendar";
 import { dayDate, parseDay } from "./calendar";
+import { formatLocale } from "../i18n/format";
 
 export type Rule =
   /** Not in the global game yet. */
@@ -64,7 +65,7 @@ export interface Availability {
   detail?: string;
 }
 
-const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+const fmt = (d: Date) => d.toLocaleDateString(formatLocale(), { month: "short", day: "numeric", year: "numeric" });
 
 /**
  * What a rule means for a server that opened on `day1` (null if no server is chosen), as of `now`.

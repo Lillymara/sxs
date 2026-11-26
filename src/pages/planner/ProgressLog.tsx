@@ -14,7 +14,7 @@ export interface Snapshot {
 
 const DAY = 86_400_000;
 const fmt = (x: number) => Math.round(x).toLocaleString(formatLocale());
-const dateLabel = (t: number) => new Date(t).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+const dateLabel = (t: number) => new Date(t).toLocaleDateString(formatLocale(), { month: "short", day: "numeric" });
 
 /** Adds a snapshot, replacing one from the same day, and keeping only this season's. */
 export function addSnapshot(log: Snapshot[], s: Snapshot): Snapshot[] {
