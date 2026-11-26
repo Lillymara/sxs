@@ -3,6 +3,8 @@ import { formatDuration, formatEta, formatXpShort } from "../lib/xp";
 import type { Character } from "./CharacterForm";
 import { ProgressRing } from "./ProgressRing";
 import { CountUp } from "./CountUp";
+import { rich, useT } from "../i18n";
+import type { MessageKey } from "../i18n/en";
 
 interface Props {
   character: Character;
@@ -16,13 +18,14 @@ const fmt = (n: number) => Math.ceil(n).toLocaleString();
 const RELIABLE_LEVELS = 5;
 
 export function Results({ character, outcome, now }: Props) {
+  const { t } = useT();
   // Nothing to show until the form is filled in: no placeholder box taking up the top of the page.
   if (!outcome) return null;
 
   if (!outcome.ok) {
     return (
       <section className="card results" aria-live="polite">
-        <p className="error" role="alert">{outcome.error}</p>
+        <p className="error" role="alert">{outcome.key ? t(outcome.key as MessageKey, outcome.vars) : outcome.error}</p>
       </section>
     );
   }
@@ -35,12 +38,9 @@ export function Results({ character, outcome, now }: Props) {
     return (
       <section className="card results" aria-live="polite">
         <div className="banked">
-          <p className="eyebrow">Level cap · banked XP</p>
-          <p>
-            You're held at level {b.cappedLevel} with <b>{formatXpShort(b.xp)}</b> XP saved up. When the cap lifts you'll jump to at least
-            {" "}<b>level {b.level}</b>, the end of this season's EXP data.
-          </p>
-          <p className="banked-warn">Banked XP carries over until the cap lifts, except at a season reset, where it's lost.</p>
+          <p className="eyebrow">{t("res.capBanked")}</p>
+          <p>{rich(t("res.pastData", { capped: b.cappedLevel, xp: formatXpShort(b.xp), level: b.level }))}</p>
+          <p className="banked-warn">{t("res.bankWarn")}</p>
         </div>
       </section>
     );
@@ -50,75 +50,64 @@ export function Results({ character, outcome, now }: Props) {
     <section className="card results" aria-live="polite">
       {b && (
         <div className="banked">
-          <p className="eyebrow">🔓 Level cap · banked XP</p>
+          <p className="eyebrow">🔓 {t("res.capBanked")}</p>
           <p className="banked-jump">
-            Level {b.cappedLevel} <span aria-hidden>→</span> <b>{b.level}</b>
+            {t("res.levelN", { n: b.cappedLevel })} <span aria-hidden>→</span> <b>{b.level}</b>
           </p>
-          <p>
-            You're held at level {b.cappedLevel} with <b>{formatXpShort(b.xp)}</b> XP saved up. When the next area opens, you'll jump straight
-            to <b>level {b.level}</b>, {pct.toFixed(1)}% of the way to {r.nextLevel}.
-          </p>
-          <p className="banked-warn">Banked XP carries over until the cap lifts, except at a season reset, where it's lost.</p>
+          <p>{rich(t("res.jump", { capped: b.cappedLevel, xp: formatXpShort(b.xp), level: b.level, pct: pct.toFixed(1), next: r.nextLevel }))}</p>
+          <p className="banked-warn">{t("res.bankWarn")}</p>
         </div>
       )}
       <div className="timer-head">
         <ProgressRing value={pct / 100}>
-          <small>Level</small>
+          <small>{t("res.levelWord")}</small>
           <b>{r.nextLevel}</b>
-          <small>{pct.toFixed(0)}% there</small>
+          <small>{t("res.there", { pct: pct.toFixed(0) })}</small>
         </ProgressRing>
         <div className="timer-text">
           <p className="eyebrow">
-            {character.name ? `${character.name} → ` : ""}Level {r.nextLevel}
-            {b ? " after the jump" : ""}
+            {character.name ? `${character.name} → ` : ""}
+            {t(b ? "res.levelJump" : "res.levelN", { n: r.nextLevel })}
           </p>
           <p className="big-time">
             <CountUp text={formatDuration(r.hoursToNext)} />
           </p>
           <p className="eta">
-            {b ? `Banked enough for level ${r.nextLevel} around ` : "Around "}
-            {formatEta(r.hoursToNext, now)}
+            {b ? t("res.bankedAround", { n: r.nextLevel, eta: formatEta(r.hoursToNext, now) }) : t("res.around", { eta: formatEta(r.hoursToNext, now) })}
           </p>
           {r.unboostedHoursToNext !== undefined && r.unboostedHoursToNext - r.hoursToNext >= 1 / 60 && (
-            <p className="boost-saved">⚡ Boosts save you {formatDuration(Math.round((r.unboostedHoursToNext - r.hoursToNext) * 60) / 60)}</p>
+            <p className="boost-saved">{t("res.boostSaved", { time: formatDuration(Math.round((r.unboostedHoursToNext - r.hoursToNext) * 60) / 60) })}</p>
           )}
         </div>
       </div>
       <dl className="stats">
         <div>
-          <dt>Progress</dt>
+          <dt>{t("res.progress")}</dt>
           <dd>{pct.toFixed(1)}%</dd>
         </div>
         <div>
-          <dt>XP to go</dt>
+          <dt>{t("res.xpToGo")}</dt>
           <dd title={fmt(r.xpRemaining)}>{formatXpShort(r.xpRemaining)}</dd>
         </div>
         <div>
-          <dt>Level needs</dt>
+          <dt>{t("res.levelNeeds")}</dt>
           <dd title={fmt(r.xpRequired)}>{formatXpShort(r.xpRequired)}</dd>
         </div>
       </dl>
 
       {r.goal && (
         <div className="goal">
-          <h3>
-            Level {r.goal.level}: {formatDuration(r.goal.hours)}
-          </h3>
-          <p className="eta">
-            {formatXpShort(r.goal.xpRemaining)} XP · around {formatEta(r.goal.hours, now)}
-          </p>
-          <p className="note">
-            Your XP rate keeps climbing as you level, so only the next 2–{RELIABLE_LEVELS} levels are
-            close to accurate. Anything further out will likely come sooner than shown.
-          </p>
+          <h3>{t("res.goalHead", { n: r.goal.level, time: formatDuration(r.goal.hours) })}</h3>
+          <p className="eta">{t("res.goalEta", { xp: formatXpShort(r.goal.xpRemaining), eta: formatEta(r.goal.hours, now) })}</p>
+          <p className="note">{t("res.note", { n: RELIABLE_LEVELS })}</p>
           <div className="table-wrap">
             <table className="level-table">
               <thead>
                 <tr>
-                  <th scope="col">Level</th>
-                  <th scope="col">XP</th>
-                  <th scope="col">Time</th>
-                  <th scope="col">Reached</th>
+                  <th scope="col">{t("res.colLevel")}</th>
+                  <th scope="col">{t("res.colXp")}</th>
+                  <th scope="col">{t("res.colTime")}</th>
+                  <th scope="col">{t("res.colReached")}</th>
                 </tr>
               </thead>
               <tbody>

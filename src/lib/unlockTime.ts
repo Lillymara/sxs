@@ -2,6 +2,7 @@
 // These helpers say when, in the player's time zone and in the game's server time, and whether it's live yet.
 
 import { RESET_UTC_HOUR, SERVER_UTC_OFFSET_HOURS } from "../data/calendar";
+import { formatLocale, unitText } from "../i18n/format";
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
@@ -11,28 +12,34 @@ const DAY = 24 * HOUR;
 export function localTime(at: Date, timeZone = ""): string {
   const opts: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit", timeZoneName: "short" };
   try {
-    return new Intl.DateTimeFormat(undefined, { ...opts, timeZone: timeZone || undefined }).format(at);
+    return new Intl.DateTimeFormat(formatLocale(), { ...opts, timeZone: timeZone || undefined }).format(at);
   } catch {
-    return new Intl.DateTimeFormat(undefined, opts).format(at);
+    return new Intl.DateTimeFormat(formatLocale(), opts).format(at);
   }
 }
 
 /** The reset in server time: "8:00 AM server time". */
 export function serverResetTime(): string {
   const hour = (RESET_UTC_HOUR + SERVER_UTC_OFFSET_HOURS + 24) % 24;
-  const label = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit", timeZone: "UTC" }).format(Date.UTC(2026, 0, 1, hour));
+  const label = new Intl.DateTimeFormat(formatLocale(), { hour: "numeric", minute: "2-digit", timeZone: "UTC" }).format(Date.UTC(2026, 0, 1, hour));
   return `${label} server time`;
 }
 
 /** "UTC−5" for the server clock. */
 export const serverZoneLabel = () => `UTC${SERVER_UTC_OFFSET_HOURS < 0 ? "−" : "+"}${Math.abs(SERVER_UTC_OFFSET_HOURS)}`;
 
-/** "2h 14m", "45m", "under a minute". */
+/** "2h 14m", "45m", "<1m" (units in the chosen language). */
 export function countdown(ms: number): string {
-  if (ms < MINUTE) return "under a minute";
+  if (ms < MINUTE) return `<${unitText("m", 1)}`;
   const h = Math.floor(ms / HOUR);
   const m = Math.floor((ms % HOUR) / MINUTE);
-  return h ? `${h}h${m ? ` ${m}m` : ""}` : `${m}m`;
+  return h ? `${unitText("h", h)}${m ? ` ${unitText("m", m)}` : ""}` : unitText("m", m);
+}
+
+/** Just the reset's clock time on the server's UTC−5 clock: "8:00 AM". */
+export function serverClockTime(): string {
+  const hour = (RESET_UTC_HOUR + SERVER_UTC_OFFSET_HOURS + 24) % 24;
+  return new Intl.DateTimeFormat(formatLocale(), { hour: "numeric", minute: "2-digit", timeZone: "UTC" }).format(Date.UTC(2026, 0, 1, hour));
 }
 
 /** Calendar days from now to a moment, counted in a time zone (0 = same local day). */
@@ -55,6 +62,10 @@ export interface Unlock {
   label: string;
   /** When, both ways: "5:00 AM PST · 8:00 AM server time". */
   at: string;
+  /** The pieces, for building the same text in another language. */
+  localAt: string;
+  ms: number;
+  days: number;
 }
 
 /**
@@ -62,13 +73,15 @@ export interface Unlock {
  * A one-day event stays live until the next reset; one with an end stays live until then.
  */
 export function unlockStatus(start: Date, now: Date, end: Date | null = null, timeZone = ""): Unlock {
-  const at = `${localTime(start, timeZone)} · ${serverResetTime()}`;
-  const until = start.getTime() - now.getTime();
-  if (until > 0) {
-    if (until < DAY) return { state: "soon", label: `Unlocks in ${countdown(until)}`, at };
-    const days = daysAway(start, now, timeZone);
-    return { state: "later", label: days <= 1 ? "Tomorrow" : `In ${days} days`, at };
+  const localAt = localTime(start, timeZone);
+  const at = `${localAt} · ${serverResetTime()}`;
+  const ms = start.getTime() - now.getTime();
+  const days = ms > 0 ? daysAway(start, now, timeZone) : 0;
+  const parts = { at, localAt, ms, days };
+  if (ms > 0) {
+    if (ms < DAY) return { state: "soon", label: `Unlocks in ${countdown(ms)}`, ...parts };
+    return { state: "later", label: days <= 1 ? "Tomorrow" : `In ${days} days`, ...parts };
   }
   const over = end ? end.getTime() : start.getTime() + DAY;
-  return now.getTime() < over ? { state: "live", label: "Live now", at } : { state: "past", label: "Done", at };
+  return now.getTime() < over ? { state: "live", label: "Live now", ...parts } : { state: "past", label: "Done", ...parts };
 }

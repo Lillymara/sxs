@@ -3,6 +3,7 @@
 // missing falls back to English, so the site always works while translations catch up.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { en, type MessageKey, type Messages } from "./en";
+import { setFormat } from "./format";
 
 export const LANGS = [
   { code: "en", name: "English" },
@@ -104,7 +105,12 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   // Until a language's file arrives, show English rather than mixing two languages.
   const shown = messages.lang === lang ? messages.msgs : {};
-  const value = useMemo<I18n>(() => ({ lang, setLang, locale: lang, ...translator(lang, shown) }), [lang, setLang, shown]);
+  const value = useMemo<I18n>(() => {
+    const tr = translator(lang, shown);
+    // Durations and dates formatted outside React follow the same language.
+    setFormat(lang, { d: tr.t("dur.d"), h: tr.t("dur.h"), m: tr.t("dur.m"), ready: tr.t("dur.ready") });
+    return { lang, setLang, locale: lang, ...tr };
+  }, [lang, setLang, shown]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

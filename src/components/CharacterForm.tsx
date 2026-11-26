@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { SeasonTable } from "../lib/xp";
 import { seasons } from "../lib/xp";
+import { useT } from "../i18n";
 
 export interface Character {
   name: string;
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export function CharacterForm({ character, onChange, onReset, table, compact, resetNote }: Props) {
+  const { t } = useT();
   const set = <K extends keyof Character>(key: K, value: Character[K]) =>
     onChange({ ...character, [key]: value });
 
@@ -38,9 +40,9 @@ export function CharacterForm({ character, onChange, onReset, table, compact, re
     <section className={compact ? undefined : "card"} aria-labelledby={compact ? undefined : "form-heading"}>
       {!compact && (
         <div className="card-head">
-          <h2 id="form-heading">Your character</h2>
+          <h2 id="form-heading">{t("char.title")}</h2>
           <button type="button" className="link-button" onClick={onReset}>
-            Clear
+            {t("char.clear")}
           </button>
         </div>
       )}
@@ -48,34 +50,32 @@ export function CharacterForm({ character, onChange, onReset, table, compact, re
       <form className="fields" onSubmit={(e) => e.preventDefault()}>
         {!compact && (
           <label className="field span-2">
-            <span>Name <em>(optional)</em></span>
+            <span>{t("char.name")} <em>{t("common.optional")}</em></span>
             <input
               value={character.name}
               onChange={(e) => set("name", e.target.value)}
-              placeholder="Character name"
+              placeholder={t("char.namePh")}
               maxLength={40}
             />
           </label>
         )}
 
         <label className="field">
-          <span>Season</span>
+          <span>{t("char.season")}</span>
           <select value={character.season} onChange={(e) => set("season", e.target.value)}>
             {seasons.map((s) => (
               <option key={s.season} value={s.season}>
-                Season {s.season}
+                {t("common.seasonN", { n: s.season })}
               </option>
             ))}
           </select>
           {table && (
-            <small>
-              Levels {table.minLevel}–{table.maxLevel}
-            </small>
+            <small>{t("char.levels", { min: table.minLevel, max: table.maxLevel })}</small>
           )}
         </label>
 
         <label className="field">
-          <span>Current level</span>
+          <span>{t("char.level")}</span>
           <input
             inputMode="numeric"
             value={character.level}
@@ -85,26 +85,26 @@ export function CharacterForm({ character, onChange, onReset, table, compact, re
         </label>
 
         <fieldset className="field span-2">
-          <legend>Progress toward next level</legend>
+          <legend>{t("char.progress")}</legend>
           <div className="with-toggle">
             {character.progressMode === "xp" ? (
               <input
                 inputMode="text"
-                aria-label="Current XP"
+                aria-label={t("char.xpAria")}
                 value={character.currentXp}
                 onChange={(e) => set("currentXp", e.target.value)}
-                placeholder="e.g. 4.13k or 1.52B"
+                placeholder={t("char.xpPh")}
               />
             ) : (
               <input
                 inputMode="decimal"
-                aria-label="Percent complete"
+                aria-label={t("char.pctAria")}
                 value={character.percent}
                 onChange={(e) => set("percent", e.target.value)}
-                placeholder="Percent of the bar, e.g. 42.5"
+                placeholder={t("char.pctPh")}
               />
             )}
-            <div className="segmented" role="group" aria-label="Progress unit">
+            <div className="segmented" role="group" aria-label={t("char.unit")}>
               <button
                 type="button"
                 aria-pressed={character.progressMode === "xp"}
@@ -124,45 +124,45 @@ export function CharacterForm({ character, onChange, onReset, table, compact, re
         </fieldset>
 
         <label className="field span-2">
-          <span>XP per hour</span>
+          <span>{t("char.rate")}</span>
           <input
             inputMode="text"
             value={character.rate}
             onChange={(e) => set("rate", e.target.value)}
-            placeholder="e.g. 150M"
+            placeholder={t("char.ratePh")}
           />
-          <small>Check the bed in your house for your current rate.</small>
+          <small>{t("char.rateHint")}</small>
         </label>
 
         {!compact && (
           <fieldset className="field span-2 boosts">
-            <legend>Boosts <em>(optional)</em></legend>
+            <legend>{t("char.boosts")} <em>{t("common.optional")}</em></legend>
             <label className="check boost-row">
               <input type="checkbox" checked={!!character.bedBoost} onChange={(e) => set("bedBoost", e.target.checked)} />
               <span className="boost-icon" aria-hidden>🛏️</span>
               <span>
-                Use my free daily bed boost
-                <small>2 hours of EXP once a day, after each daily reset.</small>
+                {t("char.bed")}
+                <small>{t("char.bedHint")}</small>
               </span>
             </label>
             {character.bedBoost && (
               <label className="check boost-sub">
                 <input type="checkbox" checked={character.bedToday !== false} onChange={(e) => set("bedToday", e.target.checked)} />
                 <span>
-                  Include today's boost
-                  <small>Untick if you've already used it since the last reset.</small>
+                  {t("char.bedToday")}
+                  <small>{t("char.bedTodayHint")}</small>
                 </span>
               </label>
             )}
             <label className="boost-row crystals">
               <img src={`${import.meta.env.BASE_URL}art/items/item_120.png`} alt="" className="boost-icon" />
               <span>
-                Temporal Crystals to use
-                <small>Each grants 2 hours of EXP instantly.</small>
+                {t("char.crystals")}
+                <small>{t("char.crystalsHint")}</small>
               </span>
               <input
                 inputMode="numeric"
-                aria-label="Temporal Crystals to use"
+                aria-label={t("char.crystals")}
                 value={character.crystals ?? ""}
                 onChange={(e) => set("crystals", e.target.value)}
                 placeholder="0"
@@ -174,14 +174,14 @@ export function CharacterForm({ character, onChange, onReset, table, compact, re
 
         {!compact && (
           <label className="field span-2">
-            <span>Goal level <em>(optional)</em></span>
+            <span>{t("char.goal")} <em>{t("common.optional")}</em></span>
             <input
               inputMode="numeric"
               value={character.goalLevel}
               onChange={(e) => set("goalLevel", e.target.value)}
-              placeholder="e.g. 205"
+              placeholder={t("char.goalPh")}
             />
-            <small>Rough guide only: estimates more than a few levels out run long.</small>
+            <small>{t("char.goalHint")}</small>
           </label>
         )}
       </form>

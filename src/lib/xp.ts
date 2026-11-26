@@ -1,4 +1,5 @@
 import rawData from "../data/exp_required.json";
+import { formatLocale, readyText, unitText } from "../i18n/format";
 
 /** XP needed to go from each level to the next, for one season. */
 export interface SeasonTable {
@@ -113,7 +114,8 @@ export interface CalcResult {
   };
 }
 
-export type CalcOutcome = { ok: true; result: CalcResult } | { ok: false; error: string };
+/** `key` and `vars` let the page show the error in the chosen language; `error` is the English. */
+export type CalcOutcome = { ok: true; result: CalcResult } | { ok: false; error: string; key?: string; vars?: Record<string, string | number> };
 
 export function calculate(input: CalcInput): CalcOutcome {
   const { table, level, currentXp, xpPerHour, goalLevel } = input;
@@ -123,13 +125,15 @@ export function calculate(input: CalcInput): CalcOutcome {
     return {
       ok: false,
       error: `Season ${table.season} has XP data for levels ${table.minLevel}–${table.maxLevel}.`,
+      key: "err.seasonRange",
+      vars: { season: table.season, min: table.minLevel, max: table.maxLevel },
     };
   }
   if (!Number.isFinite(currentXp) || currentXp < 0) {
-    return { ok: false, error: "Enter your current XP as shown in game, like 4.13k or 1.52B." };
+    return { ok: false, error: "Enter your current XP as shown in game, like 4.13k or 1.52B.", key: "err.xp" };
   }
   if (!Number.isFinite(xpPerHour) || xpPerHour <= 0) {
-    return { ok: false, error: "Enter your XP per hour, like 150M." };
+    return { ok: false, error: "Enter your XP per hour, like 150M.", key: "err.rate" };
   }
 
   // More XP than the level needs means you're held at a level cap. Work out where that
@@ -169,6 +173,8 @@ export function calculate(input: CalcInput): CalcOutcome {
       return {
         ok: false,
         error: `The highest level in season ${table.season}'s data is ${table.maxLevel + 1}.`,
+        key: "err.maxLevel",
+        vars: { season: table.season, max: table.maxLevel + 1 },
       };
     }
     const steps: LevelStep[] = [];
@@ -206,15 +212,15 @@ export function parseAmount(value: string): number {
 /** "3d 4h 12m" style duration. */
 export function formatDuration(hours: number): string {
   if (!Number.isFinite(hours)) return "—";
-  if (hours <= 0) return "Ready now";
+  if (hours <= 0) return readyText();
   const totalMinutes = Math.ceil(hours * 60);
   const days = Math.floor(totalMinutes / 1440);
   const h = Math.floor((totalMinutes % 1440) / 60);
   const m = totalMinutes % 60;
   const parts: string[] = [];
-  if (days) parts.push(`${days.toLocaleString()}d`);
-  if (h) parts.push(`${h}h`);
-  if (m || parts.length === 0) parts.push(`${m}m`);
+  if (days) parts.push(unitText("d", days));
+  if (h) parts.push(unitText("h", h));
+  if (m || parts.length === 0) parts.push(unitText("m", m));
   return parts.join(" ");
 }
 
@@ -224,7 +230,7 @@ export function formatEta(hours: number, now: Date = new Date(), short = false):
   if (!Number.isFinite(hours)) return "—";
   const eta = new Date(now.getTime() + hours * 3_600_000);
   const sameYear = eta.getFullYear() === now.getFullYear();
-  return eta.toLocaleString(undefined, {
+  return eta.toLocaleString(formatLocale(), {
     ...(short ? {} : { weekday: "short" }),
     month: "short",
     day: "numeric",

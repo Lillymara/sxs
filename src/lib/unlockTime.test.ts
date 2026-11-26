@@ -14,7 +14,7 @@ describe("unlock times", () => {
     expect(countdown(2 * 3_600_000 + 14 * 60_000)).toBe("2h 14m");
     expect(countdown(3 * 3_600_000)).toBe("3h");
     expect(countdown(45 * 60_000)).toBe("45m");
-    expect(countdown(10_000)).toBe("under a minute");
+    expect(countdown(10_000)).toBe("<1m");
   });
 
   it("is not live before reset on its own day", () => {
