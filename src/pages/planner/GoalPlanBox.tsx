@@ -6,9 +6,12 @@ import type { Spend } from "../../lib/planner/optimize";
 import type { SlotCategory } from "../../lib/planner/score";
 import { formatXpShort } from "../../lib/xp";
 import { ASTRAL_PACT, PACT_BONUSES } from "../../data/astralPact";
+import { rich, useT } from "../../i18n";
+import type { MessageKey } from "../../i18n/en";
 
 const SPEND_LABELS: Record<Spend, string> = { ore: "Ore", rola: "Rola", essence: "Essence", sand: "Sand", fantomonExp: "Fantomon EXP" };
-const SYSTEM_LABELS: Record<SlotCategory, string> = { gear: "Gear", skill: "Skills", fantomon: "Fantomons", relic: "Relics" };
+/** System names in the chosen language (the planner summary's keys). */
+const sysLabel = (t: ReturnType<typeof useT>["t"], k: SlotCategory) => t(`sum.cat.${k}` as MessageKey);
 const ORDER: SlotCategory[] = ["gear", "skill", "fantomon", "relic"];
 
 const range = (levels: number[], plus: boolean) => {
@@ -33,12 +36,13 @@ export function GoalPlanBox({
   current: Record<SlotCategory, number[]>;
   onApply: (planned: Record<SlotCategory, number[]>) => void;
 }) {
+  const { t } = useT();
   const plan = result?.goalPlan;
   if (result && !plan && result.score.goal > 0) {
     return (
       <div className="goal-plan ok">
         <p className="goal-plan-head">
-          <b>Your goal is already covered</b> by the Primostars you have and the season's fixed ones.
+          {rich(t("gp.covered"))}
         </p>
       </div>
     );
@@ -47,8 +51,7 @@ export function GoalPlanBox({
     return (
       <div className="goal-plan muted">
         <p className="hint">
-          Enter <b>Primostars you have</b> and the <b>Total you want</b> above, and the planner will work out the cheapest way to get there with
-          the materials you'll have by season end.
+          {rich(t("gp.enter"))}
         </p>
       </div>
     );
@@ -62,12 +65,13 @@ export function GoalPlanBox({
   return (
     <div className={`goal-plan ${reaches ? "ok" : "short"}`}>
       <p className="goal-plan-head">
-        <b>{reaches ? "You can reach your goal" : `${Math.ceil(plan.pointsShort / star)} Primostars short of your goal`}</b>
-        {reaches
-          ? " with the materials you'll have by season end."
-          : plan.limitedBy === "caps"
-            ? ", with the upgrade levels this plan can use."
-            : `: ${SPEND_LABELS[plan.limitedBy as Spend] ?? "materials"} runs out first. This is what the suggested upgrades reach.`}
+        {rich(
+          reaches
+            ? t("gp.reach")
+            : plan.limitedBy === "caps"
+              ? t("gp.shortCaps", { n: Math.ceil(plan.pointsShort / star) })
+              : t("gp.shortMat", { n: Math.ceil(plan.pointsShort / star), mat: SPEND_LABELS[plan.limitedBy as Spend] ?? t("gp.materials") }),
+        )}
       </p>
       {!reaches && onSetGoal && (
         <LowerGoal reachable={plan.reachableTotal} goal={result.score.goal} onSetGoal={onSetGoal} />
@@ -76,7 +80,7 @@ export function GoalPlanBox({
         <ul className="goal-plan-list">
           {changed.map((k) => (
             <li key={k}>
-              <span><GameIcon name={k} /> {SYSTEM_LABELS[k]}</span>
+              <span><GameIcon name={k} /> {sysLabel(t, k)}</span>
               <span>
                 {range(current[k], k === "relic")} → <b>{range(plan.planned[k], k === "relic")}</b>
               </span>
@@ -84,22 +88,27 @@ export function GoalPlanBox({
           ))}
         </ul>
       ) : (
-        <p className="hint">{reaches ? "Your current levels already reach it." : "This route adds no upgrades with the current inputs."}</p>
+        <p className="hint">{reaches ? t("gp.alreadyReach") : t("gp.noUpgrades")}</p>
       )}
       <p className="hint">
-        Spends{" "}
-        {(Object.keys(plan.spent) as Spend[])
-          .filter((k) => plan.spent[k] > 0)
-          .map((k) => `${formatXpShort(plan.spent[k])} ${SPEND_LABELS[k]}`)
-          .join(", ") || "nothing"}
-        . Caps at your season-end level (Lv {level}): Skills {caps.skill ?? "—"}, Fantomons {caps.fantomon ?? "—"}, Relics +{caps.relic}.
+        {t("gp.spends", {
+          list:
+            (Object.keys(plan.spent) as Spend[])
+              .filter((k) => plan.spent[k] > 0)
+              .map((k) => `${formatXpShort(plan.spent[k])} ${SPEND_LABELS[k]}`)
+              .join(", ") || t("gp.nothing"),
+          lv: level,
+          skill: caps.skill ?? "—",
+          fantomon: caps.fantomon ?? "—",
+          relic: caps.relic ?? "—",
+        })}
       </p>
       {changed.length > 0 &&
         (ORDER.every((k) => plan.planned[k].every((v, i) => v === planned[k][i])) ? (
-          <p className="hint ok-text">✓ This plan is in use. Change it below if you like.</p>
+          <p className="hint ok-text">{t("gp.inUse")}</p>
         ) : (
           <button type="button" className="spin-button" onClick={() => onApply(plan.planned)}>
-            Use this plan
+            {t("gp.use")}
           </button>
         ))}
     </div>
@@ -107,47 +116,46 @@ export function GoalPlanBox({
 }
 
 export function StaminaGoalBox({ result }: { result: PlannerResult | null }) {
+  const { t, locale } = useT();
   const plan = result?.staminaPlan;
   const targets = (["ore", "rola", "essence", "sand"] as const).filter((key) => (plan?.gathers[key] ?? 0) > 0);
   const gathersUsed = targets.reduce((total, key) => total + (plan?.gathers[key] ?? 0), 0);
 
   return (
     <section className={`goal-plan${plan ? (plan.pointsShort > 0 ? " short" : " ok") : ""}`}>
-      <h3 className="subhead">Stamina plan for your goal</h3>
+      <h3 className="subhead">{t("gp.stTitle")}</h3>
       {!plan ? (
-        <p className="hint">{result && result.score.goal > 0 ? "Your projected score already covers this goal without gathering." : "Enter a Primostar goal and season details to get gathering recommendations."}</p>
+        <p className="hint">{result && result.score.goal > 0 ? t("gp.stCovered") : t("gp.stEnter")}</p>
       ) : (
         <>
           <p className="goal-plan-head">
             <b>{plan.capped
-              ? "Your goal is above the maximum score allowed by your projected level caps."
+              ? t("gp.stCapped")
               : plan.pointsShort > 0
-              ? `No route found to your goal. This route projects ${plan.reachableTotal.toLocaleString()} of ${(result?.score.goal ?? 0).toLocaleString()} Primostars.`
-              : gathersUsed > 0 ? "This gathering plan can reach your goal." : "You can reach your goal without spending stamina on gathering."}</b>
+              ? t("gp.stNoRoute", { n: plan.reachableTotal.toLocaleString(locale), goal: (result?.score.goal ?? 0).toLocaleString(locale) })
+              : gathersUsed > 0 ? t("gp.stCan") : t("gp.stNoNeed")}</b>
           </p>
           {targets.length > 0 && (
             <ul className="goal-plan-list">
               {targets.map((key) => (
                 <li key={key}>
                   <span>{SPEND_LABELS[key]}</span>
-                  <span><b>{plan.gathers[key].toLocaleString()} gathers</b> · {(plan.gathers[key] * STAMINA_PER_GATHER).toLocaleString()} stamina</span>
+                  <span>{rich(t("gp.gathers", { n: plan.gathers[key].toLocaleString(locale), stamina: (plan.gathers[key] * STAMINA_PER_GATHER).toLocaleString(locale) }))}</span>
                 </li>
               ))}
             </ul>
           )}
           <p className="hint">
-            Uses <b>{(gathersUsed * STAMINA_PER_GATHER).toLocaleString()}</b> of <b>{(plan.available * STAMINA_PER_GATHER).toLocaleString()}</b> stamina available for whole gathers by season end.
-            Each gather costs {STAMINA_PER_GATHER}.
+            {rich(t("gp.stUses", { used: (gathersUsed * STAMINA_PER_GATHER).toLocaleString(locale), avail: (plan.available * STAMINA_PER_GATHER).toLocaleString(locale), n: STAMINA_PER_GATHER }))}
           </p>
           {plan.pointsAdded > 0 && (
             <p className="hint">
-              Target levels for this route{" "}
-              {ORDER.map((key) => `${SYSTEM_LABELS[key]} ${range(plan.planned[key], key === "relic")}`).join(" · ")}
+              {t("gp.targets", { list: ORDER.map((key) => `${sysLabel(t, key)} ${range(plan.planned[key], key === "relic")}`).join(" · ") })}
             </p>
           )}
           <p className="hint">
-            Uses your projected income and configured Realm runs, with expected gathering yields. This estimate uses its own stamina split and leaves out extra Home Shop purchases.
-            {plan.pointsShort > 0 && !plan.capped && " Other upgrade combinations or income may still close the gap."}
+            {t("gp.stNote")}
+            {plan.pointsShort > 0 && !plan.capped && t("gp.stGap")}
           </p>
         </>
       )}
@@ -157,27 +165,28 @@ export function StaminaGoalBox({ result }: { result: PlannerResult | null }) {
 
 /** When the goal is out of reach: lower it to the most the materials reach, or the best Astral Pact tier below that. */
 function LowerGoal({ reachable, goal, onSetGoal }: { reachable: number; goal: number; onSetGoal: (stars: number) => void }) {
+  const { t, locale } = useT();
   const tier = [...ASTRAL_PACT].reverse().find(([s]) => s <= reachable && s < goal);
   return (
     <div className="goal-lower">
       <p className="hint">
-        This route reaches about <b>{reachable.toLocaleString()}</b> Primostars.
+        {rich(t("gp.reaches", { n: reachable.toLocaleString(locale) }))}
         {tier && (
           <>
             {" "}
-            The highest Astral Pact bonus within that is at <b>{tier[0].toLocaleString()}</b> ({PACT_BONUSES[tier[1]].label} +{PACT_BONUSES[tier[1]].amount}%).
+            {rich(t("gp.tier", { n: tier[0].toLocaleString(locale), bonus: `${PACT_BONUSES[tier[1]].label} +${PACT_BONUSES[tier[1]].amount}%` }))}
           </>
         )}
       </p>
       <div className="goal-lower-buttons">
         {tier && (
           <button type="button" className="fill-btn" onClick={() => onSetGoal(tier[0])}>
-            Lower goal to {tier[0].toLocaleString()} (Astral Pact)
+            {t("gp.lowerPact", { n: tier[0].toLocaleString(locale) })}
           </button>
         )}
         {(!tier || tier[0] !== reachable) && reachable < goal && (
           <button type="button" className="fill-btn" onClick={() => onSetGoal(reachable)}>
-            Lower goal to {reachable.toLocaleString()} (this route)
+            {t("gp.lowerRoute", { n: reachable.toLocaleString(locale) })}
           </button>
         )}
       </div>

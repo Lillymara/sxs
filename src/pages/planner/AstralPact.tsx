@@ -3,22 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import { GameIcon } from "../../components/GameIcon";
 import { ASTRAL_PACT, PACT_BONUSES, pactProgress, pactTotals, type PactBonus } from "../../data/astralPact";
+import { rich, useT } from "../../i18n";
+import type { MessageKey } from "../../i18n/en";
 
 /** Game icon beside each bonus: the gem for each stat, and the season badges for EXP and gear. */
 const PACT_ICON: Partial<Record<PactBonus, string>> = { ATK: "ruby", DEF: "sapphire", HP: "beryl", SPD: "citrine", GEM: "moonstone", EXP: "character", GEAR: "gear" };
 const BonusIcon = ({ b }: { b: PactBonus }) => (PACT_ICON[b] ? <GameIcon name={PACT_ICON[b]!} /> : null);
 const fmt = (x: number) => Math.round(x).toLocaleString();
 const ORDER: PactBonus[] = ["ATK", "DEF", "HP", "SPD", "EXP", "GEM", "GEAR", "X2"];
-const SHORT: Record<PactBonus, string> = {
-  ATK: "ATK",
-  DEF: "DEF",
-  HP: "HP",
-  SPD: "SPD",
-  EXP: "EXP gain",
-  GEM: "Gem drops",
-  GEAR: "Gear ascension",
-  X2: "2x rating reward",
-};
+type T = ReturnType<typeof useT>["t"];
+/** Short bonus names: the stat names stay as in game, the rest are translated. */
+const short = (t: T, b: PactBonus) => (["ATK", "DEF", "HP", "SPD"].includes(b) ? b : t(`ap.${b}` as MessageKey));
+const bonusText = (t: T, b: PactBonus) => `${short(t, b)} +${PACT_BONUSES[b].amount}%`;
 
 interface Props {
   /** Primostars filled before this season. */
@@ -31,22 +27,23 @@ interface Props {
 }
 
 export function AstralPactSummary(props: Props) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const { projected } = props;
   const { unlocked, next } = pactProgress(projected);
   return (
     <div className="pact-line">
       <p>
-        <span aria-hidden>🌌</span> <b>Astral Pact:</b> {fmt(projected)} Primostars unlock <b>{unlocked}</b> of {ASTRAL_PACT.length} bonuses.
+        <span aria-hidden>🌌</span> {rich(t("ap.line", { n: fmt(projected), unlocked, total: ASTRAL_PACT.length }))}
         {next && (
           <>
             {" "}
-            Next at <b>{fmt(next[0])}</b> ({SHORT[next[1]]} +{PACT_BONUSES[next[1]].amount}%), {fmt(next[0] - projected)} more.
+            {rich(t("ap.next", { n: fmt(next[0]), bonus: bonusText(t, next[1]), more: fmt(next[0] - projected) }))}
           </>
         )}
       </p>
       <button type="button" className="link-button" onClick={() => setOpen(true)}>
-        See all bonuses
+        {t("ap.seeAll")}
       </button>
       {open && <AstralPactDialog {...props} onClose={() => setOpen(false)} />}
     </div>
@@ -54,16 +51,15 @@ export function AstralPactSummary(props: Props) {
 }
 
 /** The goal field's hint: the next bonus at or above the goal. */
-export function pactGoalHint(goal: number): string | null {
+export function pactGoalHint(goal: number, t: T): string | null {
   if (!(goal > 0)) return null;
   const at = ASTRAL_PACT.find(([s]) => s >= goal);
-  if (!at) return "Past the last Astral Pact bonus.";
-  return at[0] === goal
-    ? `Unlocks the Astral Pact's ${SHORT[at[1]]} +${PACT_BONUSES[at[1]].amount}%.`
-    : `The next Astral Pact bonus is at ${fmt(at[0])} (${SHORT[at[1]]} +${PACT_BONUSES[at[1]].amount}%).`;
+  if (!at) return t("ap.past");
+  return at[0] === goal ? t("ap.unlocks", { bonus: bonusText(t, at[1]) }) : t("ap.nextAt", { n: fmt(at[0]), bonus: bonusText(t, at[1]) });
 }
 
 function AstralPactDialog({ have, projected, goal, onPickGoal, onClose }: Props & { onClose: () => void }) {
+  const { t } = useT();
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const d = ref.current;
@@ -92,28 +88,25 @@ function AstralPactDialog({ have, projected, goal, onPickGoal, onClose }: Props 
             <span aria-hidden>🌌</span> Astral Pact
           </h2>
           <button type="button" className="link-button" onClick={() => ref.current?.close()}>
-            Close
+            {t("ap.close")}
           </button>
         </div>
-        <p className="hint">
-          Permanent bonuses for the total Primostars you've filled across every season. This is why some totals are worth aiming for: the
-          bonus only arrives once the whole amount is filled.
-        </p>
+        <p className="hint">{t("ap.intro")}</p>
         <div className="pact-totals">
           {ORDER.map((b) => (
             <div key={b}>
-              <span><BonusIcon b={b} /> {SHORT[b]}</span>
+              <span><BonusIcon b={b} /> {short(t, b)}</span>
               <b>
-                +{end[b]}%{end[b] > now[b] && <small> (+{end[b] - now[b]} this season)</small>}
+                +{end[b]}%{end[b] > now[b] && <small> {t("ap.thisSeasonPlus", { n: end[b] - now[b] })}</small>}
               </b>
             </div>
           ))}
         </div>
         <p className="pact-key">
-          <span className="pact-dot have" /> Already yours ({fmt(have)}) <span className="pact-dot season" /> This season (to {fmt(projected)})
+          <span className="pact-dot have" /> {t("ap.yours", { n: fmt(have) })} <span className="pact-dot season" /> {t("ap.season", { n: fmt(projected) })}
           {goal > 0 && (
             <>
-              <span className="pact-dot goal" /> Your goal ({fmt(goal)})
+              <span className="pact-dot goal" /> {t("ap.goal", { n: fmt(goal) })}
             </>
           )}
         </p>
@@ -121,10 +114,10 @@ function AstralPactDialog({ have, projected, goal, onPickGoal, onClose }: Props 
           <table className="pact-table">
             <thead>
               <tr>
-                <th scope="col" title="Total Primostars filled">Total</th>
-                <th scope="col">Bonus</th>
+                <th scope="col" title={t("ap.totalTitle")}>{t("ap.total")}</th>
+                <th scope="col">{t("ap.bonus")}</th>
                 <th scope="col">
-                  <span className="sr-only">Status</span>
+                  <span className="sr-only">{t("ap.status")}</span>
                 </th>
               </tr>
             </thead>
@@ -141,7 +134,7 @@ function AstralPactDialog({ have, projected, goal, onPickGoal, onClose }: Props 
                       {state === "have" ? (
                         "✓"
                       ) : state === "season" ? (
-                        "This season"
+                        t("ap.thisSeason")
                       ) : onPickGoal ? (
                         <button
                           type="button"
@@ -151,10 +144,10 @@ function AstralPactDialog({ have, projected, goal, onPickGoal, onClose }: Props 
                             ref.current?.close();
                           }}
                         >
-                          {stars === goal ? "Goal" : "Aim for this"}
+                          {stars === goal ? t("ap.goalWord") : t("ap.aim")}
                         </button>
                       ) : (
-                        `${fmt(stars - projected)} more`
+                        t("ap.more", { n: fmt(stars - projected) })
                       )}
                     </td>
                   </tr>
@@ -163,7 +156,7 @@ function AstralPactDialog({ have, projected, goal, onPickGoal, onClose }: Props 
             </tbody>
           </table>
         </div>
-        <p className="hint">From the game's Astral Pact screen. Tap "Aim for this" to make that total your planner goal.</p>
+        <p className="hint">{t("ap.foot")}</p>
       </div>
     </dialog>
   );

@@ -5,15 +5,18 @@ import { formatXpShort } from "../../lib/xp";
 import { AstralPactSummary } from "./AstralPact";
 import { PrimoBar } from "./PrimoBar";
 import { CountUp } from "../../components/CountUp";
+import { rich, useT } from "../../i18n";
+import type { MessageKey } from "../../i18n/en";
 
 const fmt = (x: number) => Math.round(x).toLocaleString();
 const short = (x: number) => formatXpShort(Math.round(x));
-const when = (d: Date | null, now: Date) =>
+const when = (d: Date | null, now: Date, { t, locale }: ReturnType<typeof useT>) =>
   d === null
-    ? "not by season end"
+    ? t("sum.notByEnd")
     : d <= now
-      ? "now"
-      : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      ? t("sum.nowWord")
+      : d.toLocaleString(locale, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const noWhite = (label: string) => label.replace(" (White eq.)", "");
 
 export function Summary({
   result,
@@ -27,6 +30,8 @@ export function Summary({
   /** The plan as a message for Discord. */
   share?: string;
 }) {
+  const i18n = useT();
+  const { t } = i18n;
   if (!result) return null;
 
   const { score, costs, materials, rule } = result;
@@ -35,51 +40,49 @@ export function Summary({
 
   return (
     <section className="card results" aria-live="polite">
-      <p className="eyebrow">Season {rule.season} projection</p>
+      <p className="eyebrow">{t("sum.projection", { n: rule.season })}</p>
       <div className="proj-big">
         <span className="proj-num">
           <CountUp text={`+${fmt(score.earned)}`} />
         </span>
         <span className="proj-label">
           <span><GameIcon name="primostar" /> Primostars</span>
-          <small>a floor, not a forecast</small>
+          <small>{t("sum.floor")}</small>
         </span>
       </div>
       <p className="eta">
-        {score.fixedStars} fixed + {fmt(score.starsFromScore)} earned · total {fmt(score.projectedTotal)}
-        {score.rating && <> · rating {score.rating}</>}
+        {t("sum.breakdown", { fixed: score.fixedStars, earned: fmt(score.starsFromScore), total: fmt(score.projectedTotal) })}
+        {score.rating && <> · {t("sum.rating", { r: score.rating })}</>}
       </p>
       <PrimoBar have={score.projectedTotal - score.earned} projected={score.projectedTotal} goal={score.goal} />
       {share && <CopyButton text={share} />}
       <AstralPactSummary have={score.projectedTotal - score.earned} projected={score.projectedTotal} goal={score.goal} onPickGoal={onPickGoal} />
       {goalSet &&
         (score.difference >= 0 ? (
-          <p className="note good">Goal of {fmt(score.goal)} reached, with {fmt(score.difference)} to spare.</p>
+          <p className="note good">{t("sum.goalReached", { goal: fmt(score.goal), n: fmt(score.difference) })}</p>
         ) : (
-          <p className="note warn">
-            {fmt(short_)} short of {fmt(score.goal)}. About {fmt(short_ * rule.pointsPerStar)} more points needed.
-          </p>
+          <p className="note warn">{t("sum.goalShort", { n: fmt(short_), goal: fmt(score.goal), points: fmt(short_ * rule.pointsPerStar) })}</p>
         ))}
 
       <ul className="proj-systems">
         {score.categories.map((c) => (
           <li key={c.key}>
             <span>
-              <GameIcon name={c.key} /> {c.label}
+              <GameIcon name={c.key} /> {t(`sum.cat.${c.key}` as MessageKey)}
             </span>
-            <span className="proj-lv">{c.key === "character" ? c.seasonLevels.toFixed(1) : fmt(c.seasonLevels)} lv</span>
-            <span className="proj-pts">{fmt(c.points)} pts</span>
+            <span className="proj-lv">{t("sum.lv", { n: c.key === "character" ? c.seasonLevels.toFixed(1) : fmt(c.seasonLevels) })}</span>
+            <span className="proj-pts">{t("sum.pts", { n: fmt(c.points) })}</span>
           </li>
         ))}
         <li className="proj-total">
-          <span>Total</span>
+          <span>{t("sum.total")}</span>
           <span />
-          <span className="proj-pts">{fmt(score.total)} pts</span>
+          <span className="proj-pts">{t("sum.pts", { n: fmt(score.total) })}</span>
         </li>
       </ul>
-      <p className="hint">Levels above the season floor, times each system's points per level. 1 Primostar per {rule.pointsPerStar} points.</p>
+      <p className="hint">{t("sum.scoreHint", { n: rule.pointsPerStar })}</p>
 
-      <h3 className="subhead">Upgrade costs</h3>
+      <h3 className="subhead">{t("sum.costs")}</h3>
       <dl className="stats two">
         <div><dt>Ore</dt><dd>{short(costs.ore)}</dd></div>
         <div><dt>Rola</dt><dd>{short(costs.rola)}</dd></div>
@@ -93,26 +96,26 @@ export function Summary({
       </dl>
       {Object.entries(costs.unknownFrom).some(([, v]) => v !== undefined) && (
         <p className="note warn">
-          Some planned levels have no cost data yet (
-          {Object.entries(costs.unknownFrom)
-            .filter(([, v]) => v !== undefined)
-            .map(([k, v]) => `${k} from ${v}`)
-            .join(", ")}
-          ). Those steps aren't counted.
+          {t("sum.noCostData", {
+            list: Object.entries(costs.unknownFrom)
+              .filter(([, v]) => v !== undefined)
+              .map(([k, v]) => t("sum.fromLv", { name: k, lv: String(v) }))
+              .join(", "),
+          })}
         </p>
       )}
 
-      <h3 className="subhead">Material balance by season end</h3>
+      <h3 className="subhead">{t("sum.balance")}</h3>
       <div className="table-wrap flat">
         <table className="balance">
           <thead>
             <tr>
               <th scope="col"></th>
-              <th scope="col">Need</th>
-              <th scope="col">Income</th>
-              <th scope="col">Realms</th>
-              <th scope="col">Shop</th>
-              <th scope="col">Left</th>
+              <th scope="col">{t("sum.need")}</th>
+              <th scope="col">{t("sum.income")}</th>
+              <th scope="col">{t("sum.realms")}</th>
+              <th scope="col">{t("sum.shop")}</th>
+              <th scope="col">{t("sum.left")}</th>
             </tr>
           </thead>
           <tbody>
@@ -148,16 +151,17 @@ export function Summary({
         </table>
       </div>
       <p className="hint">
-        Income is what you have plus Cart, gathering and daily Rola. What's still short is covered by the Realm runs you'll have, then the Home
-        Shop, which only spends Rola you have spare. Green is spare; red still needs finding. Sand is in White Sand. Refined Ore counts what you have plus 4 map gathers a day (about 117 each); Ore Realms give more, so it's rarely short.
+        {t("sum.balanceHint")}
         {(() => {
           const shopRola = materials.reduce((a, m) => a + m.shopRola, 0);
           return shopRola > 0 || result.shopRefreshRolaPerDay > 0 ? (
             <>
               {" "}
-              Rola need includes <b>{short(shopRola)}</b> for shop buys
-              {result.shopRefreshRolaPerDay > 0 && <> and {short(result.shopRefreshRolaPerDay * result.time.resets.length)} for refreshes</>}
-.
+              {rich(
+                result.shopRefreshRolaPerDay > 0
+                  ? t("sum.shopRolaRefresh", { n: short(shopRola), refresh: short(result.shopRefreshRolaPerDay * result.time.resets.length) })
+                  : t("sum.shopRola", { n: short(shopRola) }),
+              )}
             </>
           ) : null;
         })()}
@@ -169,36 +173,36 @@ export function Summary({
         return (
           <>
             {result.realmEntriesNeeded === null ? (
-              <p className="note warn">Realm yields are unknown for this season, so Realm runs can't be worked out.</p>
+              <p className="note warn">{t("sum.realmUnknown")}</p>
             ) : realmLines.length === 0 ? (
-              <p className="note good">No Material Realm runs needed. Income covers the plan.</p>
+              <p className="note good">{t("sum.noRealms")}</p>
             ) : (
               <ul className="ready-list">
                 {realmLines.map((m) => (
                   <li key={m.key}>
-                    <span>{m.label.replace(" (White eq.)", "")} Realm runs</span>
+                    <span>{t("sum.realmRuns", { name: noWhite(m.label) })}</span>
                     <span className={m.entriesLeft !== null && m.entriesLeft < 0 ? "bad" : undefined}>
-                      {fmt(m.realmEntriesNeeded ?? 0)} needed / {fmt(m.entriesAvailable ?? 0)} tools
+                      {t("sum.neededTools", { need: fmt(m.realmEntriesNeeded ?? 0), tools: fmt(m.entriesAvailable ?? 0) })}
                     </span>
                   </li>
                 ))}
               </ul>
             )}
-            {treats && treats.balance < -0.5 && <p className="note warn">{fmt(-treats.balance)} more treats needed for the Fantomon plan.</p>}
+            {treats && treats.balance < -0.5 && <p className="note warn">{t("sum.moreTreats", { n: fmt(-treats.balance) })}</p>}
           </>
         );
       })()}
 
       {materials.some((m) => m.need > 0 && !m.unknownCost) && (
         <>
-          <h3 className="subhead">Covered by passive income</h3>
+          <h3 className="subhead">{t("sum.passive")}</h3>
           <ul className="ready-list">
             {materials
               .filter((m) => m.need > 0 && !m.unknownCost)
               .map((m) => (
                 <li key={m.key}>
                   <span>{m.label}</span>
-                  <span>{when(m.readyAt, now)}</span>
+                  <span>{when(m.readyAt, now, i18n)}</span>
                 </li>
               ))}
           </ul>
@@ -206,10 +210,10 @@ export function Summary({
       )}
 
       <dl className="stats two">
-        <div><dt>Dawnium / day</dt><dd>{fmt(result.dawniumPerDay)}</dd></div>
-        <div><dt>Stamina this season</dt><dd>{fmt(result.stamina)}</dd></div>
-        {result.rolaBoughtPerDay > 0 && <div><dt>Rola bought / day</dt><dd>{short(result.rolaBoughtPerDay)}</dd></div>}
-        {result.shopRefreshRolaPerDay > 0 && <div><dt>Shop refreshes / day</dt><dd>{short(result.shopRefreshRolaPerDay)} Rola</dd></div>}
+        <div><dt>{t("sum.dawniumDay")}</dt><dd>{fmt(result.dawniumPerDay)}</dd></div>
+        <div><dt>{t("sum.stamina")}</dt><dd>{fmt(result.stamina)}</dd></div>
+        {result.rolaBoughtPerDay > 0 && <div><dt>{t("sum.rolaBought")}</dt><dd>{short(result.rolaBoughtPerDay)}</dd></div>}
+        {result.shopRefreshRolaPerDay > 0 && <div><dt>{t("sum.shopRefreshes")}</dt><dd>{short(result.shopRefreshRolaPerDay)} Rola</dd></div>}
       </dl>
     </section>
   );
@@ -217,6 +221,7 @@ export function Summary({
 
 /** Copies the plan, then says so for a moment. */
 function CopyButton({ text }: { text: string }) {
+  const { t } = useT();
   const [done, setDone] = useState<"" | "copied" | "failed">("");
   return (
     <div className="share-row">
@@ -231,10 +236,10 @@ function CopyButton({ text }: { text: string }) {
             .finally(() => setTimeout(() => setDone(""), 2500));
         }}
       >
-        📋 Copy my plan for Discord
+        {t("sum.copy")}
       </button>
-      {done === "copied" && <span className="ok-text">Copied. Paste it into Discord.</span>}
-      {done === "failed" && <span className="bad">Couldn't copy here. Select the text below instead.</span>}
+      {done === "copied" && <span className="ok-text">{t("sum.copied")}</span>}
+      {done === "failed" && <span className="bad">{t("sum.copyFailed")}</span>}
       {done === "failed" && <textarea className="share-text" readOnly value={text} rows={7} />}
     </div>
   );
@@ -242,10 +247,11 @@ function CopyButton({ text }: { text: string }) {
 
 /** A thin bar under a material: how much of what the plan needs is covered. */
 function Covered({ have, need }: { have: number; need: number }) {
+  const { t } = useT();
   if (!(need > 0)) return null;
   const share = Math.min(1, have / need);
   return (
-    <span className={`covered${share < 0.999 ? " short" : ""}`} title={`${Math.round(share * 100)}% covered`}>
+    <span className={`covered${share < 0.999 ? " short" : ""}`} title={t("sum.covered", { n: Math.round(share * 100) })}>
       <span style={{ width: `${Math.round(share * 100)}%` }} />
     </span>
   );

@@ -251,7 +251,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                 value={form.primostarGoal}
                 onChange={(v) => set("primostarGoal", v)}
                 placeholder="0"
-                hint={pactGoalHint(Number(form.primostarGoal)) ?? tr("pl.wantHint")}
+                hint={pactGoalHint(Number(form.primostarGoal), tr) ?? tr("pl.wantHint")}
               />
               <Field
                 className="span-2"
