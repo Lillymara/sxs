@@ -30,6 +30,7 @@ import { ProgressLog, addSnapshot, type Snapshot } from "./ProgressLog";
 import { usePersistentState } from "../../lib/storage";
 import { pactGoalHint } from "./AstralPact";
 import { applyFound } from "./fromScreens";
+import { fixed, formatLocale } from "../../i18n/format";
 
 interface Props {
   character: Character;
@@ -54,7 +55,7 @@ const MATERIAL_LABELS: Record<Material, string> = {
 };
 /** In the order the Cart screen lists them. */
 const CART_ORDER: Material[] = ["rola", "ore", "essence", "sand", "treats"];
-const fmt = (x: number) => Math.round(x).toLocaleString();
+const fmt = (x: number) => Math.round(x).toLocaleString(formatLocale());
 
 type SlotField = "gear" | "skills" | "fantomons" | "relics";
 const SYSTEMS: { field: SlotField; key: SlotCategory; label: string; icon: string; material: string; noun: string; one: string; plus?: boolean }[] = [
@@ -342,7 +343,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
             />
             {result?.character.ok && (
               <p className="pcard-foot">
-                {rich(tr("pl.projected", { lv: result.character.decimalLevel.toFixed(2) }))}
+                {rich(tr("pl.projected", { lv: fixed(result.character.decimalLevel, 2) }))}
                 {t && <> · {tr("pl.expHours", { n: fmt(t.xpHours) })}</>}
               </p>
             )}
@@ -782,7 +783,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
           document.getElementById("summary")?.scrollIntoView({ behavior: "smooth" });
         }}>
           <b>{tr("pl.barStars", { n: result.score.earned.toLocaleString(locale) })}</b>
-          {result.character.ok && <span>Lv {result.character.decimalLevel.toFixed(2)}</span>}
+          {result.character.ok && <span>{tr("lg.lv", { lv: fixed(result.character.decimalLevel, 2) })}</span>}
           <span>
             {result.realmEntriesNeeded === null ? tr("pl.realmsUnknown") : tr("pl.barRealms", { n: result.realmEntriesNeeded.toLocaleString(locale) })}
           </span>

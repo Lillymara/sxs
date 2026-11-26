@@ -1,6 +1,7 @@
 // Interactive world map drawn from client map data.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePersistentState } from "../../lib/storage";
+import { formatLocale } from "../../i18n/format";
 
 type Rect = [number, number, number, number, string, number?];
 interface Wheel {
@@ -872,7 +873,7 @@ function LuckyWheel({
               .map(([itemId, qty]) => (
                 <li key={itemId} className="reward with-icon">
                   {items[itemId]?.icon && <img className="skill-icon small" src={iconUrl(items[itemId].icon)} alt="" />}
-                  {name(itemId)} <b>×{qty.toLocaleString()}</b>
+                  {name(itemId)} <b>×{qty.toLocaleString(formatLocale())}</b>
                 </li>
               ))}
           </ul>

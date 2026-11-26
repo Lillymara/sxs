@@ -1,5 +1,6 @@
 // Skill and Fantomon detail math for the Skills Overview, Skills Conversion and Fantomons tools.
 import { nearest, type GameData, type Props, type Quality } from "./gamedata";
+import { formatLocale } from "../i18n/format";
 
 /** Skill rank range covered by each grade. */
 export const GRADE_RANKS: Record<string, [number, number]> = {
@@ -186,5 +187,5 @@ export type Explorer = ReturnType<typeof createExplorer>;
 /** "45% ATK + 1,234 fixed" or "12.5%" for a detail row. */
 export function rowText(r: DetailRow): string {
   if (r.kind === "passive" || r.pct === undefined) return `${(r.value ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}${r.unit ?? ""}`;
-  return `${r.pct.toFixed(2).replace(/\.00$/, "")}% ${r.source}${r.fixed ? ` + ${r.fixed.toLocaleString()} fixed` : ""}`;
+  return `${r.pct.toFixed(2).replace(/\.00$/, "")}% ${r.source}${r.fixed ? ` + ${r.fixed.toLocaleString(formatLocale())} fixed` : ""}`;
 }

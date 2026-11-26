@@ -2,8 +2,9 @@
 // along the way, so it's clear how far the next bonus is.
 import { ASTRAL_PACT, PACT_BONUSES } from "../../data/astralPact";
 import { useT } from "../../i18n";
+import { formatLocale } from "../../i18n/format";
 
-const fmt = (x: number) => Math.round(x).toLocaleString();
+const fmt = (x: number) => Math.round(x).toLocaleString(formatLocale());
 
 export function PrimoBar({ have, projected, goal }: { have: number; projected: number; goal: number }) {
   const { t } = useT();

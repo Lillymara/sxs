@@ -2,6 +2,7 @@
 // against a steady pace from the first snapshot to the goal at season end.
 import type { PlannerResult } from "../../lib/planner/plan";
 import { rich, useT } from "../../i18n";
+import { fixed, formatLocale } from "../../i18n/format";
 
 export interface Snapshot {
   /** ISO date-time. */
@@ -12,7 +13,7 @@ export interface Snapshot {
 }
 
 const DAY = 86_400_000;
-const fmt = (x: number) => Math.round(x).toLocaleString();
+const fmt = (x: number) => Math.round(x).toLocaleString(formatLocale());
 const dateLabel = (t: number) => new Date(t).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 /** Adds a snapshot, replacing one from the same day, and keeping only this season's. */
@@ -91,7 +92,7 @@ export function ProgressLog({ result, log, onLog, onClear }: { result: PlannerRe
             {entries.map((e) => (
               <circle key={e.at} cx={x(Date.parse(e.at))} cy={y(e.points)} r={3.5} className="dot">
                 <title>
-                  {t("lg.point", { date: dateLabel(Date.parse(e.at)), n: fmt(e.points), lv: e.level.toFixed(1) })}
+                  {t("lg.point", { date: dateLabel(Date.parse(e.at)), n: fmt(e.points), lv: fixed(e.level, 1) })}
                 </title>
               </circle>
             ))}
@@ -110,7 +111,7 @@ export function ProgressLog({ result, log, onLog, onClear }: { result: PlannerRe
               .map((e) => (
                 <li key={e.at}>
                   <span>{dateLabel(Date.parse(e.at))}</span>
-                  <span>{t("lg.lv", { lv: e.level.toFixed(1) })}</span>
+                  <span>{t("lg.lv", { lv: fixed(e.level, 1) })}</span>
                   <b>{t("lg.pts", { n: fmt(e.points) })}</b>
                 </li>
               ))}

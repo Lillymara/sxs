@@ -4,6 +4,7 @@ import { GameIcon } from "../../components/GameIcon";
 import { AVOID, LEFTOVER_PULLS, PRIORITIES, PULLS_REMINDER, REALM_PRESETS, ROLA_TIPS } from "../../data/dawnium";
 import { DAWNIUM_REFRESH_COSTS, ENTRIES_PER_REFRESH } from "../../data/seasons";
 import { usePersistentState } from "../../lib/storage";
+import { formatLocale } from "../../i18n/format";
 
 const REALMS = [
   ["ore", "Ore"],
@@ -79,7 +80,7 @@ function RealmPlanner() {
               />
             ))}
             <span className="realm-cost">
-              <CountUp text={costOf(plan[k]).toLocaleString()} />
+              <CountUp text={costOf(plan[k]).toLocaleString(formatLocale())} />
             </span>
           </div>
         ))}
@@ -98,8 +99,8 @@ function RealmPlanner() {
       </div>
 
       <dl className="realm-totals">
-        <div><dt>Dawnium / day</dt><dd><CountUp text={perDay.toLocaleString()} /></dd></div>
-        <div><dt>Per week</dt><dd><CountUp text={(perDay * 7).toLocaleString()} /></dd></div>
+        <div><dt>Dawnium / day</dt><dd><CountUp text={perDay.toLocaleString(formatLocale())} /></dd></div>
+        <div><dt>Per week</dt><dd><CountUp text={(perDay * 7).toLocaleString(formatLocale())} /></dd></div>
         <div><dt>Extra entries</dt><dd><CountUp text={String(entries)} /></dd></div>
       </dl>
       <p className="hint">On top of the 5 free entries per Realm from the daily quest.</p>

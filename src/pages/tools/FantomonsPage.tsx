@@ -11,6 +11,7 @@ import { usePersistentState } from "../../lib/storage";
 import { effectiveDay1 } from "../calendar/server";
 import type { ToolProps } from "./props";
 import { GlossaryText, Loading, useExplorer } from "./shared";
+import { formatLocale } from "../../i18n/format";
 
 export function FantomonsPage(props: ToolProps) {
   const { explorer, error } = useExplorer();
@@ -235,7 +236,7 @@ function Profile({ pet, detail, availState }: { pet: FantomonView; detail?: stri
             <div key={s.key} className="fm-stat">
               <GameIcon name={s.icon} />
               <span className="fm-stat-label">{s.label}</span>
-              <b>{v.toLocaleString()}</b>
+              <b>{v.toLocaleString(formatLocale())}</b>
               <span className="meter" aria-hidden>
                 <span style={{ width: `${pct}%` }} />
               </span>
@@ -323,7 +324,7 @@ function FantasmiaMeter({ f }: { f: { cap: number; initial: number; perTurn: num
         ))}
       </span>
       <small>
-        Starts at {f.initial.toLocaleString()} of {f.cap.toLocaleString()} · +{f.perTurn} a turn · +{f.perDmg} for each hit taken
+        Starts at {f.initial.toLocaleString(formatLocale())} of {f.cap.toLocaleString(formatLocale())} · +{f.perTurn} a turn · +{f.perDmg} for each hit taken
       </small>
     </div>
   );

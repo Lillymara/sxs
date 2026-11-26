@@ -5,11 +5,12 @@ import { GameIcon } from "../../components/GameIcon";
 import { ASTRAL_PACT, PACT_BONUSES, pactProgress, pactTotals, type PactBonus } from "../../data/astralPact";
 import { rich, useT } from "../../i18n";
 import type { MessageKey } from "../../i18n/en";
+import { formatLocale } from "../../i18n/format";
 
 /** Game icon beside each bonus: the gem for each stat, and the season badges for EXP and gear. */
 const PACT_ICON: Partial<Record<PactBonus, string>> = { ATK: "ruby", DEF: "sapphire", HP: "beryl", SPD: "citrine", GEM: "moonstone", EXP: "character", GEAR: "gear" };
 const BonusIcon = ({ b }: { b: PactBonus }) => (PACT_ICON[b] ? <GameIcon name={PACT_ICON[b]!} /> : null);
-const fmt = (x: number) => Math.round(x).toLocaleString();
+const fmt = (x: number) => Math.round(x).toLocaleString(formatLocale());
 const ORDER: PactBonus[] = ["ATK", "DEF", "HP", "SPD", "EXP", "GEM", "GEAR", "X2"];
 type T = ReturnType<typeof useT>["t"];
 /** Short bonus names: the stat names stay as in game, the rest are translated. */

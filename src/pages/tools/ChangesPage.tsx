@@ -4,6 +4,7 @@ export const CHANGES: { date: string; items: { text: string; href?: string }[] }
   {
     date: "2026-11-26",
     items: [
+      { text: "Languages: the Season Planner is now translated, including the results, goal plans, Astral Pact, progress log and Fill from screenshots. Numbers and decimals are written the way each language writes them (15.000 and 150,0 in Spanish).", href: "/planner" },
       { text: "Languages: the Level Timer and Server Calendar are now translated too, including the server picker, countdowns and durations (\"2 д 3 ч\", \"2 T 3 Std\").", href: "/calendar" },
       { text: "Languages: the site now speaks Español, Português, Русский, Deutsch and Français. Tap the globe at the top to switch; it starts in your device's language. The menus, page titles and home page are translated so far, with the tools themselves coming next. Game names (Primostars, Dawnium, skills, Fantomons) stay in English for now." },
     ],

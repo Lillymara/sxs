@@ -4,15 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import type { ReadErrorCode, ScreenRead } from "../../lib/screens/read";
 import { getRule } from "../../data/seasons";
 import { CART_KEYS, mergeReads, readGearPieces, type CartKey, type Found } from "./fromScreens";
+import { rich, useT } from "../../i18n";
+import type { MessageKey } from "../../i18n/en";
 
-const KIND_LABELS: Record<ScreenRead["kind"], string> = {
-  bed: "Bed",
-  cart: "Cart",
-  progression: "Season progression",
-  character: "Character",
-  backpack: "Backpack",
-  unknown: "Not recognised",
-};
 const CART_LABELS: Record<CartKey, string> = { rola: "Rola", ore: "Ore", essence: "Essence", sand: "Sand", treats: "Treats" };
 const TOOL_LABELS = { ore: "Iron Hammers", rola: "Gold Pickaxes", essence: "Worn Knuckles", sand: "Sand Shovels" } as const;
 const LEVEL_LABELS = { gear: "Gear", skill: "Skills", fantomon: "Fantomons", relic: "Relics" } as const;
@@ -67,17 +61,8 @@ const GUIDE = [
 
 type Status = { file: string; state: "waiting" | "reading" | "done" | "failed"; read?: ScreenRead; code?: ErrorCode; detail?: string; size?: number; tries?: number };
 
-/** What each error code means, in words a player can act on. CRASH is spotted on the next visit. */
+/** Error codes; what each means (in words a player can act on) is in the translations as si.err.CODE. CRASH is spotted on the next visit. */
 type ErrorCode = ReadErrorCode | "CRASH";
-const ERRORS: Record<ErrorCode, string> = {
-  FILE: "The browser couldn't get at the file you picked. Try picking fewer at a time, or pick them from the Files app instead of the photo picker.",
-  IMG: "The image couldn't be opened. It may be a format this browser can't show (like HEIC), or still downloading from cloud storage. Save it to the phone as a normal screenshot (PNG or JPG) and try again.",
-  MEM: "Your browser ran out of memory for pictures. Pick fewer screenshots at a time (one or two), or close other tabs.",
-  LOAD: "The text reader didn't download. Check your connection and try again.",
-  READ: "The text reader stopped part-way. Try this screenshot again on its own.",
-  SLOW: "Reading took too long and was stopped. Try this screenshot again on its own.",
-  CRASH: "Your browser closed the page part-way through the last batch, almost always from running out of memory. Pick one or two screenshots at a time.",
-};
 const BATCH_KEY = "sxs.shotBatch";
 const TIME_LIMIT = 120_000;
 const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -108,12 +93,19 @@ function dataUrlFile(url: string, name: string): File {
 const TIMER_SCREENS = ["character", "bed"];
 
 export function ScreenshotImport({ season, onApply, scope = "planner" }: { season: number; onApply: (found: Found) => void; scope?: ImportScope }) {
+  const { t } = useT();
   const timer = scope === "timer";
-  const guide = timer
-    ? GUIDE.filter((g) => TIMER_SCREENS.includes(g.key)).map((g) => (g.key === "character" ? { ...g, fills: "level and EXP into the level." } : g))
-    : GUIDE;
-  const target = timer ? "the Level Timer" : "the planner";
-  const fillLabel = timer ? "Fill the Level Timer" : "Fill the planner";
+  // The guide's text in the chosen language (the image and key stay as listed in GUIDE).
+  const g = (key: string, part: string) => t(`si.g.${key}.${part}` as MessageKey);
+  const guide = (timer ? GUIDE.filter((x) => TIMER_SCREENS.includes(x.key)) : GUIDE).map((x) => ({
+    ...x,
+    title: g(x.key, "title"),
+    where: g(x.key, "where"),
+    fills: timer && x.key === "character" ? g(x.key, "fillsTimer") : g(x.key, "fills"),
+    reads: g(x.key, "reads"),
+  }));
+  const fillLabel = timer ? t("si.fillTimer") : t("si.fillPlanner");
+  const errText = (code: string) => t(`si.err.${code}` as MessageKey);
   const [open, setOpen] = useState(false);
   const [statuses, setStatuses] = useState<Status[]>([]);
   const [found, setFound] = useState<Found | null>(null);
@@ -194,7 +186,7 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
       }
       setFound(mergeReads(reads, season));
     } catch {
-      setError(`${ERRORS.LOAD} (code LOAD)`);
+      setError(`${errText("LOAD")} (code LOAD)`);
       setStatuses((s) => s.slice(0, start));
     } finally {
       try {
@@ -214,14 +206,14 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
       const shot = ((e as CustomEvent<OverlayShot>).detail ?? {}) as OverlayShot;
       setGrabbing(false);
       if (!shot.image) {
-        setError(shot.error ?? "The game screen couldn't be read. Try again.");
+        setError(shot.error ?? t("si.screenFail"));
         return;
       }
       grabs.current += 1;
       try {
         void readLatest.current([dataUrlFile(shot.image, `Game screen ${grabs.current}`)]);
       } catch {
-        setError("The game screen came through damaged. Try again.");
+        setError(t("si.screenDamaged"));
       }
     };
     window.addEventListener("sxs-overlay-shot", onShot);
@@ -289,7 +281,7 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
   if (!open) {
     return (
       <button type="button" className="shot-open" onClick={() => setOpen(true)}>
-        <span aria-hidden>📷</span> Fill from screenshots
+        <span aria-hidden>📷</span> {t("si.open")}
       </button>
     );
   }
@@ -297,7 +289,7 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
   const field = (label: string, value: string | undefined, onEdit: (v: string) => void, hint?: string) => (
     <label className="shot-field" key={label}>
       <span>{label}</span>
-      <input value={value ?? ""} onChange={(e) => onEdit(e.target.value)} placeholder="not found" />
+      <input value={value ?? ""} onChange={(e) => onEdit(e.target.value)} placeholder={t("si.notFound")} />
       {hint && <small>{hint}</small>}
     </label>
   );
@@ -320,25 +312,23 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
     <section className="card shot-card">
       <div className="pcard-head">
         <h2>
-          <span aria-hidden>📷</span>Fill from screenshots
+          <span aria-hidden>📷</span>{t("si.open")}
         </h2>
         <button type="button" className="link-button" onClick={() => setOpen(false)}>
-          Close
+          {t("si.close")}
         </button>
       </div>
       <p className="hint">
-        Take screenshots of the screens below in the game, then pick them here. They're read on your device and never uploaded, and you check
-        everything before it goes into {target}.
-        {timer && <> The Season Planner gets the same character numbers.</>}
+        {timer ? t("si.introTimer") : t("si.introPlanner")}
       </p>
 
       <details className="shot-guide" open={statuses.length === 0}>
-        <summary>How to take the screenshots</summary>
+        <summary>{t("si.how")}</summary>
         <ol className="shot-steps">
           {guide.map((g, i) => (
             <li key={g.key} className="shot-step">
-              <a href={example(g.img)} target="_blank" rel="noreferrer" className="shot-thumb" title="Open the full example">
-                <img src={example(g.img)} alt={`Example ${g.title} screenshot, with the part that's read outlined`} loading="lazy" />
+              <a href={example(g.img)} target="_blank" rel="noreferrer" className="shot-thumb" title={t("si.openExample")}>
+                <img src={example(g.img)} alt={t("si.exampleAlt", { title: g.title })} loading="lazy" />
               </a>
               <div>
                 <p className="shot-step-title">
@@ -347,26 +337,19 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
                   </span>
                   {g.title}
                 </p>
-                <p>
-                  <b>Where:</b> {g.where}
-                </p>
-                <p>
-                  <b>Fills in:</b> {g.fills}
-                </p>
+                <p>{rich(t("si.where", { text: g.where }))}</p>
+                <p>{rich(t("si.fills", { text: g.fills }))}</p>
                 <p className="hint">{g.reads}</p>
               </div>
             </li>
           ))}
         </ol>
         <div className="shot-tips">
-          <p className="shot-step-title">Tips for a clean read</p>
+          <p className="shot-step-title">{t("si.tips")}</p>
           <ul>
-            <li>Screenshot the <b>whole screen</b>. Don't crop or zoom: the reader finds numbers by where they sit.</li>
-            <li>Close any pop-up, tooltip or chat that covers the numbers.</li>
-            <li>Any phone or tablet size works. Pick them all at once or one at a time, in any order, or just the ones you want.</li>
-            <li>Take them together, so the numbers match each other.</li>
-            <li>The outlined parts in the examples are what's read. Everything else is ignored.</li>
-            <li>If something reads wrong, just fix it in the box before filling the planner.</li>
+            {(["si.tip1", "si.tip2", "si.tip3", "si.tip4", "si.tip5", "si.tip6"] as const).map((k) => (
+              <li key={k}>{rich(t(k))}</li>
+            ))}
           </ul>
         </div>
       </details>
@@ -392,36 +375,34 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
         />
         <span>
           {busy
-            ? "Reading… the first time takes a little longer while the reader downloads."
+            ? t("si.reading")
             : statuses.length
-              ? "Add more screenshots"
-              : "Choose screenshots"}
+              ? t("si.addMore")
+              : t("si.choose")}
         </span>
       </label>
       {inOverlay && (
         <>
           <button type="button" className={`shot-drop${busy || grabbing ? " busy" : ""}`} disabled={busy || grabbing} onClick={grab}>
-            <span>{grabbing ? "Reading the game screen…" : "📸 Read the game screen"}</span>
+            <span>{grabbing ? t("si.readingScreen") : t("si.readScreen")}</span>
           </button>
           <p className="hint">
-            No saving needed: open one of the screens above in the game, behind this panel, then tap Read the game screen. The panel hides for a
-            moment while the screen is read. The first time, Android asks to let SxS Overlay record or cast the screen: allow it for the entire
-            screen (or Sword x Staff). It stays allowed until you stop the bubble.
+            {t("si.overlayHint")}
           </p>
         </>
       )}
       {error && <p className="error">{error}</p>}
       {crashed && (
         <p className="note warn">
-          <b>Code CRASH:</b> your last batch of {crashed.n} screenshots stopped after {crashed.done}. {ERRORS.CRASH}
+          {rich(t("si.crash", { n: crashed.n, done: crashed.done }))} {errText("CRASH")}
         </p>
       )}
 
       {statuses.length > 0 && !busy && (
         <p className="hint">
-          Screenshots add up, so you can pick them one at a time.{" "}
+          {t("si.addUp")}{" "}
           <button type="button" className="link-button" onClick={startOver}>
-            Start over
+            {t("si.startOver")}
           </button>
         </p>
       )}
@@ -432,12 +413,12 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
               <span className="shot-file">{s.file}</span>
               <span className={s.state === "done" && s.read?.kind !== "unknown" ? "ok-text" : s.state === "failed" || s.read?.kind === "unknown" ? "bad" : "hint"}>
                 {s.state === "waiting"
-                  ? "Waiting"
+                  ? t("si.waiting")
                   : s.state === "reading"
-                    ? "Reading…"
+                    ? t("si.readingShort")
                     : s.state === "failed"
-                      ? `Couldn't read (code ${s.code ?? "READ"})`
-                      : KIND_LABELS[s.read!.kind]}
+                      ? t("si.couldnt", { code: s.code ?? "READ" })
+                      : t(`si.kind.${s.read!.kind}` as MessageKey)}
               </span>
             </li>
           ))}
@@ -446,40 +427,35 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
       {!busy && statuses.some((s) => s.state === "failed" || s.read?.kind === "unknown") && (
         <div className="note warn shot-errors">
           {[...new Set(statuses.filter((s) => s.state === "failed").map((s) => s.code ?? "READ"))].map((c) => (
-            <p key={c}>
-              <b>Code {c}:</b> {ERRORS[c]}
-            </p>
+            <p key={c}>{rich(t("si.code", { code: c, text: errText(c) }))}</p>
           ))}
           {statuses.some((s) => s.read?.kind === "unknown") && (
-            <p>
-              <b>Not recognised:</b> the screenshot opened fine but didn't look like one of the screens above. Check it's the whole screen, uncropped,
-              with no pop-up covering it.
-            </p>
+            <p>{rich(t("si.unknownNote"))}</p>
           )}
         </div>
       )}
       {!busy && (statuses.some((s) => s.state === "failed" || s.read?.kind === "unknown") || crashed) && (
         <p className="hint">
-          Still stuck?{" "}
+          {t("si.stuck")}{" "}
           <button type="button" className="link-button" onClick={copyDetails}>
-            {copied ? "Copied" : "Copy details for a bug report"}
+            {copied ? t("si.copied") : t("si.copyDetails")}
           </button>{" "}
-          and paste them in the Discord. They list your browser and each file's size and result, not your screenshots or numbers.
+          {t("si.pasteDiscord")}
         </p>
       )}
 
       {timer && statuses.some((st) => st.read && st.read.kind !== "unknown" && !TIMER_SCREENS.includes(st.read.kind)) && (
         <p className="hint">
-          Cart, Season and Backpack screenshots aren't needed here. Use them in the <a href="/planner">Season Planner</a>.
+          {t("si.notNeeded")} <a href="/planner">{t("si.planner")}</a>.
         </p>
       )}
       {found && !busy && (
         <div className="shot-review">
-          <h3 className="subhead">Check what was found ({count})</h3>
+          <h3 className="subhead">{t("si.check", { n: count })}</h3>
           {count > 0 && (
             <div className="shot-apply-top">
               <p className="hint">
-                Nothing goes into {target} until you tap {fillLabel}. Check the boxes below first, or fill now.
+                {timer ? t("si.nothingGoesTimer") : t("si.nothingGoesPlanner")}
               </p>
               <button type="button" className="spin-button" onClick={apply}>
                 {fillLabel}
@@ -496,60 +472,57 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
               ...(found.refinedOre === undefined ? ["Refined Ore"] : []),
             ];
             return missing.length ? (
-              <p className="note warn">
-                Not found in your Backpack: <b>{missing.join(", ")}</b>. They may be further down the list or cut off at the bottom. Scroll so
-                they show with their numbers and tap <b>Add more screenshots</b>.
-              </p>
+              <p className="note warn">{rich(t("si.missing", { list: missing.join(", ") }))}</p>
             ) : null;
           })()}
           {count === 0 ? (
-            <p className="note warn">Nothing could be read. Try uncropped screenshots of the screens listed above.</p>
+            <p className="note warn">{t("si.nothing")}</p>
           ) : (
             <>
               <div className="shot-grid">
-                {field("Season", found.season, (v) => setFound({ ...found, season: v }))}
-                {field("Level", found.level, (v) => setFound({ ...found, level: v }))}
-                {field("EXP into level", found.xp, (v) => setFound({ ...found, xp: v }))}
-                {field("EXP per hour", found.rate, (v) => setFound({ ...found, rate: v }))}
+                {field(t("si.f.season"), found.season, (v) => setFound({ ...found, season: v }))}
+                {field(t("si.f.level"), found.level, (v) => setFound({ ...found, level: v }))}
+                {field(t("si.f.xp"), found.xp, (v) => setFound({ ...found, xp: v }))}
+                {field(t("si.f.rate"), found.rate, (v) => setFound({ ...found, rate: v }))}
                 {!timer && (
                   <>
-                {CART_KEYS.map((k) => field(`Cart ${CART_LABELS[k]} / hr`, found.cart[k], (v) => setFound({ ...found, cart: { ...found.cart, [k]: v } })))}
+                {CART_KEYS.map((k) => field(t("si.f.cartHr", { name: CART_LABELS[k] }), found.cart[k], (v) => setFound({ ...found, cart: { ...found.cart, [k]: v } })))}
                 {field(
-                  "Gear pieces",
+                  t("si.f.gear"),
                   found.gearPieces,
                   (v) => setFound({ ...found, gearPieces: v }),
-                  "Enter all five levels from the Character screen, top to bottom.",
+                  t("si.f.gearHint"),
                 )}
                 {!gearPieces && (
-                  <p className="hint warn shot-mismatch">To update current gear, enter five levels separated by commas. Your saved gear levels will stay as they are if this field is blank or incomplete.</p>
+                  <p className="hint warn shot-mismatch">{t("si.gearIncomplete")}</p>
                 )}
                 {gearMismatch && (
-                  <p className="hint warn shot-mismatch">The gear pieces don't add up to the season Gear total. One of them may be misread, so check both.</p>
+                  <p className="hint warn shot-mismatch">{t("si.gearMismatch")}</p>
                 )}
                 {CART_KEYS.map((k) =>
                   field(
-                    `${CART_LABELS[k]} on hand`,
+                    t("si.f.onHand", { name: CART_LABELS[k] }),
                     found.have?.[k],
                     (v) => setFound({ ...found, have: { ...found.have, [k]: v } }),
-                    k === "sand" ? "In White Sand (Rare ×5, Epic ×25)" : k === "treats" ? "As Basic Treats (Premium ×8, Deluxe ×40)" : undefined,
+                    k === "sand" ? t("si.f.sandHint") : k === "treats" ? t("si.f.treatsHint") : undefined,
                   ),
                 )}
-                {field("Refined Ore on hand", found.refinedOre, (v) => setFound({ ...found, refinedOre: v }), "Gear needs it every 5 levels")}
+                {field(t("si.f.refined"), found.refinedOre, (v) => setFound({ ...found, refinedOre: v }), t("si.f.refinedHint"))}
                 {(["ore", "rola", "essence", "sand"] as const).map((k) =>
-                  field(TOOL_LABELS[k], found.tools?.[k], (v) => setFound({ ...found, tools: { ...found.tools, [k]: v } }), "Saved Realm tools"),
+                  field(TOOL_LABELS[k], found.tools?.[k], (v) => setFound({ ...found, tools: { ...found.tools, [k]: v } }), t("si.f.toolHint")),
                 )}
                 {(Object.keys(LEVEL_LABELS) as (keyof typeof LEVEL_LABELS)[]).map((k) =>
                   field(
-                    `${LEVEL_LABELS[k]} season level`,
+                    t("si.f.seasonLevel", { name: t(`sum.cat.${k}` as MessageKey) }),
                     found.levels[k],
                     (v) => setFound({ ...found, levels: { ...found.levels, [k]: v } }),
-                    k === "gear" ? "Combined total for checking the five gear levels" : "Total above the floor, spread evenly over slots",
+                    k === "gear" ? t("si.f.gearTotalHint") : t("si.f.levelHint"),
                   ),
                 )}
                   </>
                 )}
               </div>
-              <p className="hint">Blank fields are left as they are. Edit anything that was misread.</p>
+              <p className="hint">{t("si.blank")}</p>
               <button type="button" className="spin-button" onClick={apply}>
                 {fillLabel}
               </button>

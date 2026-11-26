@@ -7,8 +7,9 @@ import { PrimoBar } from "./PrimoBar";
 import { CountUp } from "../../components/CountUp";
 import { rich, useT } from "../../i18n";
 import type { MessageKey } from "../../i18n/en";
+import { fixed, formatLocale } from "../../i18n/format";
 
-const fmt = (x: number) => Math.round(x).toLocaleString();
+const fmt = (x: number) => Math.round(x).toLocaleString(formatLocale());
 const short = (x: number) => formatXpShort(Math.round(x));
 const when = (d: Date | null, now: Date, { t, locale }: ReturnType<typeof useT>) =>
   d === null
@@ -70,7 +71,7 @@ export function Summary({
             <span>
               <GameIcon name={c.key} /> {t(`sum.cat.${c.key}` as MessageKey)}
             </span>
-            <span className="proj-lv">{t("sum.lv", { n: c.key === "character" ? c.seasonLevels.toFixed(1) : fmt(c.seasonLevels) })}</span>
+            <span className="proj-lv">{t("sum.lv", { n: c.key === "character" ? fixed(c.seasonLevels, 1) : fmt(c.seasonLevels) })}</span>
             <span className="proj-pts">{t("sum.pts", { n: fmt(c.points) })}</span>
           </li>
         ))}

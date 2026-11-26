@@ -13,11 +13,12 @@ import type { PlannerResult } from "../lib/planner/plan";
 import { formatDuration, type CalcOutcome } from "../lib/xp";
 import { CHANGES } from "./tools/ChangesPage";
 import { DISCORD_URL } from "../data/site";
+import { formatLocale } from "../i18n/format";
 
 const BASE = import.meta.env.BASE_URL;
 /** Companions lined up in the hero. */
 const HERO = ["figure_10503", "figure_10608", "figure_10702", "figure_10507"];
-const fmt = (x: number) => Math.round(x).toLocaleString();
+const fmt = (x: number) => Math.round(x).toLocaleString(formatLocale());
 const DAY = 86_400_000;
 
 /** Game art for each tool tile: a GameIcon name, or a path under public/art. */

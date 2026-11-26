@@ -5,6 +5,7 @@ import { ProgressRing } from "./ProgressRing";
 import { CountUp } from "./CountUp";
 import { rich, useT } from "../i18n";
 import type { MessageKey } from "../i18n/en";
+import { fixed, formatLocale } from "../i18n/format";
 
 interface Props {
   character: Character;
@@ -12,7 +13,7 @@ interface Props {
   now: Date;
 }
 
-const fmt = (n: number) => Math.ceil(n).toLocaleString();
+const fmt = (n: number) => Math.ceil(n).toLocaleString(formatLocale());
 
 /** Your XP rate keeps climbing as you level, so estimates past this many levels drift badly. */
 const RELIABLE_LEVELS = 5;
@@ -54,7 +55,7 @@ export function Results({ character, outcome, now }: Props) {
           <p className="banked-jump">
             {t("res.levelN", { n: b.cappedLevel })} <span aria-hidden>→</span> <b>{b.level}</b>
           </p>
-          <p>{rich(t("res.jump", { capped: b.cappedLevel, xp: formatXpShort(b.xp), level: b.level, pct: pct.toFixed(1), next: r.nextLevel }))}</p>
+          <p>{rich(t("res.jump", { capped: b.cappedLevel, xp: formatXpShort(b.xp), level: b.level, pct: fixed(pct, 1), next: r.nextLevel }))}</p>
           <p className="banked-warn">{t("res.bankWarn")}</p>
         </div>
       )}
@@ -62,7 +63,7 @@ export function Results({ character, outcome, now }: Props) {
         <ProgressRing value={pct / 100}>
           <small>{t("res.levelWord")}</small>
           <b>{r.nextLevel}</b>
-          <small>{t("res.there", { pct: pct.toFixed(0) })}</small>
+          <small>{t("res.there", { pct: fixed(pct, 0) })}</small>
         </ProgressRing>
         <div className="timer-text">
           <p className="eyebrow">
@@ -83,7 +84,7 @@ export function Results({ character, outcome, now }: Props) {
       <dl className="stats">
         <div>
           <dt>{t("res.progress")}</dt>
-          <dd>{pct.toFixed(1)}%</dd>
+          <dd>{fixed(pct, 1)}%</dd>
         </div>
         <div>
           <dt>{t("res.xpToGo")}</dt>

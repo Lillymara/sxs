@@ -6,9 +6,10 @@ import { DAWNIUM_REFRESH_COSTS } from "../../data/seasons";
 import { REALM_MATERIALS, type PlannerResult, type RealmMaterial } from "../../lib/planner/plan";
 import { rich, useT } from "../../i18n";
 import type { MessageKey } from "../../i18n/en";
+import { formatLocale } from "../../i18n/format";
 
 type Split = Record<RealmMaterial, number>;
-const fmt = (x: number) => Math.round(x).toLocaleString();
+const fmt = (x: number) => Math.round(x).toLocaleString(formatLocale());
 const costOf = (split: Split) => REALM_MATERIALS.reduce((a, k) => a + DAWNIUM_REFRESH_COSTS.slice(0, split[k]).reduce((x, y) => x + y, 0), 0);
 const label = (split: Split) => REALM_MATERIALS.map((k) => split[k]).join("/");
 const same = (a: Split, b: Split) => REALM_MATERIALS.every((k) => a[k] === b[k]);

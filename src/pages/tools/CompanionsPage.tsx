@@ -11,6 +11,7 @@ import { availabilityFor, companionRule, isObtainable } from "../../lib/availabi
 import { usePersistentState } from "../../lib/storage";
 import { effectiveDay1 } from "../calendar/server";
 import type { ToolProps } from "./props";
+import { formatLocale } from "../../i18n/format";
 
 interface Companion {
   id: number;
@@ -269,7 +270,7 @@ function Profile({ c, detail, availState }: { c: Companion; detail?: string; ava
           </div>
           <div className="cp-slider">
             <input type="range" min={1} max={c.maxLevel} value={lv} onChange={(e) => setLevel(+e.target.value)} aria-label="Friendship level" />
-            <small>{lv < c.maxLevel ? `Next level at ${(c.exp[lv] || 0).toLocaleString()} total friendship EXP` : "Max friendship"}</small>
+            <small>{lv < c.maxLevel ? `Next level at ${(c.exp[lv] || 0).toLocaleString(formatLocale())} total friendship EXP` : "Max friendship"}</small>
           </div>
         </div>
       )}
@@ -350,7 +351,7 @@ function GrowthChart({ c, stat, level, onLevel }: { c: Companion; stat: string; 
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
         role="img"
-        aria-label={`${stat} bonus by friendship level, up to +${max.toLocaleString()}`}
+        aria-label={`${stat} bonus by friendship level, up to +${max.toLocaleString(formatLocale())}`}
         onClick={(e) => {
           const r = (e.currentTarget as SVGSVGElement).getBoundingClientRect();
           onLevel(Math.max(1, Math.min(c.maxLevel, Math.round(((e.clientX - r.left) / r.width) * (values.length - 1)) + 1)));
@@ -369,7 +370,7 @@ function GrowthChart({ c, stat, level, onLevel }: { c: Companion; stat: string; 
       <figcaption>
         <span>{stat} bonus by friendship level · click to jump</span>
         <span>
-          Lv {level}: <b>+{(values[level - 1] || 0).toLocaleString()}</b>
+          Lv {level}: <b>+{(values[level - 1] || 0).toLocaleString(formatLocale())}</b>
         </span>
       </figcaption>
     </figure>

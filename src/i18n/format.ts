@@ -19,3 +19,7 @@ export const formatLocale = () => state.locale;
 export const unitText = (unit: Unit, n: number) => state.units[unit].replace("{n}", n.toLocaleString(state.locale));
 
 export const readyText = () => state.units.ready;
+
+/** A number with fixed decimals in the chosen language: 150.0 → "150,0" in Spanish. */
+export const fixed = (n: number, digits: number) =>
+  n.toLocaleString(state.locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
