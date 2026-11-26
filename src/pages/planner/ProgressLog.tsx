@@ -1,6 +1,7 @@
 // Season progress: a snapshot of points (and level) each time the planner is filled or logged, drawn
 // against a steady pace from the first snapshot to the goal at season end.
 import type { PlannerResult } from "../../lib/planner/plan";
+import { rich, useT } from "../../i18n";
 
 export interface Snapshot {
   /** ISO date-time. */
@@ -22,6 +23,7 @@ export function addSnapshot(log: Snapshot[], s: Snapshot): Snapshot[] {
 }
 
 export function ProgressLog({ result, log, onLog, onClear }: { result: PlannerResult | null; log: Snapshot[]; onLog: () => void; onClear: () => void }) {
+  const { t } = useT();
   if (!result) return null;
   const season = result.rule.season;
   const entries = log.filter((s) => s.season === season);
@@ -51,42 +53,37 @@ export function ProgressLog({ result, log, onLog, onClear }: { result: PlannerRe
     <section className="card progress-log">
       <div className="pcard-head">
         <h2>
-          <span aria-hidden>📈</span>Season progress
+          <span aria-hidden>📈</span>{t("lg.title")}
         </h2>
         <button type="button" className="fill-btn" onClick={onLog}>
-          Log today
+          {t("lg.log")}
         </button>
       </div>
       <p className="hint">
-        Each time you fill the planner from screenshots (or tap Log today), today's points are saved here, so you can see if you're keeping
-        pace with your goal. One entry per day; kept in this browser.
+        {t("lg.hint")}
       </p>
       {entries.length === 0 ? (
         <p className="hint">
-          Nothing logged yet. Right now you're on <b>{fmt(result.scoreNow)}</b> points.
+          {rich(t("lg.empty", { n: fmt(result.scoreNow) }))}
         </p>
       ) : (
         <>
           {diff !== null && entries.length > 1 && (
             <p className={`note ${diff >= 0 ? "good" : "warn"}`}>
               {diff >= 0 ? (
-                <>
-                  <b>{fmt(diff)} points ahead</b> of a steady pace to your goal.
-                </>
+                <>{rich(t("lg.ahead", { n: fmt(diff) }))}</>
               ) : (
-                <>
-                  <b>{fmt(-diff)} points behind</b> a steady pace to your goal. Upgrades often come in bursts, so this can catch up.
-                </>
+                <>{rich(t("lg.behind", { n: fmt(-diff) }))}</>
               )}
             </p>
           )}
-          <svg viewBox={`0 0 ${W} ${H}`} className="progress-chart" role="img" aria-label="Season points over time">
+          <svg viewBox={`0 0 ${W} ${H}`} className="progress-chart" role="img" aria-label={t("lg.chart")}>
             <line x1={P} y1={H - P + 4} x2={W - 8} y2={H - P + 4} className="axis" />
             {goalPoints > 0 && first && (
               <>
                 <line x1={x(t0)} y1={y(first.points)} x2={x(t1)} y2={y(goalPoints)} className="pace" />
                 <text x={W - 10} y={y(goalPoints) - 5} textAnchor="end" className="label">
-                  Goal {fmt(goalPoints)}
+                  {t("lg.goal", { n: fmt(goalPoints) })}
                 </text>
               </>
             )}
@@ -94,7 +91,7 @@ export function ProgressLog({ result, log, onLog, onClear }: { result: PlannerRe
             {entries.map((e) => (
               <circle key={e.at} cx={x(Date.parse(e.at))} cy={y(e.points)} r={3.5} className="dot">
                 <title>
-                  {dateLabel(Date.parse(e.at))}: {fmt(e.points)} points, Lv {e.level.toFixed(1)}
+                  {t("lg.point", { date: dateLabel(Date.parse(e.at)), n: fmt(e.points), lv: e.level.toFixed(1) })}
                 </title>
               </circle>
             ))}
@@ -102,7 +99,7 @@ export function ProgressLog({ result, log, onLog, onClear }: { result: PlannerRe
               {dateLabel(t0)}
             </text>
             <text x={W - 10} y={H - 6} textAnchor="end" className="label">
-              Season end {dateLabel(t1)}
+              {t("lg.seasonEnd", { date: dateLabel(t1) })}
             </text>
           </svg>
           <ul className="progress-list">
@@ -113,13 +110,13 @@ export function ProgressLog({ result, log, onLog, onClear }: { result: PlannerRe
               .map((e) => (
                 <li key={e.at}>
                   <span>{dateLabel(Date.parse(e.at))}</span>
-                  <span>Lv {e.level.toFixed(1)}</span>
-                  <b>{fmt(e.points)} pts</b>
+                  <span>{t("lg.lv", { lv: e.level.toFixed(1) })}</span>
+                  <b>{t("lg.pts", { n: fmt(e.points) })}</b>
                 </li>
               ))}
           </ul>
-          <button type="button" className="link-button" onClick={() => window.confirm("Delete this season's progress log?") && onClear()}>
-            Clear log
+          <button type="button" className="link-button" onClick={() => window.confirm(t("lg.confirm")) && onClear()}>
+            {t("lg.clear")}
           </button>
         </>
       )}

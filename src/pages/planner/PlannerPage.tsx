@@ -179,7 +179,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
   const floor = rule?.floor ?? 0;
   const caps = result?.caps;
   const t = result?.time;
-  const problems = findProblems(character, form, rule, table);
+  const problems = findProblems(character, form, rule, table, tr);
   const silly = problems.messages.length > 0;
   const range = (count: number, label: (i: number) => string) => Array.from({ length: count }, (_, i) => label(i));
   const capOf = (key: SlotCategory) => (caps ? (key === "gear" ? caps.gear : key === "skill" ? caps.skill : key === "fantomon" ? caps.fantomon : caps.relic) : null);

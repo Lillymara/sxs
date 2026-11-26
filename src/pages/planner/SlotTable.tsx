@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useT } from "../../i18n";
 import type { SlotForm } from "./form";
 
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
 
 /** Current → planned levels for a group of slots, with "set all" shortcuts. */
 export function SlotTable({ names, rows, onChange, baseline, cap, prefix = "", invalid, noun = "slot", quick }: Props) {
+  const { t } = useT();
   const [allCurrent, setAllCurrent] = useState("");
   const [allPlanned, setAllPlanned] = useState("");
 
@@ -45,12 +47,12 @@ export function SlotTable({ names, rows, onChange, baseline, cap, prefix = "", i
   return (
     <div className="slots">
       <div className="slot-all">
-        <span className="slot-all-label">Set every {noun}</span>
-        <input aria-label={`Every ${noun}: current level`} value={allCurrent} onChange={(e) => setAllCurrent(e.target.value)} onKeyDown={onEnter} placeholder={`now · ${prefix}${baseline}`} />
+        <span className="slot-all-label">{t("sl.setEvery", { noun })}</span>
+        <input aria-label={t("sl.allCurrent", { noun })} value={allCurrent} onChange={(e) => setAllCurrent(e.target.value)} onKeyDown={onEnter} placeholder={t("sl.nowPh", { n: `${prefix}${baseline}` })} />
         <span aria-hidden>→</span>
-        <input aria-label={`Every ${noun}: planned level`} value={allPlanned} onChange={(e) => setAllPlanned(e.target.value)} onKeyDown={onEnter} placeholder="plan" />
+        <input aria-label={t("sl.allPlanned", { noun })} value={allPlanned} onChange={(e) => setAllPlanned(e.target.value)} onKeyDown={onEnter} placeholder={t("sl.planPh")} />
         <button type="button" className="set-all" onClick={applyAll} disabled={!allCurrent.trim() && !allPlanned.trim()}>
-          Set all
+          {t("sl.setAll")}
         </button>
       </div>
       {quick && (
@@ -66,15 +68,15 @@ export function SlotTable({ names, rows, onChange, baseline, cap, prefix = "", i
           return (
             <div className="slot-row" key={i}>
               <span>{names[i]}</span>
-              <input aria-label={`${names[i]} current`} aria-invalid={badCurrent || undefined} className={badCurrent ? "silly" : undefined} value={r.current} onChange={(e) => update(i, "current", e.target.value)} placeholder={`${prefix}${baseline}`} />
+              <input aria-label={t("sl.current", { name: names[i] })} aria-invalid={badCurrent || undefined} className={badCurrent ? "silly" : undefined} value={r.current} onChange={(e) => update(i, "current", e.target.value)} placeholder={`${prefix}${baseline}`} />
               <span aria-hidden>→</span>
               <input
-                aria-label={`${names[i]} planned`}
+                aria-label={t("sl.planned", { name: names[i] })}
                 aria-invalid={over || badPlanned || undefined}
                 className={badPlanned ? "silly" : over ? "over-cap" : undefined}
                 value={r.planned}
                 onChange={(e) => update(i, "planned", e.target.value)}
-                placeholder="same"
+                placeholder={t("pl.same")}
               />
             </div>
           );

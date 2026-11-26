@@ -1,3 +1,4 @@
+import { useT } from "../i18n";
 /** A cartoon goat with googly eyes and its tongue out, for impossible planner inputs. */
 export function SillyGoat({ className }: { className?: string }) {
   const ink = "#3b2f2f";
@@ -45,21 +46,19 @@ export function SillyGoat({ className }: { className?: string }) {
 
 /** Shown in place of the results when some inputs can't happen in the game. */
 export function GoatCard({ messages, outlined }: { messages: string[]; outlined: boolean }) {
+  const { t, tn } = useT();
   return (
     <section className="card results goat-card" aria-live="polite">
       <SillyGoat className="silly-goat" />
-      <p className="eyebrow">Hold on</p>
-      <h2 className="goat-title">You silly goat! 🐐</h2>
-      <p>
-        {messages.length === 1 ? "This number can't" : "These numbers can't"} happen in the game, so the planner can't work out a
-        real plan:
-      </p>
+      <p className="eyebrow">{t("va.holdOn")}</p>
+      <h2 className="goat-title">{t("va.title")}</h2>
+      <p>{tn("va.intro", messages.length)}</p>
       <ul className="goat-reasons">
         {messages.map((m) => <li key={m}>{m}</li>)}
       </ul>
       <p className="hint">
-        Fix {messages.length === 1 ? "it" : "them"} and your plan comes right back.
-        {outlined && " Problem levels in the upgrade tables are outlined in red."}
+        {tn("va.fix", messages.length)}
+        {outlined && t("va.outlined")}
       </p>
     </section>
   );

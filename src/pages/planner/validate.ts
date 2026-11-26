@@ -4,6 +4,11 @@ import type { SeasonRule } from "../../data/seasons";
 import { parseAmount, type SeasonTable } from "../../lib/xp";
 import type { Character } from "../../components/CharacterForm";
 import { GEAR_NAMES, type PlannerForm, type SlotForm } from "./form";
+import { en, type MessageKey } from "../../i18n/en";
+
+/** Translates a message; the page passes the chosen language, and English is the default (and what the tests check). */
+export type Tr = (key: MessageKey, vars?: Record<string, string | number>) => string;
+const english: Tr = (key, vars) => (en[key] as string).replace(/\{(\w+)\}/g, (m, k: string) => (vars && k in vars ? String(vars[k]) : m));
 
 export type SlotField = "gear" | "skills" | "fantomons" | "relics";
 
@@ -22,14 +27,15 @@ export function readLevel(value: string): number | null | "junk" {
   return Number.isFinite(x) ? x : "junk";
 }
 
-const list = (names: string[]) =>
-  names.length <= 3 ? names.join(", ") : `${names.slice(0, 3).join(", ")} and ${names.length - 3} more`;
+const list = (names: string[], tr: Tr) =>
+  names.length <= 3 ? names.join(", ") : tr("va.more", { list: names.slice(0, 3).join(", "), n: names.length - 3 });
 
 export function findProblems(
   character: Character,
   form: PlannerForm,
   rule: SeasonRule | undefined,
   table: SeasonTable | undefined,
+  tr: Tr = english,
 ): Problems {
   const messages: string[] = [];
   const slots: Problems["slots"] = { gear: new Set(), skills: new Set(), fantomons: new Set(), relics: new Set() };
@@ -39,31 +45,31 @@ export function findProblems(
   // Character
   const level = readLevel(character.level);
   if (level === "junk" || (level !== null && !Number.isInteger(level))) {
-    messages.push(`Your character level "${character.level}" isn't a whole number.`);
+    messages.push(tr("va.levelNotWhole", { v: character.level }));
   } else if (level !== null && table && (level < table.minLevel || level > table.maxLevel)) {
-    messages.push(`Level ${level} doesn't exist in Season ${season}. Its levels run from ${table.minLevel} to ${table.maxLevel}.`);
+    messages.push(tr("va.levelRange", { lv: level, season, min: table.minLevel, max: table.maxLevel }));
   } else if (level !== null && table) {
     if (character.progressMode === "xp" && character.currentXp.trim() !== "") {
       const xp = parseAmount(character.currentXp);
       // More EXP than the level needs is fine: it's banked behind a level cap.
-      if (!Number.isFinite(xp)) messages.push(`Your EXP into the level, "${character.currentXp}", isn't a number.`);
+      if (!Number.isFinite(xp)) messages.push(tr("va.xpNaN", { v: character.currentXp }));
     }
     if (character.progressMode === "percent" && character.percent.trim() !== "") {
       const pct = parseAmount(character.percent.replace(/%$/, ""));
-      if (!Number.isFinite(pct) || pct >= 100) messages.push(`Progress has to be under 100%. You entered "${character.percent}".`);
+      if (!Number.isFinite(pct) || pct >= 100) messages.push(tr("va.pctOver", { v: character.percent }));
     }
   }
   if (character.rate.trim() !== "" && !Number.isFinite(parseAmount(character.rate)))
-    messages.push(`Your XP per hour, "${character.rate}", isn't a number.`);
+    messages.push(tr("va.rateNaN", { v: character.rate }));
 
   // Gear, skills, Fantomons, relics
   // Planning past a level cap is left to the red outline on the slot tables: the cap
   // depends on the projected season-end level, so it isn't impossible in itself.
-  const sections: { field: SlotField; plural: string; single: string; names: string[]; start: number; plus: string }[] = [
-    { field: "gear", plural: "gear pieces", single: "gear", names: GEAR_NAMES, start: rule.floor, plus: "" },
-    { field: "skills", plural: "skills", single: "skill", names: form.skills.map((_, i) => `Skill ${i + 1}`), start: rule.floor, plus: "" },
-    { field: "fantomons", plural: "Fantomons", single: "Fantomon", names: form.fantomons.map((_, i) => `Fantomon #${i + 1}`), start: rule.floor, plus: "" },
-    { field: "relics", plural: "relics", single: "relic", names: form.relics.map((_, i) => `Relic #${i + 1}`), start: rule.relicBase, plus: "+" },
+  const sections: { field: SlotField; names: string[]; start: number; plus: string }[] = [
+    { field: "gear", names: GEAR_NAMES, start: rule.floor, plus: "" },
+    { field: "skills", names: form.skills.map((_, i) => tr("pl.skillN", { n: i + 1 })), start: rule.floor, plus: "" },
+    { field: "fantomons", names: form.fantomons.map((_, i) => tr("va.fantomonN", { n: i + 1 })), start: rule.floor, plus: "" },
+    { field: "relics", names: form.relics.map((_, i) => tr("va.relicN", { n: i + 1 })), start: rule.relicBase, plus: "+" },
   ];
   for (const s of sections) {
     const junk: string[] = [], low: string[] = [], down: string[] = [];
@@ -80,28 +86,27 @@ export function findProblems(
       if (typeof plan === "number" && plan >= s.start && plan < from) down.push(name), slots[s.field].add(`${i}:planned`);
     });
     const uniq = (xs: string[]) => [...new Set(xs)];
-    if (junk.length) messages.push(`Some ${s.single} levels aren't valid numbers (${list(uniq(junk))}).`);
+    if (junk.length) messages.push(tr("va.junk", { single: tr(`va.single.${s.field}`), list: list(uniq(junk), tr) }));
     if (low.length)
-      messages.push(`${upper(s.plural)} can't be below ${s.plus}${s.start} in Season ${season}. That's where they start (${list(uniq(low))}).`);
-    if (down.length) messages.push(`Some ${s.plural} are planned lower than they already are (${list(uniq(down))}). Upgrades only go up.`);
+      messages.push(tr("va.low", { plural: tr(`va.pluralCap.${s.field}`), start: `${s.plus}${s.start}`, season, list: list(uniq(low), tr) }));
+    if (down.length) messages.push(tr("va.down", { plural: tr(`va.plural.${s.field}`), list: list(uniq(down), tr) }));
   }
 
   // Everything else that has to be a positive number
   const plain: [string, string][] = [
-    ["Primostars you have", form.primostarsNow],
-    ["Primostar goal", form.primostarGoal],
-    ["Boost hours per reset", form.boostHours],
-    ["Hours to save", form.saveBedHours],
-    ["Statues", form.statues],
-    ["Statues per day", form.statuesPerDay],
+    [tr("pl.have"), form.primostarsNow],
+    [tr("va.goal"), form.primostarGoal],
+    [tr("pl.boostHours"), form.boostHours],
+    [tr("va.hoursToSave"), form.saveBedHours],
+    [tr("va.statues"), form.statues],
+    [tr("va.statuesDay"), form.statuesPerDay],
   ];
   const bad = plain.filter(([, v]) => v.trim() !== "" && !Number.isFinite(parseAmount(v))).map(([l]) => l);
-  if (bad.length) messages.push(`These need to be plain numbers, not negative or text: ${list(bad)}.`);
-  if (form.saveBed && parseAmount(form.saveBedHours) > 36) messages.push("The bed only holds 36 hours of EXP, so you can't save more than that.");
+  if (bad.length) messages.push(tr("va.plain", { list: list(bad, tr) }));
+  if (form.saveBed && parseAmount(form.saveBedHours) > 36) messages.push(tr("va.bed36"));
   const boost = parseAmount(form.boostHours);
-  if (Number.isFinite(boost) && boost > 24) messages.push("A daily reset can't give more than 24 boost hours.");
+  if (Number.isFinite(boost) && boost > 24) messages.push(tr("va.boost24"));
 
   return { messages, slots };
 }
 
-const upper = (s: string) => s[0].toUpperCase() + s.slice(1);

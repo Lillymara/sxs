@@ -4,6 +4,8 @@ import { REALM_PRESETS } from "../../data/dawnium";
 import { DAILY_TASKS } from "../../data/gameConfig";
 import { DAWNIUM_REFRESH_COSTS } from "../../data/seasons";
 import { REALM_MATERIALS, type PlannerResult, type RealmMaterial } from "../../lib/planner/plan";
+import { rich, useT } from "../../i18n";
+import type { MessageKey } from "../../i18n/en";
 
 type Split = Record<RealmMaterial, number>;
 const fmt = (x: number) => Math.round(x).toLocaleString();
@@ -12,50 +14,41 @@ const label = (split: Split) => REALM_MATERIALS.map((k) => split[k]).join("/");
 const same = (a: Split, b: Split) => REALM_MATERIALS.every((k) => a[k] === b[k]);
 
 export function RealmSuggest({ result, current, onPick }: { result: PlannerResult | null; current: Split; onPick: (split: Split) => void }) {
+  const { t, locale } = useT();
   const s = result?.realmSuggestion;
   const g = result?.goalRealms;
   const resets = result?.time.resets.length ?? 0;
   const options: { name: string; split: Split; note?: string }[] = [
-    ...(g ? [{ name: "To reach your goal", split: g.perDay }] : []),
-    ...(s && !(g && same(g.perDay, s.perDay)) ? [{ name: "For your planned levels", split: s.perDay }] : []),
-    ...REALM_PRESETS.map((p) => ({ name: p.label, split: p.plan })),
+    ...(g ? [{ name: t("rs.toGoal"), split: g.perDay }] : []),
+    ...(s && !(g && same(g.perDay, s.perDay)) ? [{ name: t("rs.forPlanned"), split: s.perDay }] : []),
+    ...REALM_PRESETS.map((p) => ({ name: t(`preset.${p.label}` as MessageKey), split: p.plan })),
   ];
 
   return (
     <div className="realm-suggest">
       <p className="hint">
-        Refreshes a day for each Realm, written <b>Ore/Rola/Essence/Sand</b>. Your split now: <b>{label(current)}</b> ·{" "}
-        {fmt(costOf(current))} Dawnium a day.
+        {rich(t("rs.intro", { split: label(current), n: fmt(costOf(current)) }))}
       </p>
       {g && (
         <p className="realm-suggest-head">
           {g.reachable ? (
-            <>
-              To reach your goal: <b>{label(g.perDay)}</b>, {fmt(g.dawniumPerDay)} Dawnium a day. Then tap <b>Use this plan</b> in System levels
-              again, so the levels match.
-            </>
+            <>{rich(t("rs.goal", { split: label(g.perDay), n: fmt(g.dawniumPerDay) }))}</>
           ) : (
-            <span className="bad">Your goal is out of reach even with 10 refreshes on every Realm. The split shown is the most it can use.</span>
+            <span className="bad">{t("rs.outOfReach")}</span>
           )}
         </p>
       )}
       {s && !g && (
         <p className="realm-suggest-head">
           {REALM_MATERIALS.every((k) => s.perDay[k] === 0) ? (
-            <>
-              <b>No refreshes needed</b> for your planned levels: Cart, gathering, saved tools and the daily tasks' free runs cover it.
-            </>
+            <>{rich(t("rs.none"))}</>
           ) : (
-            <>
-              Your planned levels need <b>{label(s.perDay)}</b>: the fewest refreshes that cover what's still short after Cart, gathering,
-              saved tools and the daily tasks' free runs.
-            </>
+            <>{rich(t("rs.need", { split: label(s.perDay) }))}</>
           )}
           {s.capped.length > 0 && (
             <span className="bad">
               {" "}
-              Even 10 a day isn't enough for {s.capped.map((k) => k[0].toUpperCase() + k.slice(1)).join(" and ")}: lower that plan or find more
-              elsewhere.
+              {t("rs.capped", { list: new Intl.ListFormat(locale, { type: "conjunction" }).format(s.capped.map((k) => k[0].toUpperCase() + k.slice(1))) })}
             </span>
           )}
         </p>
@@ -69,17 +62,16 @@ export function RealmSuggest({ result, current, onPick }: { result: PlannerResul
               <span className="realm-option-name">{o.name}</span>
               <b>{label(o.split)}</b>
               <span>
-                {fmt(perDay)} Dawnium a day
-                {resets > 0 && perDay > 0 && <> · {fmt(perDay * resets)} by season end</>}
+                {t("rs.perDay", { n: fmt(perDay) })}
+                {resets > 0 && perDay > 0 && <> · {t("rs.byEnd", { n: fmt(perDay * resets) })}</>}
               </span>
-              {inUse && <span className="ok-text">✓ In use</span>}
+              {inUse && <span className="ok-text">{t("rs.inUse")}</span>}
             </button>
           );
         })}
       </div>
       <p className="hint">
-        The daily tasks give {DAILY_TASKS.dawnium} Dawnium a day. Each Realm's first two refreshes cost {DAWNIUM_REFRESH_COSTS[0]}; later ones
-        cost more. Pick a split, or set each Realm below.
+        {t("rs.foot", { daily: DAILY_TASKS.dawnium, first: DAWNIUM_REFRESH_COSTS[0] })}
       </p>
     </div>
   );

@@ -1,10 +1,12 @@
 // Primostars on a track: what you have, what this season adds, your goal, and the Astral Pact tiers
 // along the way, so it's clear how far the next bonus is.
 import { ASTRAL_PACT, PACT_BONUSES } from "../../data/astralPact";
+import { useT } from "../../i18n";
 
 const fmt = (x: number) => Math.round(x).toLocaleString();
 
 export function PrimoBar({ have, projected, goal }: { have: number; projected: number; goal: number }) {
+  const { t } = useT();
   // The track runs from a little below what you have to a little past the furthest of goal and next tier.
   const nextTier = ASTRAL_PACT.find(([s]) => s > projected)?.[0] ?? projected;
   const end = Math.max(projected, goal, nextTier) * 1.04;
@@ -15,7 +17,7 @@ export function PrimoBar({ have, projected, goal }: { have: number; projected: n
   const reached = goal > 0 && projected >= goal;
 
   return (
-    <div className="primo-bar" role="img" aria-label={`${fmt(have)} Primostars now, ${fmt(projected)} projected${goal > 0 ? `, goal ${fmt(goal)}` : ""}`}>
+    <div className="primo-bar" role="img" aria-label={goal > 0 ? t("pb.ariaGoal", { have: fmt(have), projected: fmt(projected), goal: fmt(goal) }) : t("pb.aria", { have: fmt(have), projected: fmt(projected) })}>
       <div className="primo-track">
         <span className="primo-have" style={{ width: pos(have) }} />
         <span className="primo-season" style={{ left: pos(have), width: `calc(${pos(projected)} - ${pos(have)})` }} />
@@ -27,22 +29,22 @@ export function PrimoBar({ have, projected, goal }: { have: number; projected: n
             title={`${fmt(s)}: ${PACT_BONUSES[b].label} +${PACT_BONUSES[b].amount}%`}
           />
         ))}
-        {goal > 0 && <span className={`primo-goal${reached ? " reached" : ""}`} style={{ left: pos(goal) }} title={`Goal ${fmt(goal)}`} />}
+        {goal > 0 && <span className={`primo-goal${reached ? " reached" : ""}`} style={{ left: pos(goal) }} title={t("pb.goalTitle", { n: fmt(goal) })} />}
       </div>
       <div className="primo-legend">
         <span>
-          <i className="dot have" /> {fmt(have)} now
+          <i className="dot have" /> {t("pb.now", { n: fmt(have) })}
         </span>
         <span>
-          <i className="dot season" /> {fmt(projected)} by season end
+          <i className="dot season" /> {t("pb.byEnd", { n: fmt(projected) })}
         </span>
         {goal > 0 && (
           <span>
-            <i className={`dot goal${reached ? " reached" : ""}`} /> goal {fmt(goal)}
+            <i className={`dot goal${reached ? " reached" : ""}`} /> {t("pb.goal", { n: fmt(goal) })}
           </span>
         )}
         <span>
-          <i className="dot tick" /> Astral Pact tier
+          <i className="dot tick" /> {t("pb.tier")}
         </span>
       </div>
     </div>
