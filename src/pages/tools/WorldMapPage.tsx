@@ -1,7 +1,9 @@
 // Interactive world map drawn from client map data.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePersistentState } from "../../lib/storage";
-import { formatLocale } from "../../i18n/format";
+import { fixed, formatLocale } from "../../i18n/format";
+import { rich, useT } from "../../i18n";
+import type { MessageKey } from "../../i18n/en";
 
 type Rect = [number, number, number, number, string, number?];
 interface Wheel {
@@ -41,9 +43,19 @@ interface WorldData {
 let dataPromise: Promise<WorldData> | null = null;
 const loadWorld = () =>
   (dataPromise ??= fetch(`${import.meta.env.BASE_URL}data/worldmap.json?v=${__BUILD_ID__}`).then((r) => {
-    if (!r.ok) throw new Error(`Map data failed to load (${r.status})`);
+    if (!r.ok) throw new Error(String(r.status));
     return r.json();
   }));
+
+/** What each blockade-clearing item does, in the chosen language. */
+const USE_KEYS: Record<string, MessageKey> = {
+  "Clears coral blockades": "wm.use.coral",
+  "Removes Chaos Crystals": "wm.use.chaos",
+  "Summons a cloud bridge": "wm.use.cloud",
+  "Clears vine blockades": "wm.use.vine",
+  "Opens sealed pillars": "wm.use.pillar",
+  "Clears boulder blockades": "wm.use.boulder",
+};
 
 const lootName = (n: string) => (n === "料理锅" ? "Cooking Pot" : n === "Rolla" ? "Rola" : n);
 const lootGlyph = (n: string) =>
@@ -99,6 +111,7 @@ function pairBlockades(map: MapData, areas: Area[]): Spot[] {
 const spotKey = (spot: Spot) => (spot.index >= 0 ? `${spot.itemId}:${spot.index}` : `area:${spot.area?.id}`);
 
 export function WorldMapPage() {
+  const { t } = useT();
   const [data, setData] = useState<WorldData | null>(null);
   const [error, setError] = useState("");
   useEffect(() => {
@@ -108,12 +121,16 @@ export function WorldMapPage() {
     });
   }, []);
   if (!data) {
-    return <section className="card results empty">{error ? <p className="error">{error}</p> : <p>Loading map data…</p>}</section>;
+    return <section className="card results empty">{error ? <p className="error">{t("wm.loadFail", { status: error })}</p> : <p>{t("wm.loading")}</p>}</section>;
   }
   return <WorldMap data={data} />;
 }
 
 function WorldMap({ data }: { data: WorldData }) {
+  const { t, tn } = useT();
+  // `t` is also a local name in the progress section below.
+  const tr = t;
+  const clearsText = (use: string) => (USE_KEYS[use] ? t(USE_KEYS[use]) : use);
   const [mapId, setMapId] = useState("11");
   const map = data.maps[mapId];
   const areas = useMemo(() => data.areaLoot[mapId] || [], [data, mapId]);
@@ -428,7 +445,7 @@ function WorldMap({ data }: { data: WorldData }) {
       <section className="card map-card">
         <div className="map-toolbar">
           <label className="field inline">
-            <span>Region</span>
+            <span>{t("wm.region")}</span>
             <select value={mapId} onChange={(e) => changeMap(e.target.value)}>
               {Object.values(data.maps).map((m) => <option key={m.id} value={m.id}>{m.title}</option>)}
             </select>
@@ -438,21 +455,21 @@ function WorldMap({ data }: { data: WorldData }) {
             className={`mark-mode ${marking ? "on" : ""}`}
             aria-pressed={marking}
             onClick={() => setMarking((m) => !m)}
-            title="While on, one click on a blockade marks it opened (or not)"
+            title={t("wm.markTitle")}
           >
-            {marking ? "✓ Marking opened · click blockades" : "Mark opened"}
+            {marking ? t("wm.marking") : t("wm.markOpened")}
           </button>
         </div>
         <div className={`map-viewport ${marking ? "marking" : ""}`} ref={viewportRef}>
-          <div className="map-zoom" role="group" aria-label="Zoom">
-            <button type="button" aria-label="Zoom in" onClick={() => zoomAt(1.25, canvasRef.current!.clientWidth / 2, canvasRef.current!.clientHeight / 2)}>+</button>
-            <button type="button" aria-label="Zoom out" onClick={() => zoomAt(0.8, canvasRef.current!.clientWidth / 2, canvasRef.current!.clientHeight / 2)}>−</button>
-            <button type="button" aria-label="Fit the whole region" onClick={fit} className="fit">Fit</button>
+          <div className="map-zoom" role="group" aria-label={t("wm.zoom")}>
+            <button type="button" aria-label={t("wm.zoomIn")} onClick={() => zoomAt(1.25, canvasRef.current!.clientWidth / 2, canvasRef.current!.clientHeight / 2)}>+</button>
+            <button type="button" aria-label={t("wm.zoomOut")} onClick={() => zoomAt(0.8, canvasRef.current!.clientWidth / 2, canvasRef.current!.clientHeight / 2)}>−</button>
+            <button type="button" aria-label={t("wm.fitLabel")} onClick={fit} className="fit">{t("wm.fit")}</button>
           </div>
           <canvas
             ref={canvasRef}
             role="img"
-            aria-label={`${map.title} map. Drag to move, scroll to zoom.`}
+            aria-label={t("wm.canvas", { map: map.title })}
             onPointerDown={(e) => {
               canvasRef.current!.setPointerCapture(e.pointerId);
               const p = point(e);
@@ -490,8 +507,8 @@ function WorldMap({ data }: { data: WorldData }) {
                 if (near) {
                   const wasOpen = opened.has(spotKey(near.spot));
                   toggleOpened(near.spot);
-                  const name = near.spot.area?.name ?? data.items[near.spot.itemId]?.name ?? "Blockade";
-                  setToast(`${name}: ${wasOpen ? "not opened" : "opened ✓"}`);
+                  const name = near.spot.area?.name ?? data.items[near.spot.itemId]?.name ?? t("wm.blockade");
+                  setToast(t(wasOpen ? "wm.toastNot" : "wm.toastOpen", { name }));
                   if (near.spot.area) setSelection({ type: "area", id: near.spot.area.id });
                 }
                 return;
@@ -510,7 +527,7 @@ function WorldMap({ data }: { data: WorldData }) {
                 else {
                   hit = null;
                   const u = map.unlocks[spot.itemId];
-                  setToast(`${data.items[spot.itemId]?.name} ${spot.index + 1} of ${u.points.length} · ${u.use}`);
+                  setToast(t("wm.spotToast", { item: data.items[spot.itemId]?.name ?? "", n: spot.index + 1, total: u.points.length, use: clearsText(u.use) }));
                 }
               }
               if (hit) setSelection(hit);
@@ -519,26 +536,26 @@ function WorldMap({ data }: { data: WorldData }) {
           {hover && (
             <div className="map-tooltip" style={{ left: Math.min(hover.x + 16, (canvasRef.current?.clientWidth ?? 300) - 280), top: hover.y + 16 }}>
               <b>{hover.area.name}</b>
-              <span>{data.items[hover.area.unlockItem]?.name} · {hover.area.items.length} pickup types</span>
+              <span>{data.items[hover.area.unlockItem]?.name} · {tn("wm.pickups", hover.area.items.length)}</span>
             </div>
           )}
           {toast && <div className="map-toast" role="status">{toast}</div>}
         </div>
 
-        <div className="unlock-bar" role="group" aria-label="Show on map">
-          <span className="event-tag">Show on map</span>
+        <div className="unlock-bar" role="group" aria-label={t("wm.showOnMap")}>
+          <span className="event-tag">{t("wm.showOnMap")}</span>
           <button type="button" aria-pressed={filter.wheels} onClick={() => setFilter((f) => ({ ...f, wheels: !f.wheels }))}>
             <span className="unlock-name">
               {data.markerIcon && <img src={iconUrl(data.markerIcon)} alt="" />}
               Lucky Wheels ×{wheels.length}
             </span>
-            <small>Spin for rewards</small>
+            <small>{t("wm.spinFor")}</small>
           </button>
           {Object.entries(map.unlocks).map(([id, u]) => (
             <button
               key={id}
               type="button"
-              title={u.use}
+              title={clearsText(u.use)}
               aria-pressed={unlocks.has(+id)}
               onClick={() =>
                 setFilter((f) => ({ ...f, hidden: f.hidden.includes(+id) ? f.hidden.filter((x) => x !== +id) : [...f.hidden, +id] }))
@@ -548,18 +565,18 @@ function WorldMap({ data }: { data: WorldData }) {
                 {data.items[id]?.icon && <img src={iconUrl(data.items[id].icon)} alt="" />}
                 {data.items[id]?.name} ×{u.points.length}
               </span>
-              <small>{u.use}</small>
+              <small>{clearsText(u.use)}</small>
             </button>
           ))}
           <button type="button" aria-pressed={filter.places} onClick={() => setFilter((f) => ({ ...f, places: !f.places }))}>
-            <span className="unlock-name">Place names ×{map.labels.length}</span>
-            <small>Towns, camps and areas</small>
+            <span className="unlock-name">{t("wm.places", { n: map.labels.length })}</span>
+            <small>{t("wm.placesSub")}</small>
           </button>
           <button type="button" aria-pressed={filter.hideOpened} onClick={() => setFilter((f) => ({ ...f, hideOpened: !f.hideOpened }))}>
-            <span className="unlock-name">Hide opened</span>
-            <small>Only show what's left</small>
+            <span className="unlock-name">{t("wm.hideOpened")}</span>
+            <small>{t("wm.hideOpenedSub")}</small>
           </button>
-          <button type="button" className="link-button" onClick={() => setFilter({ wheels: true, places: true, hideOpened: false, hidden: [] })}>Show all</button>
+          <button type="button" className="link-button" onClick={() => setFilter({ wheels: true, places: true, hideOpened: false, hidden: [] })}>{t("wm.showAll")}</button>
           <button
             type="button"
             className="link-button"
@@ -567,7 +584,7 @@ function WorldMap({ data }: { data: WorldData }) {
               setFilter({ wheels: false, places: false, hideOpened: false, hidden: [...new Set(Object.values(data.maps).flatMap((m) => Object.keys(m.unlocks).map(Number)))] })
             }
           >
-            Clear all
+            {t("wm.clearAll")}
           </button>
         </div>
 
@@ -586,32 +603,32 @@ function WorldMap({ data }: { data: WorldData }) {
           return (
             <div className="still-needed">
               <div className="still-needed-head">
-                <span className="event-tag">Still needed in {map.title}</span>
-                <span className="chip">{done} of {all.total} opened</span>
+                <span className="event-tag">{tr("wm.stillNeeded", { map: map.title })}</span>
+                <span className="chip">{tr("wm.openedOf", { done, total: all.total })}</span>
               </div>
-              <div className="bar" role="progressbar" aria-label="Blockades opened" aria-valuenow={Math.round((done / all.total) * 100)} aria-valuemin={0} aria-valuemax={100}>
+              <div className="bar" role="progressbar" aria-label={tr("wm.barLabel")} aria-valuenow={Math.round((done / all.total) * 100)} aria-valuemin={0} aria-valuemax={100}>
                 <div className="bar-fill" style={{ width: `${(done / all.total) * 100}%` }} />
               </div>
               {all.left === 0 ? (
-                <p className="note good">Every blockade in {map.title} is open. 🎉</p>
+                <p className="note good">{tr("wm.allOpen", { map: map.title })}</p>
               ) : (
                 <ul className="needed-items">
                   {[...totals.entries()].filter(([, t]) => t.left > 0).map(([id, t]) => (
                     <li key={id}>
                       {data.items[id]?.icon && <img src={iconUrl(data.items[id].icon)} alt="" />}
                       <b>{data.items[id]?.name} ×{t.left}</b>
-                      <small>{t.total - t.left} of {t.total} done</small>
+                      <small>{tr("wm.doneOf", { done: t.total - t.left, total: t.total })}</small>
                     </li>
                   ))}
                 </ul>
               )}
               <p className="hint">
-                Turn on "Mark opened" and click blockades on the map, or pick one and press "Mark as opened". Counts one item per blockade.
+                {tr("wm.markHint", { mark: tr("wm.markOpened"), markAs: tr("wm.markAs") })}
                 {done > 0 && (
                   <>
                     {" "}
                     <button type="button" className="link-button" onClick={() => setOpenedByMap((o) => ({ ...o, [mapId]: [] }))}>
-                      Reset {map.title}
+                      {tr("wm.reset", { map: map.title })}
                     </button>
                   </>
                 )}
@@ -623,7 +640,7 @@ function WorldMap({ data }: { data: WorldData }) {
 
       <section className="card map-panel">
         {wheels.length > 0 && (
-          <div className="filter-row wheel-tabs" role="group" aria-label="Lucky wheels">
+          <div className="filter-row wheel-tabs" role="group" aria-label={t("wm.wheelsLabel")}>
             {wheels.map((w) => (
               <button
                 key={w.id}
@@ -634,7 +651,7 @@ function WorldMap({ data }: { data: WorldData }) {
                   center(w.world[0], w.world[1]);
                 }}
               >
-                Wheel {w.id} · {w.area}
+                {t("wm.wheelTab", { id: w.id, area: w.area })}
               </button>
             ))}
           </div>
@@ -654,13 +671,13 @@ function WorldMap({ data }: { data: WorldData }) {
           </>
         ) : area ? (
           <>
-            <p className="eyebrow">Unlockable area</p>
+            <p className="eyebrow">{t("wm.unlockable")}</p>
             <h2>{area.name}</h2>
             <p className="unlock-with">
               {data.items[area.unlockItem]?.icon && <img src={iconUrl(data.items[area.unlockItem].icon)} alt="" />}
               <span>
-                <span>Unlock with a <b>{data.items[area.unlockItem]?.name}</b></span>
-                <small>{area.unlockUse} · {map.title}, area {area.areaId}</small>
+                <span>{rich(t("wm.unlockWith", { item: data.items[area.unlockItem]?.name ?? "" }))}</span>
+                <small>{t("wm.useLine", { use: clearsText(area.unlockUse), map: map.title, id: area.areaId })}</small>
               </span>
             </p>
             {(() => {
@@ -669,7 +686,7 @@ function WorldMap({ data }: { data: WorldData }) {
               const isOpen = opened.has(spotKey(spot));
               return (
                 <button type="button" className={`open-toggle ${isOpen ? "is-open" : ""}`} aria-pressed={isOpen} onClick={() => toggleOpened(spot)}>
-                  {isOpen ? "✓ Opened · tap to undo" : "Mark as opened"}
+                  {isOpen ? t("wm.openedUndo") : t("wm.markAs")}
                 </button>
               );
             })()}
@@ -677,21 +694,21 @@ function WorldMap({ data }: { data: WorldData }) {
               {area.items.map(([name, count]) => (
                 <li key={name}>
                   <span><span aria-hidden>{lootGlyph(name)}</span> {lootName(name)}</span>
-                  <span>{count} {count === 1 ? "location" : "locations"}</span>
+                  <span>{tn("wm.locations", count)}</span>
                 </li>
               ))}
             </ul>
-            <p className="hint">Static spawn spots recorded in the client. Respawns and chest contents are handled separately by the game.</p>
+            <p className="hint">{t("wm.spawnHint")}</p>
           </>
         ) : (
-          <p className="hint">{wheels.length ? "Pick a wheel or area." : "No Lucky Wheels in this region. Tap a blockade marker to see the area behind it."}</p>
+          <p className="hint">{wheels.length ? t("wm.pick") : t("wm.noWheels")}</p>
         )}
       </section>
     </div>
   );
 }
 
-const pct = (x: number) => `${(x * 100).toFixed(x * 100 >= 10 ? 1 : 2)}%`;
+const pct = (x: number) => `${fixed(x * 100, x * 100 >= 10 ? 1 : 2)}%`;
 
 /**
  * The Lucky Wheel: a ring of its slots that spins to simulate a reward. Players can mark
@@ -710,6 +727,7 @@ function LuckyWheel({
   iconUrl: (file?: string) => string | undefined;
   markerIcon?: string;
 }) {
+  const { t, tn } = useT();
   const n = wheel.rewards.length;
   const seg = 360 / n;
   const [saved, setSaved] = usePersistentState<Record<string, number[]>>("sxs.wheels", {});
@@ -779,21 +797,17 @@ function LuckyWheel({
     const [itemId, qty] = wheel.rewards[slot];
     totals.set(itemId, (totals.get(itemId) ?? 0) + qty);
   }
-  const name = (id: number) => items[id]?.name ?? `Item ${id}`;
+  const name = (id: number) => items[id]?.name ?? t("wm.item", { id });
 
   return (
     <div className="lucky-wheel">
       <p className="hint">
-        {wheel.area} · <b>{remaining.length}</b> of {n} slots left
-        {remaining.length ? `, ${pct(each)} each` : ""}.{" "}
-        {wheel.fixed === null
-          ? "No fixed first result."
-          : fixedApplies
-            ? `Slot ${wheel.fixed + 1} is flagged as a fresh wheel's fixed first result.`
-            : ""}
+        {rich(t("wm.slotsLeft", { area: wheel.area, left: remaining.length, n }))}
+        {remaining.length ? t("wm.each", { pct: pct(each) }) : ""}.{" "}
+        {wheel.fixed === null ? t("wm.noFixed") : fixedApplies ? t("wm.fixedSlot", { n: wheel.fixed + 1 }) : ""}
       </p>
 
-      <div className="wheel" role="group" aria-label={`${wheel.title}: ${remaining.length} of ${n} slots left. Tap a slot to mark it won.`}>
+      <div className="wheel" role="group" aria-label={t("wm.wheelAria", { title: wheel.title, left: remaining.length, n })}>
         <span className="wheel-pointer" aria-hidden />
         <div
           className={`wheel-rotor ${spinning ? "spinning" : ""}`}
@@ -810,8 +824,8 @@ function LuckyWheel({
                 type="button"
                 className={`wheel-slot ${i === wheel.fixed && fixedApplies ? "fixed" : ""} ${i === result && !spinning ? "won" : ""} ${taken.has(i) ? "taken" : ""}`}
                 style={{ left: `${50 + 41 * Math.cos(angle)}%`, top: `${50 + 41 * Math.sin(angle)}%` }}
-                title={`Slot ${i + 1}: ${item?.name ?? itemId} ×${qty}${taken.has(i) ? " (won · tap to put back)" : " · tap if you've won this"}`}
-                aria-label={`Slot ${i + 1}: ${item?.name ?? itemId} ×${qty}`}
+                title={`${t("wm.slotAria", { n: i + 1, item: item?.name ?? itemId, qty })}${taken.has(i) ? ` ${t("wm.slotWon")}` : ` · ${t("wm.slotTap")}`}`}
+                aria-label={t("wm.slotAria", { n: i + 1, item: item?.name ?? itemId, qty })}
                 aria-pressed={taken.has(i)}
                 onClick={() => toggle(i)}
                 disabled={spinning}
@@ -821,38 +835,38 @@ function LuckyWheel({
             );
           })}
         </div>
-        <button type="button" className="wheel-hub" onClick={spin} disabled={spinning || !remaining.length} aria-label="Spin the wheel">
+        <button type="button" className="wheel-hub" onClick={spin} disabled={spinning || !remaining.length} aria-label={t("wm.spinWheel")}>
           {markerIcon && <img src={markerIcon} alt="" />}
         </button>
       </div>
 
       <div className="wheel-controls">
         <button type="button" className="spin-button" onClick={spin} disabled={spinning || !remaining.length}>
-          {!remaining.length ? "Wheel cleared" : spinning ? "Spinning…" : history.length ? "Spin again" : "Spin"}
+          {!remaining.length ? t("wm.cleared") : spinning ? t("wm.spinning") : history.length ? t("wm.spinAgain") : t("wm.spin")}
         </button>
         <p className="wheel-result" role="status" aria-live="polite">
           {won ? (
             <>
               {items[won[0]]?.icon && <img src={iconUrl(items[won[0]].icon)} alt="" />}
               <span>
-                You won <b>{name(won[0])} ×{won[1]}</b>
+                {rich(t("wm.youWon", { item: name(won[0]), qty: won[1] }))}
                 <small>
-                  Slot {result! + 1}
-                  {history.length === 1 && wheel.fixed === result ? " · fixed first result" : ""}
+                  {t("wm.slot", { n: result! + 1 })}
+                  {history.length === 1 && wheel.fixed === result ? ` · ${t("wm.fixedFirst")}` : ""}
                 </small>
               </span>
             </>
           ) : spinning ? (
-            "Good luck…"
+            t("wm.goodLuck")
           ) : remaining.length ? (
-            "Spin to simulate a reward. Each spin uses a Lucky Ticket."
+            t("wm.spinHint")
           ) : (
-            "Every slot is marked as won. Restore slots below to spin again."
+            t("wm.allWon")
           )}
         </p>
         <label className="check small-check">
           <input type="checkbox" checked={settings.autoRemove} onChange={(e) => setSettings({ autoRemove: e.target.checked })} />
-          <span>Remove each simulated win from the wheel</span>
+          <span>{t("wm.autoRemove")}</span>
         </label>
       </div>
 
@@ -860,11 +874,10 @@ function LuckyWheel({
         <div className="wheel-tally">
           <div className="card-head">
             <h3 className="subhead">
-              {history.length} simulated {history.length === 1 ? "spin" : "spins"} · {history.length} Lucky{" "}
-              {history.length === 1 ? "Ticket" : "Tickets"}
+              {tn("wm.tally", history.length)}
             </h3>
             <button type="button" className="link-button" disabled={spinning} onClick={() => { setHistory([]); setResult(null); }}>
-              Clear
+              {t("wm.clear")}
             </button>
           </div>
           <ul className="chips">
@@ -882,7 +895,7 @@ function LuckyWheel({
 
       {remaining.length > 0 && (
         <>
-          <h3 className="subhead">Odds of what's left</h3>
+          <h3 className="subhead">{t("wm.odds")}</h3>
           <ul className="item-odds">
             {itemOdds.map(([itemId, o]) => (
               <li key={itemId}>
@@ -890,7 +903,7 @@ function LuckyWheel({
                 <span>
                   <b>{name(itemId)}</b>
                   <small>
-                    {o.slots} {o.slots === 1 ? "slot" : "slots"} · ×{o.qtys.sort((a, b) => a - b).join(", ×")}
+                    {tn("wm.slotsN", o.slots)} · ×{o.qtys.sort((a, b) => a - b).join(", ×")}
                   </small>
                 </span>
                 <span className="odds">{pct(o.slots * each)}</span>
@@ -902,30 +915,30 @@ function LuckyWheel({
       )}
 
       <div className="card-head slots-head">
-        <h3 className="subhead">Slots</h3>
+        <h3 className="subhead">{t("wm.slots")}</h3>
         {taken.size > 0 && (
           <button type="button" className="link-button" disabled={spinning} onClick={() => setTaken(new Set())}>
-            Restore all
+            {t("wm.restoreAll")}
           </button>
         )}
       </div>
-      <p className="hint">Tap the slots you've already won in game, here or on the wheel, to take them off it.</p>
+      <p className="hint">{t("wm.tapHint")}</p>
       <ol className="wheel-rewards">
         {wheel.rewards.map(([itemId, qty], i) => (
           <li key={i} className={`${i === wheel.fixed && fixedApplies ? "fixed" : ""} ${taken.has(i) ? "taken" : ""}`}>
-            <button type="button" aria-pressed={taken.has(i)} onClick={() => toggle(i)} disabled={spinning} title={taken.has(i) ? "Won · tap to put back" : "Tap if you've won this"}>
+            <button type="button" aria-pressed={taken.has(i)} onClick={() => toggle(i)} disabled={spinning} title={taken.has(i) ? t("wm.wonTap") : t("wm.tapIfWon")}>
               <span className="slot">{taken.has(i) ? "✓" : i + 1}</span>
               {items[itemId]?.icon ? <img src={iconUrl(items[itemId].icon)} alt="" /> : <span className="no-icon" />}
               <span>
                 {name(itemId)} <b>×{qty}</b>
-                <small>{taken.has(i) ? "Won" : pct(each)}</small>
+                <small>{taken.has(i) ? t("wm.won") : pct(each)}</small>
               </span>
-              {i === wheel.fixed && fixedApplies && <em>First</em>}
+              {i === wheel.fixed && fixedApplies && <em>{t("wm.first")}</em>}
             </button>
           </li>
         ))}
       </ol>
-      <p className="hint">Simulated spins use equal odds per remaining slot; real results come from the game.</p>
+      <p className="hint">{t("wm.oddsHint")}</p>
     </div>
   );
 }
