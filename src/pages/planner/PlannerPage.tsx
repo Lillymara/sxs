@@ -9,6 +9,8 @@ import type { SlotCategory } from "../../lib/planner/score";
 import { REALM_MATERIALS, type RealmMaterial } from "../../lib/planner/plan";
 import { RealmSuggest } from "./RealmSuggest";
 import { formatDuration, formatEta, formatXpShort, getSeason } from "../../lib/xp";
+import { rich, useT } from "../../i18n";
+import type { MessageKey } from "../../i18n/en";
 import {
   DEFAULT_EXP_PER_TREAT,
   GEAR_NAMES,
@@ -92,6 +94,7 @@ function Card({
   onStep: (s: StepId) => void;
   children: ReactNode;
 }) {
+  const { t } = useT();
   const i = STEPS.findIndex((x) => x.id === step);
   const prev = STEPS[i - 1], next = STEPS[i + 1];
   return (
@@ -107,21 +110,21 @@ function Card({
       <div className="step-nav">
         {prev ? (
           <button type="button" className="link-button" onClick={() => onStep(prev.id)}>
-            ← {prev.label}
+            ← {t(`pl.step.${prev.id}` as MessageKey)}
           </button>
         ) : (
           <span />
         )}
         {next ? (
           <button type="button" className="spin-button" onClick={() => onStep(next.id)}>
-            Next: {next.label} →
+            {t("pl.next", { label: t(`pl.step.${next.id}` as MessageKey) })}
           </button>
         ) : (
           <a className="spin-button" href="#summary" onClick={(e) => {
             e.preventDefault();
             document.getElementById("summary")?.scrollIntoView({ behavior: "smooth" });
           }}>
-            See my projection
+            {t("pl.seeProjection")}
           </a>
         )}
       </div>
@@ -147,6 +150,7 @@ const shown = (rows: SlotForm[], key: keyof SlotForm) => {
 export function PlannerPage({ character, onCharacterChange, form, onChange, onClear, result, now, defaults, server }: Props) {
   const season = Number(character.season);
   const rule = getRule(season);
+  const { t: tr, tn, locale } = useT();
   const table = getSeason(season);
   const set = <K extends keyof PlannerForm>(key: K, value: PlannerForm[K]) => onChange({ ...form, [key]: value });
   // Phones show one card at a time; the step bar and Back/Next move between them.
@@ -199,24 +203,24 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
           <a className="guide-banner" href="/guide">
             <span aria-hidden>📖</span>
             <span>
-              <b>New to the planner?</b> Read the step-by-step guide to what everything does →
+              {rich(tr("pl.newTo"))}
             </span>
           </a>
           <button type="button" className="link-button planner-clear" onClick={onClear}>
-            Clear planner
+            {tr("planner.clear")}
           </button>
         </div>
-        <div className="mode-switch" role="group" aria-label="Planner detail">
+        <div className="mode-switch" role="group" aria-label={tr("pl.detail")}>
           {(["simple", "full"] as const).map((m) => (
             <button key={m} type="button" aria-pressed={form.mode === m} onClick={() => set("mode", m)}>
-              <b>{m === "simple" ? "Simple" : "Full"}</b>
-              <small>{m === "simple" ? "One level per system" : "Every slot and stockpile"}</small>
+              <b>{m === "simple" ? tr("pl.simple") : tr("pl.full")}</b>
+              <small>{m === "simple" ? tr("pl.simpleSub") : tr("pl.fullSub")}</small>
             </button>
           ))}
           <p className="hint">
             {full
-              ? "Every slot, what you have stockpiled, stamina, shops and Realm details."
-              : "Quick and rougher: one level per system and your Cart income. Switch to Full for a closer answer."}
+              ? tr("pl.fullHint")
+              : tr("pl.simpleHint")}
           </p>
         </div>
 
@@ -230,79 +234,79 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
           }}
         />
 
-        <nav className="plan-steps" id="plan-steps" aria-label="Planner steps">
+        <nav className="plan-steps" id="plan-steps" aria-label={tr("pl.steps")}>
           {STEPS.map((x, i) => (
             <button key={x.id} type="button" aria-current={x.id === step ? "step" : undefined} onClick={() => goStep(x.id)}>
               <span className="plan-step-num">{i + 1}</span>
-              {x.label}
+              {tr(`pl.step.${x.id}` as MessageKey)}
             </button>
           ))}
         </nav>
         <div className="planner-cards">
-          <Card icon={<GameIcon name="primostar" />} title="Season & goal" step="goal" current={step} onStep={goStep}>
+          <Card icon={<GameIcon name="primostar" />} title={tr("pl.goalCard")} step="goal" current={step} onStep={goStep}>
             <div className="fields">
-              <Field label="Primostars you have" value={form.primostarsNow} onChange={(v) => set("primostarsNow", v)} placeholder="0" />
+              <Field label={tr("pl.have")} value={form.primostarsNow} onChange={(v) => set("primostarsNow", v)} placeholder="0" />
               <Field
-                label="Total you want"
+                label={tr("pl.want")}
                 value={form.primostarGoal}
                 onChange={(v) => set("primostarGoal", v)}
                 placeholder="0"
-                hint={pactGoalHint(Number(form.primostarGoal)) ?? "Pick a total that unlocks an Astral Pact bonus (see the projection)."}
+                hint={pactGoalHint(Number(form.primostarGoal)) ?? tr("pl.wantHint")}
               />
               <Field
                 className="span-2"
                 type="datetime-local"
-                label="Season ends"
+                label={tr("pl.seasonEnds")}
                 value={effectiveSeasonEnd(form, defaults, now)}
                 onChange={(v) => set("seasonEnd", v)}
                 hint={
                   form.seasonEnd ? (
                     defaults.seasonEnd ? (
                       <button type="button" className="link-button" onClick={() => set("seasonEnd", "")}>
-                        Use {server?.name || "my server"}'s season end
+                        {tr("pl.useServerEnd", { server: server?.name || tr("pl.myServer") })}
                       </button>
                     ) : undefined
                   ) : defaults.seasonEnd ? (
-                    <>From {server?.name || "your server"}'s calendar.</>
+                    <>{tr("pl.fromCalendar", { server: server?.name || tr("pl.yourServer") })}</>
                   ) : (
                     <>
-                      Guessing 14 days. <a href="/calendar">Pick your server</a> for the real date.
+                      {tr("pl.guessing")} <a href="/calendar">{tr("pl.pickServer")}</a> {tr("pl.forRealDate")}
                     </>
                   )
                 }
               />
             </div>
-            {t && <p className="pcard-foot">{formatDuration(t.realHours)} left · {t.resets.length} resets</p>}
+            {t && <p className="pcard-foot">{tr("pl.left", { time: formatDuration(t.realHours), n: t.resets.length })}</p>}
             {rule && result && result.score.scoreNeeded > 0 && (
               <p className="hint">
-                This season needs <b>{fmt(result.score.scoreNeeded)}</b> points (1 Primostar per {rule.pointsPerStar}, plus {rule.fixedStars} fixed).
+                {rich(tr("pl.needs", { points: fmt(result.score.scoreNeeded), per: rule.pointsPerStar, fixed: rule.fixedStars }))}
               </p>
             )}
             <div className="fields save-next">
               <label className="check span-2">
                 <input type="checkbox" checked={form.saveBed} onChange={(e) => set("saveBed", e.target.checked)} />
                 <span>
-                  Save bed EXP for next season <em className="chip">Recommended</em>
-                  <small>Stop claiming the bed for the last hours so its EXP carries into next season. Reset boosts inside that window still count.</small>
+                  {tr("pl.saveBed")} <em className="chip">{tr("pl.recommended")}</em>
+                  <small>{tr("pl.saveBedHint")}</small>
                 </span>
               </label>
               {form.saveBed && (
-                <Field label="Bed hours to save" value={form.saveBedHours} onChange={(v) => set("saveBedHours", v)} placeholder="36" hint="Max 36." />
+                <Field label={tr("pl.bedHours")} value={form.saveBedHours} onChange={(v) => set("saveBedHours", v)} placeholder="36" hint={tr("pl.max36")} />
               )}
               <label className="check span-2">
                 <input type="checkbox" checked={form.saveCart !== false} onChange={(e) => set("saveCart", e.target.checked)} />
                 <span>
-                  Save Cart resources for next season <em className="chip">Recommended</em>
-                  <small>Stop claiming the Cart for the last hours so its resources carry into next season. They're left out of this season's materials.</small>
+                  {tr("pl.saveCart")} <em className="chip">{tr("pl.recommended")}</em>
+                  <small>{tr("pl.saveCartHint")}</small>
                 </span>
               </label>
               {form.saveCart !== false && (
-                <Field label="Cart hours to save" value={form.saveCartHours ?? "36"} onChange={(v) => set("saveCartHours", v)} placeholder="36" hint="Max 36." />
+                <Field label={tr("pl.cartHours")} value={form.saveCartHours ?? "36"} onChange={(v) => set("saveCartHours", v)} placeholder="36" hint={tr("pl.max36")} />
               )}
               {(t?.saveStart || t?.cartSaveStart) && (
                 <p className="hint span-2">
-                  {t?.saveStart && <>Stop claiming the bed {formatEta(0, t.saveStart)}. </>}
-                  {t?.cartSaveStart && <>Stop claiming the Cart {formatEta(0, t.cartSaveStart)}.</>}
+                  {t?.saveStart && <>{tr("pl.stopBed", { eta: formatEta(0, t.saveStart) })} </>}
+                  {t?.cartSaveStart && <>{tr("pl.stopCart", { eta: formatEta(0, t.cartSaveStart) })}</>}
                 </p>
               )}
             </div>
@@ -310,22 +314,22 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
               <div className="fields full-only">
                 <Field
                   type="time"
-                  label="Daily reset"
+                  label={tr("pl.dailyReset")}
                   value={form.resetTime || defaults.resetTime}
                   onChange={(v) => set("resetTime", v)}
-                  hint={form.resetTime ? undefined : "13:00 UTC in your time."}
+                  hint={form.resetTime ? undefined : tr("pl.resetHint")}
                 />
-                <Field label="Boost hours per reset" value={form.boostHours} onChange={(v) => set("boostHours", v)} placeholder="2" />
+                <Field label={tr("pl.boostHours")} value={form.boostHours} onChange={(v) => set("boostHours", v)} placeholder="2" />
               </div>
             )}
           </Card>
 
-          <Card icon={<GameIcon name="character" />} title="Character EXP" step="character" current={step} onStep={goStep}>
+          <Card icon={<GameIcon name="character" />} title={tr("pl.charCard")} step="character" current={step} onStep={goStep}>
             {server && server.season !== season && server.season <= 5 && (
               <p className="note warn">
-                {server.name || "Your server"} is in Season {server.season}.{" "}
+                {tr("pl.serverIn", { server: server.name || tr("cal.yourServer"), n: server.season })}{" "}
                 <button type="button" className="link-button" onClick={() => onCharacterChange({ ...character, season: String(server.season) })}>
-                  Switch to Season {server.season}
+                  {tr("pl.switchSeason", { n: server.season })}
                 </button>
               </p>
             )}
@@ -338,24 +342,24 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
             />
             {result?.character.ok && (
               <p className="pcard-foot">
-                Projected by season end: <b>Lv {result.character.decimalLevel.toFixed(2)}</b>
-                {t && <> · {fmt(t.xpHours)} EXP hours</>}
+                {rich(tr("pl.projected", { lv: result.character.decimalLevel.toFixed(2) }))}
+                {t && <> · {tr("pl.expHours", { n: fmt(t.xpHours) })}</>}
               </p>
             )}
-            {result && !result.character.ok && <p className="error">No EXP data for that level in Season {season}.</p>}
-            {result?.character.stoppedAt !== undefined && <p className="error">EXP data runs out at level {result.character.stoppedAt}.</p>}
+            {result && !result.character.ok && <p className="error">{tr("pl.noExpData", { n: season })}</p>}
+            {result?.character.stoppedAt !== undefined && <p className="error">{tr("pl.runsOut", { n: result.character.stoppedAt })}</p>}
             {full && (
               <div className="fields full-only">
-                <Field label="Goddess statues now" value={form.statues} onChange={(v) => set("statues", v)} placeholder="0" hint="Each adds 1% EXP." />
-                <Field label="New statues per day" value={form.statuesPerDay} onChange={(v) => set("statuesPerDay", v)} placeholder="0" />
+                <Field label={tr("pl.statues")} value={form.statues} onChange={(v) => set("statues", v)} placeholder="0" hint={tr("pl.statuesHint")} />
+                <Field label={tr("pl.statuesDay")} value={form.statuesPerDay} onChange={(v) => set("statuesPerDay", v)} placeholder="0" />
               </div>
             )}
           </Card>
 
-          <Card icon="📈" title="System levels" step="levels" current={step} onStep={goStep} wide>
+          <Card icon="📈" title={tr("pl.levelsCard")} step="levels" current={step} onStep={goStep} wide>
             <p className="hint">
-              {full ? "Each slot's current level and where you plan to take it." : "One level for the whole system: now, and where you plan to take it."} Scoring starts above Lv {floor}
-              {rule && <> (relics above +{rule.relicFloor})</>}.
+              {full ? tr("pl.levelsFull") : tr("pl.levelsSimple")}{" "}
+              {rule ? tr("pl.scoringRelic", { floor, relic: rule.relicFloor }) : tr("pl.scoring", { floor })}
             </p>
             <StaminaGoalBox result={result} />
             <GoalPlanBox
@@ -386,15 +390,15 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
             />
             {full ? (
               SYSTEMS.map((s) => {
-                const names = s.field === "gear" ? GEAR_NAMES : range(form[s.field].length, (i) => (s.field === "skills" ? `Skill ${i + 1}` : `#${i + 1}`));
+                const names = s.field === "gear" ? GEAR_NAMES : range(form[s.field].length, (i) => (s.field === "skills" ? tr("pl.skillN", { n: i + 1 }) : `#${i + 1}`));
                 const cap = capOf(s.key);
                 return (
                   <div key={s.field} className="system-block">
                     <div className="system-head">
                       <h3>
-                        <GameIcon name={s.key} /> {s.label} <small>· {s.material}</small>
+                        <GameIcon name={s.key} /> {tr(`pl.sys.${s.field}` as MessageKey)} <small>· {s.material}</small>
                       </h3>
-                      {rule && <span className="chip">+{rule.weights[s.key]} pts / lv</span>}
+                      {rule && <span className="chip">{tr("pl.ptsLv", { n: rule.weights[s.key] })}</span>}
                     </div>
                     <SlotTable
                       names={names}
@@ -404,18 +408,18 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                       baseline={baselineOf(s.field)}
                       cap={cap ?? null}
                       prefix={s.plus ? "+" : ""}
-                      noun={s.one}
-                      quick={s.field === "skills" && character.level.trim() ? { label: `Now = my level (${character.level.trim()}) for every skill`, value: character.level.trim() } : undefined}
+                      noun={tr(`pl.one.${s.field}` as MessageKey)}
+                      quick={s.field === "skills" && character.level.trim() ? { label: tr("pl.quickSkills", { lv: character.level.trim() }), value: character.level.trim() } : undefined}
                     />
                     <div className="system-foot">
-                      {cap != null && <span className="hint">Cap by season end: {s.plus ? "+" : ""}{cap}</span>}
+                      {cap != null && <span className="hint">{tr("pl.capBy", { cap: `${s.plus ? "+" : ""}${cap}` })}</span>}
                       {canFill && (
                         <button type="button" className="link-button" onClick={() => fill(s)}>
-                          Fill minimum {s.noun} for my goal
+                          {tr(`pl.fillMin.${s.field}` as MessageKey)}
                         </button>
                       )}
                     </div>
-                    {result?.minimum[s.key].limited && <p className="hint warn">{s.label} alone can't make up the rest of the goal under the cap.</p>}
+                    {result?.minimum[s.key].limited && <p className="hint warn">{tr("pl.cantAlone", { system: tr(`pl.sys.${s.field}` as MessageKey) })}</p>}
                   </div>
                 );
               })
@@ -423,9 +427,9 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
               <div className="simple-levels">
                 <div className="simple-head" aria-hidden>
                   <span />
-                  <span>Now</span>
+                  <span>{tr("pl.now")}</span>
                   <span />
-                  <span>Plan</span>
+                  <span>{tr("pl.plan")}</span>
                   <span />
                 </div>
                 {SYSTEMS.map((s) => {
@@ -437,33 +441,33 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                     <div key={s.field} className="simple-row">
                       <span className="simple-name">
                         <b>
-                          <GameIcon name={s.key} /> {s.label}
+                          <GameIcon name={s.key} /> {tr(`pl.sys.${s.field}` as MessageKey)}
                         </b>
-                        {rule && <small>+{rule.weights[s.key]} pts / lv</small>}
-                        {capOf(s.key) != null && <small>Cap {prefix}{capOf(s.key)}</small>}
+                        {rule && <small>{tr("pl.ptsLv", { n: rule.weights[s.key] })}</small>}
+                        {capOf(s.key) != null && <small>{tr("pl.cap", { cap: `${prefix}${capOf(s.key)}` })}</small>}
                       </span>
                       <input
-                        aria-label={`${s.label} current level`}
+                        aria-label={tr("pl.currentAria", { system: tr(`pl.sys.${s.field}` as MessageKey) })}
                         className={bad ? "silly" : undefined}
                         value={shown(rows, "current")}
                         onFocus={(e) => mixed(rows, "current") && e.target.select()}
-                        title={mixed(rows, "current") ? "Slots differ (see Full). Typing here sets them all." : undefined}
+                        title={mixed(rows, "current") ? tr("pl.slotsDiffer") : undefined}
                         onChange={(e) => setAll("current", e.target.value)}
-                        placeholder={mixed(rows, "current") ? "mixed" : `${prefix}${baselineOf(s.field)}`}
+                        placeholder={mixed(rows, "current") ? tr("pl.mixed") : `${prefix}${baselineOf(s.field)}`}
                       />
                       <span aria-hidden>→</span>
                       <input
-                        aria-label={`${s.label} planned level`}
+                        aria-label={tr("pl.plannedAria", { system: tr(`pl.sys.${s.field}` as MessageKey) })}
                         className={bad ? "silly" : overCap(rows, capOf(s.key)) ? "over-cap" : undefined}
                         value={shown(rows, "planned")}
                         onFocus={(e) => mixed(rows, "planned") && e.target.select()}
-                        title={mixed(rows, "planned") ? "Slots differ (see Full). Typing here sets them all." : undefined}
+                        title={mixed(rows, "planned") ? tr("pl.slotsDiffer") : undefined}
                         onChange={(e) => setAll("planned", e.target.value)}
-                        placeholder={mixed(rows, "planned") ? "mixed" : "same"}
+                        placeholder={mixed(rows, "planned") ? tr("pl.mixed") : tr("pl.same")}
                       />
                       {canFill ? (
-                        <button type="button" className="fill-btn" onClick={() => fill(s)} title={`Fill the lowest ${s.noun} levels that reach your goal`}>
-                          Fill min
+                        <button type="button" className="fill-btn" onClick={() => fill(s)} title={tr(`pl.fillTitle.${s.field}` as MessageKey)}>
+                          {tr("pl.fillMinShort")}
                         </button>
                       ) : (
                         <span />
@@ -471,32 +475,32 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                     </div>
                   );
                 })}
-                <p className="hint">"Fill min" puts the rest of your goal on that system. Levels past a cap are counted at the cap. A range like 135–140 means the slots differ: see each one in Full, or type one level to set them all.</p>
+                <p className="hint">{tr("pl.fillHint")}</p>
               </div>
             )}
           </Card>
 
-          <Card icon={<GameIcon name="rola" />} title="Cart income" step="materials" current={step} onStep={goStep}>
-            <p className="hint">What your Cart makes an hour, in the order the Cart screen lists it, and how much you already have.</p>
+          <Card icon={<GameIcon name="rola" />} title={tr("pl.cartCard")} step="materials" current={step} onStep={goStep}>
+            <p className="hint">{tr("pl.cartHint")}</p>
             {full ? (
               <div className="table-wrap flat">
                 <table className="input-table">
                   <thead>
                     <tr>
                       <th scope="col"></th>
-                      <th scope="col">Cart / hr</th>
-                      <th scope="col">Have now</th>
-                      <th scope="col">Shop + other / day</th>
+                      <th scope="col">{tr("pl.cartHr")}</th>
+                      <th scope="col">{tr("pl.haveNow")}</th>
+                      <th scope="col">{tr("pl.shopOther")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {CART_ORDER.map((k) => (
                       <tr key={k}>
-                        <th scope="row"><GameIcon name={k} /> {MATERIAL_LABELS[k]}</th>
+                        <th scope="row"><GameIcon name={k} /> {k === "sand" ? tr("pl.sandWhite") : MATERIAL_LABELS[k]}</th>
                         {(["cartPerHour", "have", "perDay"] as const).map((col) => (
                           <td key={col}>
                             <input
-                              aria-label={`${MATERIAL_LABELS[k]} ${col}`}
+                              aria-label={tr(col === "cartPerHour" ? "pl.cartAria" : col === "have" ? "pl.handAria" : "pl.perDayAria", { name: MATERIAL_LABELS[k] })}
                               value={form.income[k][col]}
                               onChange={(e) => set("income", { ...form.income, [k]: { ...form.income[k], [col]: e.target.value } })}
                               placeholder="0"
@@ -512,8 +516,8 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
               <div className="cart-list">
                 <div className="cart-row cart-head" aria-hidden>
                   <span />
-                  <span>Cart / hr</span>
-                  <span>Have now</span>
+                  <span>{tr("pl.cartHr")}</span>
+                  <span>{tr("pl.haveNow")}</span>
                 </div>
                 {CART_ORDER.map((k) => {
                   const name = MATERIAL_LABELS[k].replace(" (White eq.)", "");
@@ -521,13 +525,13 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                     <div key={k} className="cart-row">
                       <span><GameIcon name={k} /> {name}</span>
                       <input
-                        aria-label={`${name} Cart per hour`}
+                        aria-label={tr("pl.cartAria", { name })}
                         value={form.income[k].cartPerHour}
                         onChange={(e) => set("income", { ...form.income, [k]: { ...form.income[k], cartPerHour: e.target.value } })}
                         placeholder="0"
                       />
                       <input
-                        aria-label={`${name} on hand`}
+                        aria-label={tr("pl.handAria", { name })}
                         value={form.income[k].have}
                         onChange={(e) => set("income", { ...form.income, [k]: { ...form.income[k], have: e.target.value } })}
                         placeholder="0"
@@ -537,21 +541,21 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                 })}
               </div>
             )}
-            <p className="hint">Sand counts as White Sand (1 Blue = 5 White, 1 Purple = 25 White).</p>
+            <p className="hint">{tr("pl.sandHint")}</p>
             <Field
-              label="Refined Ore on hand"
+              label={tr("pl.refined")}
               value={form.refinedOre ?? ""}
               onChange={(v) => set("refinedOre", v)}
               placeholder="0"
-              hint="Gear needs it every 5 levels. Rarely short: 4 map gathers a day and Ore Realms keep it topped up."
+              hint={tr("pl.refinedHint")}
             />
             {full && (
-              <Field label="Fantomon EXP per treat" value={form.expPerTreat} onChange={(v) => set("expPerTreat", v)} placeholder={String(DEFAULT_EXP_PER_TREAT)} />
+              <Field label={tr("pl.expPerTreat")} value={form.expPerTreat} onChange={(v) => set("expPerTreat", v)} placeholder={String(DEFAULT_EXP_PER_TREAT)} />
             )}
           </Card>
 
-          <Card icon="📅" title="Each day" step="daily" current={step} onStep={goStep}>
-            <h3 className="subhead">Material Realms</h3>
+          <Card icon="📅" title={tr("pl.dailyCard")} step="daily" current={step} onStep={goStep}>
+            <h3 className="subhead">{tr("pl.realms")}</h3>
             <RealmSuggest
               result={result}
               current={Object.fromEntries(REALM_MATERIALS.map((k) => [k, Number(form.refreshes[k]) || 0])) as Record<RealmMaterial, number>}
@@ -564,7 +568,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                   <select value={form.refreshes[k] || "0"} onChange={(e) => set("refreshes", { ...form.refreshes, [k]: e.target.value })}>
                     {Array.from({ length: 11 }, (_, n) => (
                       <option key={n} value={n}>
-                        {n} {n === 1 ? "refresh" : "refreshes"}
+                        {tn("pl.refreshN", n)}
                       </option>
                     ))}
                   </select>
@@ -574,51 +578,45 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
             {result && days > 0 && (
               <div className="tool-summary">
                 <p>
-                  By season end you'll have{" "}
-                  {REALM_MATERIALS.map((k, i) => (
-                    <span key={k}>
-                      {i > 0 && (i === REALM_MATERIALS.length - 1 ? " and " : ", ")}
-                      <b>{fmt(result.realmTools[k])}</b> {REALM_TOOL_NAMES[k]}
-                    </span>
-                  ))}
-                  {form.dailyTasks !== false && <>, daily tasks included</>}.
+                  {rich(
+                    tr(form.dailyTasks !== false ? "pl.byEndTasks" : "pl.byEnd", {
+                      list: new Intl.ListFormat(locale, { type: "conjunction" }).format(REALM_MATERIALS.map((k) => `<b>${fmt(result.realmTools[k])}</b> ${REALM_TOOL_NAMES[k]}`)),
+                    }),
+                  )}
                 </p>
                 {result.realmYields && (
                   <p className="hint">
-                    Each run: ~{fmt(result.realmYields.ore)} Ore · ~{fmt(result.realmYields.rola)} Rola · ~{fmt(result.realmYields.essence)} Essence · ~
-                    {fmt(result.realmYields.sand)} Sand.
+                    {tr("pl.eachRun", { ore: fmt(result.realmYields.ore), rola: fmt(result.realmYields.rola), essence: fmt(result.realmYields.essence), sand: fmt(result.realmYields.sand) })}
                   </p>
                 )}
                 <p className="hint">
-                  Refreshes cost <b>{fmt(result.dawniumPerDay - rolaBuyCost(Number(form.rolaBuys) || 0))}</b> Dawnium a day. First two {realmCost(1)} each.{" "}
-                  <a href="/dawnium">Dawnium Guide →</a>
+                  {rich(tr("pl.refreshCost", { n: fmt(result.dawniumPerDay - rolaBuyCost(Number(form.rolaBuys) || 0)), cost: realmCost(1) }))}{" "}
+                  <a href="/dawnium">{tr("pl.dawniumGuide")}</a>
                 </p>
               </div>
             )}
 
-            <h3 className="subhead">Home Shop</h3>
+            <h3 className="subhead">{tr("pl.homeShop")}</h3>
             <label className="field">
-              <span>Refreshes a day</span>
+              <span>{tr("pl.refreshes")}</span>
               <select value={form.shopRefreshes || "0"} onChange={(e) => set("shopRefreshes", e.target.value)}>
                 {Array.from({ length: SHOP_REFRESH_COSTS.length + 1 }, (_, n) => (
                   <option key={n} value={n}>
-                    {n === 0 ? "None (free shelf only)" : `${n} · ${formatXpShort(shopRefreshCost(n))} Rola a day`}
+                    {n === 0 ? tr("pl.noneFree") : tr("pl.rolaDay", { n, rola: formatXpShort(shopRefreshCost(n)) })}
                   </option>
                 ))}
               </select>
-              <small>Each shelf lists about 1.5 stacks each of Ore, Sand, Essence and treats. Spare Rola buys whatever is still short.</small>
+              <small>{tr("pl.shelfHint")}</small>
             </label>
 
-            <h3 className="subhead">Realm tools saved up</h3>
-            <p className="hint">
-              Tools already in your Backpack, on top of the ones the daily tasks give. Filled in from a Backpack screenshot when the tools show in it.
-            </p>
+            <h3 className="subhead">{tr("pl.toolsSaved")}</h3>
+            <p className="hint">{tr("pl.toolsHint")}</p>
             <div className="table-wrap flat">
               <table className="input-table">
                 <thead>
                   <tr>
                     <th scope="col"></th>
-                    <th scope="col">In Backpack</th>
+                    <th scope="col">{tr("pl.inBackpack")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -626,7 +624,7 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                     <tr key={k}>
                       <th scope="row">{REALM_TOOL_NAMES[k]}</th>
                       <td>
-                        <input aria-label={`${REALM_TOOL_NAMES[k]} saved`} value={form.savedEntries[k]} onChange={(e) => set("savedEntries", { ...form.savedEntries, [k]: e.target.value })} placeholder="0" />
+                        <input aria-label={tr("pl.toolSavedAria", { name: REALM_TOOL_NAMES[k] })} value={form.savedEntries[k]} onChange={(e) => set("savedEntries", { ...form.savedEntries, [k]: e.target.value })} placeholder="0" />
                       </td>
                     </tr>
                   ))}
@@ -638,32 +636,35 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                 <label className="check">
                   <input type="checkbox" checked={form.dailyTasks !== false} onChange={(e) => set("dailyTasks", e.target.checked)} />
                   <span>
-                    I clear the daily tasks
+                    {tr("pl.dailyTasks")}
                     <small>
-                      They pay {DAILY_TASKS.stamina} Stamina, {Object.values(DAILY_TASKS.realmTools).reduce((a, b) => a + b, 0)} Realm tools and{" "}
-                      {result ? fmt(DAILY_TASKS.rolaBase * result.scale) : `${DAILY_TASKS.rolaBase} × rank`} Rola a day.
+                      {tr("pl.dailyTasksHint", {
+                        stamina: DAILY_TASKS.stamina,
+                        tools: Object.values(DAILY_TASKS.realmTools).reduce((a, b) => a + b, 0),
+                        rola: result ? fmt(DAILY_TASKS.rolaBase * result.scale) : tr("pl.rolaRank", { n: DAILY_TASKS.rolaBase }),
+                      })}
                     </small>
                   </span>
                 </label>
                 <label className="field">
-                  <span>Rola bought with Dawnium a day</span>
+                  <span>{tr("pl.rolaBought")}</span>
                   <select value={form.rolaBuys || "0"} onChange={(e) => set("rolaBuys", e.target.value)}>
                     {Array.from({ length: 21 }, (_, n) => (
                       <option key={n} value={n}>
                         {n === 0
-                          ? "None"
-                          : `${n} · ${result ? formatXpShort(n * 1500 * result.scale) : n * 1500} Rola for ${fmt(rolaBuyCost(n))} Dawnium`}
+                          ? tr("pl.none")
+                          : tr("pl.rolaFor", { n, rola: result ? formatXpShort(n * 1500 * result.scale) : n * 1500, cost: fmt(rolaBuyCost(n)) })}
                       </option>
                     ))}
                   </select>
-                  <small>Five at 30 Dawnium, five at 50, then 100 each.</small>
+                  <small>{tr("pl.rolaBuyHint")}</small>
                 </label>
 
                 {rule && (
                   <label className="field">
-                    <span>Rank (sets Realm, gathering and shop amounts)</span>
+                    <span>{tr("pl.rank")}</span>
                     <select value={form.realmTier} onChange={(e) => set("realmTier", e.target.value as PlannerForm["realmTier"])}>
-                      <option value="auto">Auto ({rule.realmRankName} III)</option>
+                      <option value="auto">{tr("pl.auto", { name: `${rule.realmRankName} III` })}</option>
                       {[1, 2, 3].map((tier) => (
                         <option key={tier} value={tier}>
                           {rule.realmRankName} {"I".repeat(tier)}
@@ -673,26 +674,22 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                   </label>
                 )}
 
-                <h3 className="subhead">Stamina & gathering</h3>
-                <p className="hint">
-                  Out in the world map you spend Stamina to gather from Rola, Ore, Sand and Essence spots. Tell the planner how you usually split
-                  your Stamina and it adds what you'd gather to your materials.
-                </p>
+                <h3 className="subhead">{tr("pl.stamina")}</h3>
+                <p className="hint">{tr("pl.staminaHint")}</p>
                 <ul className="hint gather-facts">
                   <li>
-                    You get 5 Stamina an hour{form.dailyTasks !== false && <> plus {DAILY_TASKS.stamina} from the daily tasks</>}
-                    {result && <>: about <b>{fmt(result.stamina)}</b> by season end</>}. Each gather costs 5.
+                    {form.dailyTasks !== false ? tr("pl.st.baseTasks", { n: DAILY_TASKS.stamina }) : tr("pl.st.base")}
+                    {result && rich(tr("pl.st.total", { n: fmt(result.stamina) }))}
+                    {tr("pl.st.cost")}
                   </li>
                   <li>
-                    <b>Share of Stamina:</b> what percent goes to each kind. For example, 50 Rola and 50 Ore. Leave it blank if you don't gather.
+                    {rich(tr("pl.st.share"))}
                   </li>
                   <li>
-                    <b>Shared Grand Mines:</b> big mines other players find and share with you. Each pays double and costs no Stamina, up to 50 a
-                    week in total.
+                    {rich(tr("pl.st.mines"))}
                   </li>
                   <li>
-                    <b>Per Stamina:</b> already worked out from your rank, including the Grand Mines your own gathers sometimes find. Only change
-                    it if your gathers pay a different amount.
+                    {rich(tr("pl.st.per"))}
                   </li>
                 </ul>
                 <div className="table-wrap flat">
@@ -700,10 +697,10 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                     <thead>
                       <tr>
                         <th scope="col"></th>
-                        <th scope="col">Share of Stamina %</th>
-                        <th scope="col">Shared Grand Mines / week</th>
-                        <th scope="col">Per Stamina</th>
-                        <th scope="col">By season end</th>
+                        <th scope="col">{tr("pl.col.share")}</th>
+                        <th scope="col">{tr("pl.col.mines")}</th>
+                        <th scope="col">{tr("pl.col.per")}</th>
+                        <th scope="col">{tr("pl.col.byEnd")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -711,13 +708,13 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                         <tr key={k}>
                           <th scope="row"><GameIcon name={k} /> {MATERIAL_LABELS[k].replace(" (White eq.)", "")}</th>
                           <td>
-                            <input aria-label={`${k} stamina percent`} value={form.staminaSplit[k] ?? ""} onChange={(e) => set("staminaSplit", { ...form.staminaSplit, [k]: e.target.value })} placeholder="0" />
+                            <input aria-label={tr("pl.aria.stPct", { name: MATERIAL_LABELS[k] })} value={form.staminaSplit[k] ?? ""} onChange={(e) => set("staminaSplit", { ...form.staminaSplit, [k]: e.target.value })} placeholder="0" />
                           </td>
                           <td>
                             {k === "essence" ? (
                               <span className="hint">—</span>
                             ) : (
-                              <input aria-label={`${k} shared mines per week`} value={form.bigNodes[k]} onChange={(e) => set("bigNodes", { ...form.bigNodes, [k]: e.target.value })} placeholder="0" />
+                              <input aria-label={tr("pl.aria.mines", { name: MATERIAL_LABELS[k] })} value={form.bigNodes[k]} onChange={(e) => set("bigNodes", { ...form.bigNodes, [k]: e.target.value })} placeholder="0" />
                             )}
                           </td>
                           <td>
@@ -725,10 +722,10 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                               <span className="hint">{result ? fmt(result.gatherPerStamina.essence) : "—"}</span>
                             ) : (
                               <input
-                                aria-label={`${k} per stamina`}
+                                aria-label={tr("pl.aria.per", { name: MATERIAL_LABELS[k] })}
                                 value={form.staminaYield[k]}
                                 onChange={(e) => set("staminaYield", { ...form.staminaYield, [k]: e.target.value })}
-                                placeholder={result ? fmt(result.gatherPerStamina[k]) : "auto"}
+                                placeholder={result ? fmt(result.gatherPerStamina[k]) : tr("pl.autoValue")}
                               />
                             )}
                           </td>
@@ -743,17 +740,17 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
                 {(() => {
                   const total = (["rola", "ore", "sand", "essence"] as const).reduce((t, k) => t + (Number(form.staminaSplit[k]) || 0), 0);
                   return total > 100 ? (
-                    <p className="hint warn">Your shares add up to {total}%. They should total 100% or less.</p>
+                    <p className="hint warn">{tr("pl.overTotal", { n: total })}</p>
                   ) : total > 0 && total < 100 ? (
-                    <p className="hint">{100 - total}% of your Stamina isn't gathering (for example, it goes on fights).</p>
+                    <p className="hint">{tr("pl.notGathering", { n: 100 - total })}</p>
                   ) : null;
                 })()}
                 <Field
-                  label="Ore from dungeons per day"
+                  label={tr("pl.dungeonOre")}
                   value={form.dungeonOrePerDay}
                   onChange={(v) => set("dungeonOrePerDay", v)}
                   placeholder="0"
-                  hint="Ore your daily dungeon runs give, if you want it counted. It's added to the Ore gathered above."
+                  hint={tr("pl.dungeonOreHint")}
                 />
               </div>
             )}
@@ -776,18 +773,18 @@ export function PlannerPage({ character, onCharacterChange, form, onChange, onCl
           e.preventDefault();
           document.getElementById("summary")?.scrollIntoView({ behavior: "smooth" });
         }}>
-          <b>🐐 You silly goat!</b>
-          <span>Some numbers can't happen. Tap to see why.</span>
+          <b>{tr("pl.goat")}</b>
+          <span>{tr("pl.goatSub")}</span>
         </a>
       ) : result && (
         <a className="mobile-bar" href="#summary" onClick={(e) => {
           e.preventDefault();
           document.getElementById("summary")?.scrollIntoView({ behavior: "smooth" });
         }}>
-          <b>+{result.score.earned.toLocaleString()} Primostars</b>
+          <b>{tr("pl.barStars", { n: result.score.earned.toLocaleString(locale) })}</b>
           {result.character.ok && <span>Lv {result.character.decimalLevel.toFixed(2)}</span>}
           <span>
-            {result.realmEntriesNeeded === null ? "Realms ?" : `${result.realmEntriesNeeded.toLocaleString()} Realm runs`}
+            {result.realmEntriesNeeded === null ? tr("pl.realmsUnknown") : tr("pl.barRealms", { n: result.realmEntriesNeeded.toLocaleString(locale) })}
           </span>
         </a>
       )}
