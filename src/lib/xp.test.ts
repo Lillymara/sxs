@@ -91,4 +91,12 @@ describe("helpers", () => {
     expect(seasons.length).toBeGreaterThan(0);
     expect(getSeason(1)?.expToNext[0]).toBe(80);
   });
+
+  it("matches the game's Season 2 ladder", () => {
+    const s2 = getSeason(2)!;
+    expect(s2.maxLevel + 1).toBe(280); // Champion cap 130, then Season Levels to 280
+    expect(s2.expToNext[100 - s2.minLevel]).toBe(2_904_398); // level 100 → 101
+    expect(s2.expToNext[122 - s2.minLevel]).toBe(4_866_448); // level 122 → 123
+    expect(s2.expToNext[130 - s2.minLevel]).toBe(6_342_809); // first Season Level
+  });
 });
