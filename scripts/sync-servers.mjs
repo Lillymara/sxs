@@ -72,6 +72,13 @@ export function parseCsv(text) {
 }
 
 const squash = (s) => s.replace(/\s+/g, " ").trim();
+/** Spreadsheet error values (#REF!, #N/A, #VALUE!, #NAME?, #ERROR!, #DIV/0!) mean "no data here", not a name. */
+const isSheetError = (s) => /^#(REF!|N\/A|VALUE!|NAME\?|ERROR!|DIV\/0!|NUM!|NULL!)$/i.test(s);
+/** A cell's text, or "" for blanks and spreadsheet errors. */
+const cell = (s) => {
+  const v = squash(s ?? "");
+  return isSheetError(v) ? "" : v;
+};
 const key = (s) => squash(s).toUpperCase();
 
 /** "FAERIE INN" → "Faerie Inn", "SKY-REACH" → "Sky-Reach", "PIER OF YORE" → "Pier of Yore". */
@@ -112,15 +119,16 @@ export function readSheet(csvText) {
   for (const r of rows.slice(1)) {
     const nexus = squash(r[at.nexus] ?? "");
     const number = Number(squash(r[at.number] ?? ""));
-    const name = squash(r[at.name] ?? "");
-    if (!/^\d{5}$/.test(nexus) || !Number.isInteger(number) || number < 1 || !name) continue;
+    const name = cell(r[at.name]);
+    // A blank name is kept (as ""): the sheet's editors sometimes clear names while the rest of the row is still good.
+    if (!/^\d{5}$/.test(nexus) || !Number.isInteger(number) || number < 1) continue;
     servers.push({
       id: `${nexus}-${number}`,
       name,
-      opened: sheetDate(r[at.start]),
+      opened: sheetDate(cell(r[at.start])),
       nexus,
       number,
-      merges: at.merges.map((i) => (r[i] ?? "").split(",").map(squash).filter(Boolean)),
+      merges: at.merges.map((i) => (r[i] ?? "").split(",").map(cell).filter(Boolean)),
     });
   }
   return servers;
@@ -133,11 +141,11 @@ export function readSheet(csvText) {
 export function mergeRoster(ourRows, sheetServers) {
   const rows = ourRows.map(([name, opened, nexus, number, merges]) => [name, opened, nexus, number, merges.map((g) => [...g])]);
   const byId = new Map(rows.map((r) => [`${r[2]}-${r[3]}`, r]));
-  const report = { added: [], datesFilled: [], mergesFilled: [], conflicts: [], missingFromSheet: [] };
+  const report = { added: [], datesFilled: [], mergesFilled: [], conflicts: [], missingFromSheet: [], waitingForName: [] };
 
   // Names in our spelling where we have them; new names get title case.
   const spelling = new Map(rows.map((r) => [key(r[0]), r[0]]));
-  for (const s of sheetServers) if (!spelling.has(key(s.name))) spelling.set(key(s.name), titleCase(s.name));
+  for (const s of sheetServers) if (s.name && !spelling.has(key(s.name))) spelling.set(key(s.name), titleCase(s.name));
   const spell = (n) => spelling.get(key(n)) ?? titleCase(n);
   const groups = (merges) => merges.map((g) => g.map(spell));
 
@@ -147,13 +155,18 @@ export function mergeRoster(ourRows, sheetServers) {
     seen.add(s.id);
     const mine = byId.get(s.id);
     if (!mine) {
+      // A new server with no name yet: wait for the sheet to name it rather than add a nameless row.
+      if (!s.name) {
+        report.waitingForName.push({ id: s.id, opened: s.opened });
+        continue;
+      }
       const row = [spell(s.name), s.opened, s.nexus, s.number, groups(s.merges)];
       rows.push(row);
       byId.set(s.id, row);
       report.added.push({ id: s.id, name: row[0], opened: row[1] });
       continue;
     }
-    if (key(mine[0]) !== key(s.name)) report.conflicts.push({ id: s.id, field: "name", ours: mine[0], sheet: titleCase(s.name) });
+    if (s.name && key(mine[0]) !== key(s.name)) report.conflicts.push({ id: s.id, field: "name", ours: mine[0], sheet: titleCase(s.name) });
     if (!mine[1] && s.opened) {
       mine[1] = s.opened;
       report.datesFilled.push({ id: s.id, name: mine[0], opened: s.opened });
@@ -188,7 +201,7 @@ export function mergeWithManual(ourRows, manualRows, sheetServers) {
   const manualIds = new Set(manualRows.map(id));
   const { rows, report } = mergeRoster([...ourRows, ...manualRows.filter((r) => !ourRows.some((o) => id(o) === id(r)))], sheetServers);
   const sheetIds = new Set(sheetServers.map((s) => s.id));
-  const sheetByName = new Map(sheetServers.map((s) => [key(s.name), s]));
+  const sheetByName = new Map(sheetServers.filter((s) => s.name).map((s) => [key(s.name), s]));
   report.manualMoved = [];
   report.manualReplaced = [];
   const roster = [];
@@ -223,6 +236,7 @@ export function describe(report) {
     `\`${x.id}\` ${x.field}: ours ${JSON.stringify(x.ours)}, sheet ${JSON.stringify(x.sheet)}`,
   );
   list("In our roster but not the sheet (kept)", report.missingFromSheet, (x) => `\`${x}\``);
+  list("New in the sheet but not named yet (skipped until it has a name)", report.waitingForName ?? [], (x) => `\`${x.id}\`${x.opened ? `, opened ${x.opened}` : ""}`);
   list("Hand-added servers now in the sheet (moved into the roster)", report.manualMoved ?? [], (x) => `\`${x.id}\` ${x.name}`);
   list(
     "Hand-added servers the sheet lists under a different Nexus/number (replaced by the sheet's; check SERVER_SHIFT_DAYS)",

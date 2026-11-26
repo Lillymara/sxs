@@ -81,6 +81,23 @@ describe("server roster sync", () => {
     expect(report.missingFromSheet).toEqual([]);
   });
 
+  it("keeps working when the sheet clears server names", () => {
+    const ours = [["Runestone", "", "70001", 2, [[], [], [], []]]];
+    const sheet = readSheet(
+      [
+        HEADER,
+        row("70001", 2, "#REF!", "05/19/2026 9:00 AM", "FIRST DAWN", "#REF!"), // ours, name broken: still fills the date and merges
+        row("70048", 3, "", "11/20/2026 9:00 AM"), // new and unnamed: wait for a name
+      ].join("\n"),
+    );
+    expect(sheet).toHaveLength(2);
+    const { rows, report } = mergeRoster(ours, sheet);
+    expect(rows).toEqual([["Runestone", "2026-05-19", "70001", 2, [["First Dawn"], [], [], []]]]);
+    expect(report.conflicts).toEqual([]);
+    expect(report.added).toEqual([]);
+    expect(report.waitingForName).toEqual([{ id: "70048-3", opened: "2026-11-20" }]);
+  });
+
   it("writes one server per line", () => {
     expect(formatRows([["A", "", "70001", 1, [[], [], [], []]]])).toBe(`[\n["A","","70001",1,[[],[],[],[]]]\n]\n`);
   });
