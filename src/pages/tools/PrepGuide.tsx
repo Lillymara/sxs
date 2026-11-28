@@ -1,16 +1,21 @@
 // One Season Prep guide (an island opening, a season change), all laid out the same way:
 // a summary of the key times, the one rule to remember, then "Before…" / "When…" phases of short, tagged steps.
 import type { ReactNode } from "react";
-import { formatLocale } from "../../i18n/format";
+import { formatLocale, unitText } from "../../i18n/format";
+import { useT } from "../../i18n";
+import type { MessageKey } from "../../i18n/en";
+
+type T = (key: MessageKey, vars?: Record<string, string | number>) => string;
+type Tn = (key: string, n: number, vars?: Record<string, string | number>) => string;
 
 const HOUR = 3_600_000;
 /** Exact time in the saved server timezone (device zone when none is set), with the zone name. */
 export const when = (d: Date, timeZone?: string) =>
   d.toLocaleString(formatLocale(), { timeZone, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
-export const left = (d: Date, now: Date) => {
+export const left = (d: Date, now: Date, t: T, tn: Tn) => {
   const h = (d.getTime() - now.getTime()) / HOUR;
-  if (h <= 0) return "passed";
-  return h >= 48 ? `in ${Math.floor(h / 24)} days` : `in ${Math.floor(h)}h ${Math.round((h % 1) * 60)}m`;
+  if (h <= 0) return t("pr.passed");
+  return h >= 48 ? tn("pr.inDays", Math.floor(h / 24)) : t("pr.inTime", { time: `${unitText("h", Math.floor(h))} ${unitText("m", Math.round((h % 1) * 60))}` });
 };
 export const hoursBefore = (d: Date, h: number) => new Date(d.getTime() - h * HOUR);
 
@@ -20,6 +25,8 @@ export interface GuideContext {
   name: string;
   tz: string | undefined;
   now: Date;
+  t: T;
+  tn: Tn;
 }
 
 export interface GuideStep {
@@ -62,6 +69,7 @@ export interface Guide {
 export function PrepGuide({ guide, ctx }: { guide: Guide; ctx: GuideContext }) {
   const { at, event } = guide;
   const { tz, now } = ctx;
+  const { t, tn } = useT();
   return (
     <>
       <section className="card">
@@ -69,13 +77,13 @@ export function PrepGuide({ guide, ctx }: { guide: Guide; ctx: GuideContext }) {
           <>
             <p className="eyebrow">{ctx.name}</p>
             <p className="prep-end">
-              {at > now ? event : guide.eventPast} <b>{when(at, tz)}</b> {at > now && <span className="hint">({left(at, now)})</span>}
+              {at > now ? event : guide.eventPast} <b>{when(at, tz)}</b> {at > now && <span className="hint">({left(at, now, t, tn)})</span>}
             </p>
             <ol className="prep-timeline">
-              {guide.timeline.map((t) => (
-                <li key={t.label}>
-                  <b>{t.at ? when(t.at, tz) : t.whenText}</b>
-                  {t.at && t.at > now && <span className="hint"> ({left(t.at, now)})</span>} · {t.label}
+              {guide.timeline.map((e) => (
+                <li key={e.label}>
+                  <b>{e.at ? when(e.at, tz) : e.whenText}</b>
+                  {e.at && e.at > now && <span className="hint"> ({left(e.at, now, t, tn)})</span>} · {e.label}
                 </li>
               ))}
             </ol>

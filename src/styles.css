@@ -1072,6 +1072,7 @@ button.wheel-hub:disabled { cursor: progress; }
 /* Season Prep and What's New. */
 .prep-end { font-size: 1.05rem; margin: 4px 0 10px; }
 .prep-timeline { margin: 0; padding-left: 1.2rem; display: grid; gap: 6px; font-size: 0.9rem; }
+.prep .table-wrap td + td { white-space: normal; }
 .change-list { margin: 0; padding-left: 1.2rem; display: grid; gap: 6px; }
 .change-list a { color: var(--accent); white-space: nowrap; }
 
