@@ -990,6 +990,8 @@ const fr: Messages = {
   "wm.use.vine": "Dégage les barrages de lianes",
   "wm.use.pillar": "Ouvre les piliers scellés",
   "wm.use.boulder": "Dégage les barrages de rochers",
+
+  "si.f.seasonSaved": "Ta saison enregistrée. Change-la si elle est fausse.",
 };
 
 export default fr;

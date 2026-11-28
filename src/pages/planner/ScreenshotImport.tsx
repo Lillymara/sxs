@@ -480,7 +480,7 @@ export function ScreenshotImport({ season, onApply, scope = "planner" }: { seaso
           ) : (
             <>
               <div className="shot-grid">
-                {field(t("si.f.season"), found.season, (v) => setFound({ ...found, season: v }))}
+                {field(t("si.f.season"), found.season ?? String(season), (v) => setFound({ ...found, season: v }), found.season ? undefined : t("si.f.seasonSaved"))}
                 {field(t("si.f.level"), found.level, (v) => setFound({ ...found, level: v }))}
                 {field(t("si.f.xp"), found.xp, (v) => setFound({ ...found, xp: v }))}
                 {field(t("si.f.rate"), found.rate, (v) => setFound({ ...found, rate: v }))}

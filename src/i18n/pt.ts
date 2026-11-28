@@ -990,6 +990,8 @@ const pt: Messages = {
   "wm.use.vine": "Remove bloqueios de trepadeiras",
   "wm.use.pillar": "Abre pilares selados",
   "wm.use.boulder": "Remove bloqueios de pedras",
+
+  "si.f.seasonSaved": "Sua temporada salva. Mude se estiver errada.",
 };
 
 export default pt;

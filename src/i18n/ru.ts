@@ -1022,6 +1022,8 @@ const ru: Messages = {
   "wm.use.vine": "Убирает преграды из лиан",
   "wm.use.pillar": "Открывает запечатанные столбы",
   "wm.use.boulder": "Убирает каменные преграды",
+
+  "si.f.seasonSaved": "Сохранённый сезон. Измените, если он неверный.",
 };
 
 export default ru;

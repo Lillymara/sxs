@@ -990,6 +990,8 @@ const es: Messages = {
   "wm.use.vine": "Elimina bloqueos de enredaderas",
   "wm.use.pillar": "Abre pilares sellados",
   "wm.use.boulder": "Elimina bloqueos de rocas",
+
+  "si.f.seasonSaved": "Tu temporada guardada. Cámbiala si no es correcta.",
 };
 
 export default es;

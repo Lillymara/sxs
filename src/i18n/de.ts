@@ -990,6 +990,8 @@ const de: Messages = {
   "wm.use.vine": "Entfernt Rankenblockaden",
   "wm.use.pillar": "Öffnet versiegelte Säulen",
   "wm.use.boulder": "Entfernt Felsblockaden",
+
+  "si.f.seasonSaved": "Deine gespeicherte Saison. Ändere sie, falls sie falsch ist.",
 };
 
 export default de;

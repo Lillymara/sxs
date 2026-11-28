@@ -168,6 +168,17 @@ export default function App() {
   const day1 = effectiveDay1(serverChoice);
   const server = day1 ? { ...seasonStatus(day1, now), name: serverChoice.name } : null;
   const seasonEndTime = server?.seasonEnds?.getTime();
+
+  // Follow the picked server's season: set it when a server is picked and again whenever a new season
+  // starts there, so it doesn't need entering by hand. Picking another season by hand sticks until then.
+  const serverSeason = server?.season.number;
+  const [synced, setSynced] = usePersistentState<{ season: number }>("sxs.serverSeason", { season: 0 });
+  const syncedSeason = synced.season;
+  useEffect(() => {
+    if (!serverSeason || serverSeason === syncedSeason || !getSeason(serverSeason)) return;
+    setSynced({ season: serverSeason });
+    setCharacter((c) => ({ ...c, season: String(serverSeason) }));
+  }, [serverSeason, syncedSeason, setSynced, setCharacter]);
   const timeDefaults: TimeDefaults = useMemo(
     () => ({ seasonEnd: seasonEndTime !== undefined ? new Date(seasonEndTime) : null, resetTime: localResetTime() }),
     [seasonEndTime],

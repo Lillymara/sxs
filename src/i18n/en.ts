@@ -999,6 +999,8 @@ export const en = {
   "wm.use.vine": "Clears vine blockades",
   "wm.use.pillar": "Opens sealed pillars",
   "wm.use.boulder": "Clears boulder blockades",
+
+  "si.f.seasonSaved": "Your saved season. Change it if it's wrong.",
 };
 
 export type MessageKey = keyof typeof en;
