@@ -1,14 +1,21 @@
-// What's worth buying in the in-game shop. Content lives in src/data/spending.ts.
+// What's worth buying in the in-game shop. Structure lives in src/data/spending.ts, words in src/i18n (sp.*).
 import { useState } from "react";
-import { CHECKLIST, COSMETICS, DEALS, TIERS, TIPS, type Tier } from "../../data/spending";
+import { CHECKLIST, COSMETICS_PARAGRAPHS, DEALS, TIERS, TIPS, type Deal, type Tier } from "../../data/spending";
+import { rich, useT } from "../../i18n";
+import type { MessageKey } from "../../i18n/en";
 
-const ORDER: Tier[] = ["best", "good", "situational", "skip"];
+const ORDER = TIERS;
+const k = (key: string) => key as MessageKey;
+const range = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
+/** A deal's name: game names like Monthly Pass stay in English unless a language has its own. */
+const dealKey = (d: Deal, field: string) => k(`sp.deal.${d.id}.${field}`);
 /** Bars lit on the value meter for each tier. */
 const BARS: Record<Tier, number> = { best: 4, good: 3, situational: 2, skip: 1 };
 
 function ValueMeter({ tier }: { tier: Tier }) {
+  const { t } = useT();
   return (
-    <span className={`value-meter tier-${tier}`} role="img" aria-label={`Value: ${TIERS[tier].label}`}>
+    <span className={`value-meter tier-${tier}`} role="img" aria-label={t("sp.valueAria", { tier: t(k(`sp.tier.${tier}.label`)) })}>
       {[1, 2, 3, 4].map((n) => <i key={n} className={n <= BARS[tier] ? "on" : undefined} />)}
     </span>
   );
@@ -16,27 +23,28 @@ function ValueMeter({ tier }: { tier: Tier }) {
 
 /** The four "before you buy" questions as a quick yes/no check with a verdict. */
 function DealCheck() {
+  const { t, tn } = useT();
   const [answers, setAnswers] = useState<(boolean | null)[]>(() => CHECKLIST.map(() => null));
   const answered = answers.filter((a) => a !== null).length;
-  const flags = CHECKLIST.filter((q, i) => answers[i] !== null && answers[i] !== q.good);
+  const flags = CHECKLIST.map((_, i) => i + 1).filter((n) => answers[n - 1] !== null && answers[n - 1] !== CHECKLIST[n - 1].good);
   const verdict =
     answered < CHECKLIST.length
-      ? { cls: "", title: `${CHECKLIST.length - answered} to go`, text: "Answer each question about the deal you're looking at." }
+      ? { cls: "", title: tn("sp.check.toGo", CHECKLIST.length - answered), text: t("sp.check.toGoText") }
       : flags.length === 0
-        ? { cls: "ok", title: "Reasonable buy", text: "It fixes a real need and nothing better covers it. Buy the smallest tier that does the job." }
+        ? { cls: "ok", title: t("sp.check.okTitle"), text: t("sp.check.okText") }
         : flags.length === 1
-          ? { cls: "maybe", title: "Think twice", text: "One red flag:" }
-          : { cls: "no", title: "Skip it", text: `${flags.length} red flags:` };
+          ? { cls: "maybe", title: t("sp.check.maybeTitle"), text: t("sp.check.maybeText") }
+          : { cls: "no", title: t("sp.check.noTitle"), text: tn("sp.check.noText", flags.length) };
   return (
     <section className="card deal-check">
       <div className="deal-check-head">
         <div>
-          <p className="eyebrow">Deal check</p>
-          <h2 className="subhead">Looking at a pack right now?</h2>
+          <p className="eyebrow">{t("sp.check.eyebrow")}</p>
+          <h2 className="subhead">{t("sp.check.title")}</h2>
         </div>
         {answered > 0 && (
           <button type="button" className="link-button" onClick={() => setAnswers(CHECKLIST.map(() => null))}>
-            Start over
+            {t("sp.check.reset")}
           </button>
         )}
       </div>
@@ -44,13 +52,14 @@ function DealCheck() {
         {CHECKLIST.map((q, i) => {
           const a = answers[i];
           const flag = a !== null && a !== q.good;
+          const question = t(k(`sp.chk${i + 1}.q`));
           return (
-            <li key={q.q} className={a === null ? undefined : flag ? "flag" : "fine"}>
-              <span className="check-q">{q.q}</span>
-              <span className="yn" role="group" aria-label={q.q}>
+            <li key={i} className={a === null ? undefined : flag ? "flag" : "fine"}>
+              <span className="check-q">{question}</span>
+              <span className="yn" role="group" aria-label={question}>
                 {[true, false].map((v) => (
                   <button key={String(v)} type="button" aria-pressed={a === v} onClick={() => setAnswers((s) => s.map((x, j) => (j === i ? v : x)))}>
-                    {v ? "Yes" : "No"}
+                    {v ? t("sp.check.yes") : t("sp.check.no")}
                   </button>
                 ))}
               </span>
@@ -63,7 +72,7 @@ function DealCheck() {
         <span>{verdict.text}</span>
         {answered === CHECKLIST.length && flags.length > 0 && (
           <ul>
-            {flags.map((q) => <li key={q.q}>{q.flag}</li>)}
+            {flags.map((n) => <li key={n}>{t(k(`sp.chk${n}.flag`))}</li>)}
           </ul>
         )}
       </div>
@@ -72,81 +81,77 @@ function DealCheck() {
 }
 
 export function SpendingPage() {
+  const { t } = useT();
   const [tier, setTier] = useState<Tier | "all">("all");
   const [open, setOpen] = useState<string | null>(null);
   const path = DEALS.filter((d) => d.tier === "best" || d.tier === "good");
   const shown = DEALS.filter((d) => tier === "all" || d.tier === tier).sort((a, b) => ORDER.indexOf(a.tier) - ORDER.indexOf(b.tier));
+  const tierLabel = (x: Tier) => t(k(`sp.tier.${x}.label`));
 
   return (
     <div className="tool spending">
       <section className="card honest-answer">
         <span className="salt" aria-hidden>🧂</span>
         <div>
-          <p className="eyebrow">Read this first</p>
-          <h2>The honest answer to "Is this worth it?"</h2>
-          <p>
-            <strong>No.</strong> Nothing in the shop is truly <em>worth</em> it. Sword x Staff is fully playable and fun without spending a
-            cent. Most players won't still be playing three to six months from now, so whatever you buy may not matter for long.
-          </p>
-          <p>
-            Gacha games are built around the same reward loops as slot machines, designed to make spending feel good. So take this guide,
-            and any spending guide, with a grain of salt.
-          </p>
-          <p className="honest-next">If you do decide to spend, here's how to get the most for your money.</p>
+          <p className="eyebrow">{t("sp.honest.eyebrow")}</p>
+          <h2>{t("sp.honest.title")}</h2>
+          <p>{rich(t("sp.honest.p1"))}</p>
+          <p>{t("sp.honest.p2")}</p>
+          <p className="honest-next">{t("sp.honest.next")}</p>
         </div>
       </section>
 
       <section className="card spend-path">
-        <p className="eyebrow">If you spend at all</p>
-        <h2 className="subhead">Buy in this order</h2>
+        <p className="eyebrow">{t("sp.path.eyebrow")}</p>
+        <h2 className="subhead">{t("sp.path.title")}</h2>
         <ol>
           {path.map((d, i) => (
-            <li key={d.name} className={`tier-${d.tier}`}>
+            <li key={d.id} className={`tier-${d.tier}`}>
               <span className="path-step" aria-hidden>{i + 1}</span>
               <div>
-                <b>{d.name}</b>
-                <small>{d.verdict}</small>
+                <b>{t(dealKey(d, "name"))}</b>
+                <small>{t(dealKey(d, "verdict"))}</small>
               </div>
             </li>
           ))}
         </ol>
-        <p className="hint">Stop wherever your budget runs out. Everything past this list is "only if you need it" or worse.</p>
+        <p className="hint">{t("sp.path.hint")}</p>
       </section>
 
       <section className="card deal-board">
         <div className="deal-board-head">
-          <h2 className="subhead">Every deal, rated</h2>
-          <div className="filter-row" role="group" aria-label="Filter by value">
-            <button type="button" aria-pressed={tier === "all"} onClick={() => setTier("all")}>All</button>
-            {ORDER.map((t) => (
-              <button key={t} type="button" className={`tier-chip tier-${t}`} aria-pressed={tier === t} onClick={() => setTier(t)}>
-                {TIERS[t].label}
+          <h2 className="subhead">{t("sp.board.title")}</h2>
+          <div className="filter-row" role="group" aria-label={t("sp.board.filterAria")}>
+            <button type="button" aria-pressed={tier === "all"} onClick={() => setTier("all")}>{t("sp.board.all")}</button>
+            {ORDER.map((x) => (
+              <button key={x} type="button" className={`tier-chip tier-${x}`} aria-pressed={tier === x} onClick={() => setTier(x)}>
+                {tierLabel(x)}
               </button>
             ))}
           </div>
         </div>
-        {tier !== "all" && <p className="hint">{TIERS[tier].blurb}</p>}
+        {tier !== "all" && <p className="hint">{t(k(`sp.tier.${tier}.blurb`))}</p>}
         <ul className="deal-list">
           {shown.map((d) => {
-            const isOpen = open === d.name;
+            const isOpen = open === d.id;
             return (
-              <li key={d.name} className={`deal-row tier-${d.tier}${isOpen ? " open" : ""}`}>
-                <button type="button" className="deal-row-head" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : d.name)}>
+              <li key={d.id} className={`deal-row tier-${d.tier}${isOpen ? " open" : ""}`}>
+                <button type="button" className="deal-row-head" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : d.id)}>
                   <ValueMeter tier={d.tier} />
                   <span className="deal-name">
-                    <b>{d.name}</b>
-                    <small>{d.verdict}</small>
+                    <b>{t(dealKey(d, "name"))}</b>
+                    <small>{t(dealKey(d, "verdict"))}</small>
                   </span>
-                  <span className={`tier-badge tier-${d.tier}`}>{TIERS[d.tier].label}</span>
+                  <span className={`tier-badge tier-${d.tier}`}>{tierLabel(d.tier)}</span>
                   <span className="deal-caret" aria-hidden>▾</span>
                 </button>
                 {isOpen && (
                   <div className="deal-body">
                     <ul>
-                      {d.why.map((w) => <li key={w}>{w}</li>)}
+                      {range(d.why).map((n) => <li key={n}>{t(dealKey(d, `why${n}`))}</li>)}
                     </ul>
-                    {d.bestFor && <p className="hint"><b>Best for:</b> {d.bestFor}</p>}
-                    {d.link && <p className="hint deal-link"><a href={d.link.href}>{d.link.label} →</a></p>}
+                    {d.bestFor && <p className="hint"><b>{t("sp.bestFor")}</b> {t(dealKey(d, "best"))}</p>}
+                    {d.link && <p className="hint deal-link"><a href={d.link}>{t(dealKey(d, "link"))} →</a></p>}
                   </div>
                 )}
               </li>
@@ -158,24 +163,22 @@ export function SpendingPage() {
       <section className="card cosmetics-note">
         <span className="cosmetics-icon" aria-hidden>👗</span>
         <div>
-          <p className="eyebrow">Cosmetics</p>
-          <h2 className="subhead">{COSMETICS.title}</h2>
-          {COSMETICS.body.map((t) => <p key={t}>{t}</p>)}
+          <p className="eyebrow">{t("sp.cos.eyebrow")}</p>
+          <h2 className="subhead">{t("sp.cos.title")}</h2>
+          {range(COSMETICS_PARAGRAPHS).map((n) => <p key={n}>{t(k(`sp.cos.p${n}`))}</p>)}
         </div>
       </section>
 
       <DealCheck />
 
       <section className="card">
-        <h2 className="subhead">Good to know</h2>
+        <h2 className="subhead">{t("sp.tips.title")}</h2>
         <div className="tip-tiles">
-          {TIPS.map((t) => <p key={t}>{t}</p>)}
+          {range(TIPS).map((n) => <p key={n}>{t(k(`sp.tip${n}`))}</p>)}
         </div>
       </section>
 
-      <p className="hint spending-fine-print">
-        Community advice, not official. Pack contents and prices change and vary by region, so always check what's inside before you buy.
-      </p>
+      <p className="hint spending-fine-print">{t("sp.fine")}</p>
     </div>
   );
 }

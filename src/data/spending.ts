@@ -1,137 +1,39 @@
-// Spending guide content. Community consensus, not official: edit freely.
-// Each verdict should be something you'd stand behind when a player asks "is this worth it?".
+// Spending guide structure. Community consensus, not official. The words live in src/i18n/en.ts under "sp."
+// (and the other language files), so each line can be translated: sp.deal.<id>.name / .verdict / .why1… / .best / .link.
 
 export type Tier = "best" | "good" | "situational" | "skip";
 
 export interface Deal {
-  name: string;
+  id: string;
   tier: Tier;
-  /** One-line verdict shown under the name. */
-  verdict: string;
-  /** Why, in a couple of short points. */
-  why: string[];
-  /** Who it suits, or when to buy it. */
-  bestFor?: string;
-  /** A page on this site to point to, shown after "Best for". */
-  link?: { label: string; href: string };
+  /** How many "why" points it has (sp.deal.<id>.why1, why2…). */
+  why: number;
+  /** Has a "Best for" line (sp.deal.<id>.best). */
+  bestFor?: boolean;
+  /** A page on this site to point to (label in sp.deal.<id>.link), shown after "Best for". */
+  link?: string;
 }
 
-export const TIERS: Record<Tier, { label: string; blurb: string }> = {
-  best: { label: "Best value", blurb: "Buy these first if you play most days." },
-  good: { label: "Good value", blurb: "Worth it once you've got the best-value ones." },
-  situational: { label: "Only if you need it", blurb: "Fine when the contents fix a real bottleneck. Otherwise skip." },
-  skip: { label: "Usually skip", blurb: "Poor value for progress." },
-};
+export const TIERS: Tier[] = ["best", "good", "situational", "skip"];
 
 export const DEALS: Deal[] = [
-  {
-    name: "Monthly Pass",
-    tier: "best",
-    verdict: "The best value in the shop for anyone who logs in daily.",
-    why: [
-      "Pays out Dawnium every day for 30 days, far more in total than a currency pack at the same price.",
-      "Also boosts AFK gains and EXP while it's active.",
-    ],
-    bestFor: "Everyone who spends anything. Skip it only if you won't log in most days, because missed days are lost.",
-  },
-  {
-    name: "Pilgrimage Pass",
-    tier: "best",
-    verdict: "Second priority, if you'll keep levelling.",
-    why: [
-      "Pays out at level milestones, with bigger rewards at higher milestones.",
-      "You only get full value if you actually reach those levels.",
-    ],
-    bestFor: "Players planning to stick with the game for a while.",
-  },
-  {
-    name: "Long-term growth passes",
-    tier: "best",
-    verdict: "Occasional passes that pay out like the Pilgrimage Pass, usually $10, $15 or $20. Always a good buy when one shows up.",
-    why: [
-      "They pay out over time as you progress, so the total is far more than a pack at the same price.",
-      "They only come round now and then, so pick one up when you see it.",
-    ],
-    bestFor: "Anyone who already has the Monthly Pass and Pilgrimage Pass and plans to keep playing.",
-  },
-  {
-    name: "Starter / New Player Pack",
-    tier: "best",
-    verdict: "Cheap one-time pack with excellent value. Grab it early.",
-    why: ["Only offered in your first days.", "Low price for what's inside."],
-    bestFor: "New characters.",
-  },
-  {
-    name: "Unlock item packs",
-    tier: "best",
-    verdict: "Blockade-clearing items are a steal, especially the 99¢ packs.",
-    why: [
-      "Gateway Keys, Withering Potions, Magic Drills, Water Mines and the like open up new areas, each with its own chests, ore, Rola and other pickups.",
-      "Every unlocked area keeps paying back, so a few cents goes a long way.",
-    ],
-    bestFor: "Anyone with blockades still in their way.",
-    link: { label: "See where each blockade is on the World Map", href: "/map" },
-  },
-  {
-    name: "7-Day Prayer",
-    tier: "good",
-    verdict: "The weekly pass, in the same shop section as the Monthly Pass. Good after the Monthly Pass and Pilgrimage Pass.",
-    why: ["Better rate than buying currency directly.", "Lower total value than the Monthly Pass."],
-  },
-  {
-    name: "Pop-up packs (relics, skills, materials)",
-    tier: "situational",
-    verdict: "Only buy the smallest tier, and only when you need what's inside.",
-    why: [
-      "The advertised value % drops as the price goes up, so the cheapest tier is the most efficient.",
-      "Timers are there to rush you. A pack you don't need isn't a deal.",
-    ],
-    bestFor: "Pushing past a specific wall, like finishing a relic set or hitting a Primostar milestone.",
-  },
-  {
-    name: "Limited event bundles",
-    tier: "situational",
-    verdict: "Judge each one on its contents, not the 'limited' label.",
-    why: ["Often priced at a premium because they're limited.", "Worth it when the event item is something you'd actually use."],
-  },
-  {
-    name: "Currency packs (Vouchers)",
-    tier: "skip",
-    verdict: "The worst rate for regular spending. Buy the passes instead.",
-    why: ["The Monthly Pass gives far more for the same money.", "Only top up when you need a specific amount for something planned."],
-  },
-  {
-    name: "Random chest / loot box packs",
-    tier: "skip",
-    verdict: "Poor and unpredictable value.",
-    why: ["Results are random, so the expected value is usually worse than a fixed pack."],
-  },
+  { id: "monthly", tier: "best", why: 2, bestFor: true },
+  { id: "pilgrimage", tier: "best", why: 2, bestFor: true },
+  { id: "growth", tier: "best", why: 2, bestFor: true },
+  { id: "starter", tier: "best", why: 2, bestFor: true },
+  { id: "unlock", tier: "best", why: 2, bestFor: true, link: "/map" },
+  { id: "prayer", tier: "good", why: 2 },
+  { id: "popup", tier: "situational", why: 2, bestFor: true },
+  { id: "limited", tier: "situational", why: 2 },
+  { id: "currency", tier: "skip", why: 2 },
+  { id: "random", tier: "skip", why: 1 },
 ];
 
-/** Cosmetics get their own section rather than a value rating: they're bought for fun, not progress. */
-export const COSMETICS = {
-  title: "Cosmetics: just for fun",
-  body: [
-    "Cosmetics are some of the most fun things to own in the game, and you can even buy them as gifts for people on your friends list.",
-    "They add very, very little in game terms: a small bump to your Visage score. Buy them because you love the look or want to treat a friend, not for power.",
-  ],
-};
+/** Cosmetics get their own section (sp.cos.*) rather than a value rating: they're bought for fun, not progress. */
+export const COSMETICS_PARAGRAPHS = 2;
 
-/** Questions to ask about any deal before buying. `good` is the answer that's no red flag; `flag` says why the other one is. */
-export const CHECKLIST: { q: string; good: boolean; flag: string }[] = [
-  { q: "Do I need what's inside right now?", good: true, flag: "You don't need it yet. It'll come round again." },
-  {
-    q: "Does it get me past a real wall or milestone (a relic set, a Primostar goal, a class change)?",
-    good: true,
-    flag: "It doesn't fix a real wall, so it won't change much.",
-  },
-  { q: "Would the same money buy more as a Monthly Pass, 7-Day Prayer or Pilgrimage Pass?", good: false, flag: "A pass gives more for the same money. Buy that instead." },
-  { q: "Am I mostly buying it because of the timer or the 'value %' badge?", good: false, flag: "The timer and badge are there to rush you. Let it expire." },
-];
+/** Questions to ask about any deal before buying (sp.chk<n>.q / .flag). `good` is the answer that's no red flag. */
+export const CHECKLIST: { good: boolean }[] = [{ good: true }, { good: true }, { good: false }, { good: false }];
 
-/** Free-to-play and spending tips that apply whatever you buy. */
-export const TIPS = [
-  "Save Vouchers for the premium (pink) skill banner rather than the standard (blue) one.",
-  "VIP points only come from real-money spending, not from Vouchers, so don't hoard Vouchers expecting VIP progress.",
-  "Pull in 10s. Multi-pulls get you to pity faster.",
-];
+/** Free-to-play and spending tips that apply whatever you buy (sp.tip1…). */
+export const TIPS = 3;

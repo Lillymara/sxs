@@ -1,93 +1,39 @@
-// Dawnium guide content: the site owner's recommendations plus the Realm refresh prices from the client. Edit freely.
+// Dawnium guide structure: the site owner's recommendations plus the Realm presets. The words live in
+// src/i18n/en.ts under "dw." (and the other language files), so each line can be translated.
 
 export interface Use {
-  title: string;
-  /** Short cost line, e.g. "60–300 per refresh". */
-  cost: string;
-  advice: string;
-  points: string[];
-  /** A page on this site to point to. */
-  link?: { label: string; href: string };
+  /** Keys: dw.use.<id>.title / .cost / .advice / .p1… / .link */
+  id: string;
+  points: number;
+  /** A page on this site to point to (label in dw.use.<id>.link). */
+  link?: string;
 }
 
 /** Where Dawnium does the most good, best first. */
 export const PRIORITIES: Use[] = [
-  {
-    title: "Daily Dungeon refreshes",
-    cost: "2 extra runs a day",
-    advice: "One of the best purchases in the game. Buy 2 extra runs every day.",
-    points: [
-      "Unused runs bank up to 6.",
-      "Don't spend them the day before a new dungeon opens. Bank them so you can run the new dungeon 6 times on day one.",
-    ],
-  },
-  {
-    title: "Material Realm refreshes",
-    cost: "60 each for the first two",
-    advice: "Free to play: 2 / 2 / 2 / 2. Spenders: 4 / 2 / 4 / 4. Whales will happily go much higher.",
-    points: [
-      "Each refresh gives 5 more entries. The first two cost 60 Dawnium, just 12 per entry.",
-      "Prices climb fast after that, up to 300 for the 10th (60 per entry). Use the calculator below to see your daily cost.",
-    ],
-    link: { label: "See which materials you're short on in the Season Planner", href: "/planner" },
-  },
-  {
-    title: "Guild donations & 24-hour tool upgrade",
-    cost: "70 for the 2nd and 3rd",
-    advice: "Everyone should consider this one. Donate 3 times a day: the first is free, the next two cost 70 Dawnium in total.",
-    points: [
-      "Also keep the 150 Dawnium 24-hour tool upgrade running at your guild's gathering spots.",
-      "Together they return a great haul of guild tokens for the guild shop. The discounted sheep, chickens and plants are the top buys.",
-    ],
-  },
-  {
-    title: "Arena tickets",
-    cost: "Buy around the weekly reset",
-    advice: "Want to jump the leaderboard? Stockpile, then go all in on Monday.",
-    points: [
-      "Save your attempts later in the week, buy 4 before Monday's reset and 4 more after it.",
-      "That gives you roughly 20–28 runs when the ladder resets, enough to jump to a decent placing right away.",
-      "During the week, buy 2 attempts a day only if you can actually climb higher. If you can't, it's wasted Dawnium.",
-    ],
-  },
+  { id: "dungeon", points: 2 },
+  { id: "realm", points: 2, link: "/planner" },
+  { id: "guild", points: 2 },
+  { id: "arena", points: 3 },
 ];
 
-/** Where any Dawnium left over after the best uses can go, best first. */
-export const LEFTOVER_PULLS: { title: string; icon: string; note?: string }[] = [
-  { title: "Relic pulls", icon: "relic" },
-  { title: "Skill pulls", icon: "skill" },
-  {
-    title: "Fantomon pulls",
-    icon: "fantomon",
-    note: "Worth it if you're very close to a Mythic pet purchase (60 exchange hearts), for instance with a server or Nexus tournament coming up soon.",
-  },
+/** Where any Dawnium left over after the best uses can go, best first (dw.pull.<id>.title / .note). */
+export const LEFTOVER_PULLS: { id: string; icon: string; note?: boolean }[] = [
+  { id: "relic", icon: "relic" },
+  { id: "skill", icon: "skill" },
+  { id: "fantomon", icon: "fantomon", note: true },
 ];
 
-/** The reminder shown with the pulls. Kept in the site owner's words. */
-export const PULLS_REMINDER = {
-  title: "All of this spending is very optional",
-  body: [
-    "Pulling extra just because you have Dawnium to spend is usually a poor use of it. The steady build-up of character power from the best uses above will far outpace extra pulls of anything in the long run.",
-    "I promise: getting the skill you need to finish your theoretical best build will feel just as good 3 days from now, when you get it from free pulls, as it would today spending Dawnium on them.",
-  ],
-};
+/** The reminder shown with the pulls (dw.remind.*). Kept in the site owner's words. */
+export const REMINDER_PARAGRAPHS = 2;
 
-/** Realm refresh presets for the calculator, per Realm. */
-export const REALM_PRESETS: { label: string; plan: Record<"ore" | "rola" | "essence" | "sand", number> }[] = [
+/** Realm refresh presets for the calculator, per Realm. Labels are translated as preset.<label>. */
+export const REALM_PRESETS: { label: "Free to play" | "Spender" | "Whale"; plan: Record<"ore" | "rola" | "essence" | "sand", number> }[] = [
   { label: "Free to play", plan: { ore: 2, rola: 2, essence: 2, sand: 2 } },
   { label: "Spender", plan: { ore: 4, rola: 2, essence: 4, sand: 4 } },
   { label: "Whale", plan: { ore: 10, rola: 10, essence: 10, sand: 10 } },
 ];
 
-/** Rola budgeting tips. */
-export const ROLA_TIPS = [
-  "Keep a surplus of 200k–500k Rola. That covers most power spikes that need Rola.",
-  "Always check what your next rank will cost. Expert 2, for example, costs 110k at level 80.",
-];
-
-/** Things to avoid spending Dawnium on. */
-export const AVOID = [
-  "Cosmetics, at least until your build is settled.",
-  "Convenience items that only save a little time.",
-  "Anything you're buying just because it's there. A reserve lets you jump on a new dungeon or a good deal.",
-];
+/** Rola budgeting tips (dw.rola1…) and things to avoid spending Dawnium on (dw.avoid1…). */
+export const ROLA_TIPS = 2;
+export const AVOID = 3;

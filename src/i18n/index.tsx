@@ -54,9 +54,11 @@ export function translator(lang: Lang, messages: Messages) {
   return { t, tn };
 }
 
-/** Turns "<b>bold</b>" in a translated string into real bold text (no other markup is allowed). */
+/** Turns "<b>bold</b>" and "<i>stressed</i>" in a translated string into real markup (nothing else is allowed). */
 export function rich(text: string): ReactNode {
-  return text.split(/(<b>.*?<\/b>)/g).map((part, i) => (part.startsWith("<b>") ? <b key={i}>{part.slice(3, -4)}</b> : part));
+  return text.split(/(<b>.*?<\/b>|<i>.*?<\/i>)/g).map((part, i) =>
+    part.startsWith("<b>") ? <b key={i}>{part.slice(3, -4)}</b> : part.startsWith("<i>") ? <em key={i}>{part.slice(3, -4)}</em> : part,
+  );
 }
 
 interface I18n {

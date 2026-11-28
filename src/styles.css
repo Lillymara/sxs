@@ -369,7 +369,7 @@ input.silly { border-color: var(--error); color: var(--error); box-shadow: 0 0 0
 .honest-answer .salt { font-size: 2.6rem; line-height: 1; padding: 10px; border-radius: 18px; background: var(--surface-2); border: 1px solid var(--line); }
 .honest-answer h2 { margin: 2px 0 10px; font-size: 1.35rem; letter-spacing: -0.015em; }
 .honest-answer p { margin: 0 0 10px; line-height: 1.6; max-width: 70ch; }
-.honest-answer strong { color: var(--accent); font-size: 1.05em; }
+.honest-answer p > b { color: var(--accent); font-size: 1.05em; }
 .honest-answer .honest-next { margin: 14px 0 0; padding-top: 12px; border-top: 1px dashed var(--line); color: var(--muted); font-weight: 600; }
 .spending-fine-print { margin: -4px 4px 0; }
 @media (max-width: 560px) { .honest-answer { grid-template-columns: 1fr; } .honest-answer .salt { justify-self: start; font-size: 2rem; } }
